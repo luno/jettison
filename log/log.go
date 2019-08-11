@@ -1,0 +1,113 @@
+package log
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/go-stack/stack"
+	"github.com/luno/jettison"
+	jerrors "github.com/luno/jettison/errors"
+	"github.com/luno/jettison/internal"
+	"github.com/luno/jettison/models"
+)
+
+const (
+	LevelInfo  models.Level = "info"
+	LevelError models.Level = "error"
+	LevelDebug models.Level = "debug"
+)
+
+// WithLevel returns a jettison option to override the default log level.
+// It only works when provided as option to log package functions.
+func WithLevel(level models.Level) jettison.OptionFunc {
+	return func(details jettison.Details) {
+		l, ok := details.(*models.Log)
+		if !ok {
+			log.Printf("jettison/log: WithLevel option not applicable to: %T", details)
+			return
+		}
+		l.Level = level
+	}
+}
+
+// Info writes a structured jettison log to the logger. Any jettison
+// key/value pairs contained in the given context are included in the log.
+func Info(ctx context.Context, msg string, ol ...jettison.Option) {
+	l := newLog(msg, LevelInfo, 2)
+	opts := append(ol, internal.ContextOptions(ctx)...)
+	for _, o := range opts {
+		o.Apply(&l)
+	}
+
+	logger.Log(Log(l))
+}
+
+// Error writes a structured jettison log of the given error to the logger.
+// If the error is not already a Jettison error, it is converted into one and
+// then logged. Any jettison key/value pairs contained in the given context are
+// included in the log.
+func Error(ctx context.Context, err error, ol ...jettison.Option) {
+	opts := append(ol, internal.ContextOptions(ctx)...)
+
+	je, ok := err.(*internal.JettisonError)
+	if !ok {
+		je, ok = jerrors.New(err.Error()).(*internal.JettisonError)
+	}
+	if !ok {
+		log.Printf("jettison/log: failed to convert error to jettison error: %v", err)
+		// best-effort, will just log err.Err() wrapped as a Jettison log
+	}
+
+	l := newLog(je.Error(), LevelError, 4)
+	for _, o := range opts {
+		o.Apply(&l)
+	}
+
+	for _, h := range je.Hops {
+		l.Hops = append(l.Hops, h)
+	}
+
+	// Bubble up all nested parameters in the list of hops to the log's root
+	// parameters list for ease of use. Newer parameters come first.
+	for _, h := range je.Hops {
+		for _, e := range h.Errors {
+			if e.Parameters == nil {
+				continue
+			}
+
+			for _, k := range e.Parameters {
+				l.Parameters = append(l.Parameters, k)
+			}
+		}
+	}
+
+	// Add the most recent error code in the chain to the log's root.
+	codes := jerrors.GetCodes(err)
+	if len(codes) > 0 {
+		l.ErrorCode = &codes[0]
+	}
+
+	logger.Log(Log(l))
+}
+
+// ContextWith returns a new context with the given jettison options appended
+// to its key/value store. When a context containing jettison options is
+// passed to InfoCtx or ErrorCtx, the options are automatically applied to
+// the resulting log.
+func ContextWith(ctx context.Context, opts ...jettison.Option) context.Context {
+	return internal.ContextWith(ctx, opts...)
+}
+
+// newLog returns a Log struct decorated with useful defaults - stackSkip
+// is the number of callstacks to skip in the stacktrace before pulling
+// out the `source` of the call to `jettison/log.XXX`.
+func newLog(msg string, level models.Level, stackSkip int) models.Log {
+	return models.Log{
+		Message:   msg,
+		Source:    fmt.Sprintf("%+v", stack.Caller(stackSkip)),
+		Level:     level,
+		Timestamp: time.Now(),
+	}
+}

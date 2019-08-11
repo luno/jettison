@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package examplepb;
+
+service Hopper {
+  rpc Hop(HopRequest) returns (Empty) {}
+ }
+
+message Empty {}
+
+message HopRequest{
+  int64 hops = 1;
+}

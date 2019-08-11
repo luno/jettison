@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package jettisonpb;
+
+message Hop {
+  string binary = 1;
+  repeated string stack_trace = 3;
+  repeated Error errors = 2;
+}
+
+message Error {
+  string code = 4;
+  string message = 1;
+  string source = 2;
+  repeated KeyValue parameters = 3;
+}
+
+message KeyValue {
+  string key = 1;
+  string value = 2;
+}
+
