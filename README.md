@@ -72,7 +72,7 @@ import (
 
 func Example(ctx context.Context) {
     // You can log general info as you normally would.
-    log.InfoCtx(ctx, "entering the example function",
+    log.Info(ctx, "entering the example function",
         jettison.WithKeyValueString("key", "value"))
 
     // Errors can be logged separately - if the error is a jettison error then
@@ -81,7 +81,7 @@ func Example(ctx context.Context) {
         jettison.WithKeyValueString("key", "value"),
     jettison.WithSource("Example()"))
 
-    log.ErrorCtx(ctx, err, 
+    log.Error(ctx, err, 
         jettison.WithKeyValueString("another_key", "another_value"))
 }
 ```

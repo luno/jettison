@@ -175,12 +175,15 @@ func (je *JettisonError) Unwrap() error {
 	}
 
 	// If this was the last unwrap, just return the original error for
-	// compatibility with golang.org/x/xerrors.Unwrap().
+	// compatibility with golang.org/x/xerrors.Unwrap() if it isn't nil.
 	//
 	// NOTE(guy): This can lead to a gotcha where an errors.Is() call works
 	// locally, but doesn't work over gRPC since original error values can't
 	// be preserved over the wire.
-	if len(je.Hops) == 1 && len(je.Hops[0].Errors) == 1 {
+	if len(je.Hops) == 1 &&
+		len(je.Hops[0].Errors) == 1 &&
+		je.OriginalErr != nil {
+
 		return je.OriginalErr
 	}
 

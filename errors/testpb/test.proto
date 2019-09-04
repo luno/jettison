@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package testpb;
+
+service Test {
+  rpc ErrorWithCode(ErrorWithCodeRequest) returns (Empty) {}
+  rpc WrapErrorWithCode(WrapErrorWithCodeRequest) returns (Empty) {}
+}
+
+message ErrorWithCodeRequest {
+  string code = 1;
+}
+
+message WrapErrorWithCodeRequest {
+  string code = 1;
+  int64 wraps = 2;
+}
+
+message Empty {}
