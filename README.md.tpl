@@ -40,19 +40,7 @@ import (
     "github.com/luno/jettison/errors"
 )
 
-func Example() error {
-	// Construct your error as usual, with additional metadata.
-	err := errors.New("something went wrong",
-		jettison.WithKeyValueString("key", "value"),
-		jettison.WithSource("Example()"))
-
-	// Wrap errors with additional metadata as they get passed down the stack.
-	err = errors.Wrap(err, "something else went wrong",
-		jettison.WithKeyValueString("another_key", "another_value"))
-
-	// Pass it around - including over gRPC - like you would any other error.
-	return err
-}
+func Example() error {{ "ExampleErrors" | code }}
 ```
 
 ### Logs
@@ -69,20 +57,7 @@ import (
     "github.com/luno/jettison/log"
 )
 
-func Example(ctx context.Context) {
-	// You can log general info as you normally would.
-	log.Info(ctx, "entering the example function",
-		jettison.WithKeyValueString("key", "value"))
-
-	err := errors.New("a jettison error",
-		jettison.WithKeyValueString("key", "value"),
-		jettison.WithSource("Example()"))
-
-	// Errors can be logged separately, with metadata marshalled to JSON in
-	// a machine-friendly manner.
-	log.Error(ctx, err,
-		jettison.WithKeyValueString("another_key", "another_value"))
-}
+func Example(ctx context.Context) {{ "ExampleLog" | code }}
 ```
 
 An example log written via `log.Info`:
@@ -146,9 +121,5 @@ import (
     "github.com/luno/jettison/j"
 )
 
-func Example() error {
-	return errors.New("using the aliases",
-		j.KV("int_key", 1),
-		j.KS("string_key", "value"))
-}
+func Example() error {{ "ExampleUtilities" | code }}
 ```
