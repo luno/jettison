@@ -1,5 +1,5 @@
 # Jettison
-[![Go Report Card](https://goreportcard.com/badge/github.com/golang-standards/project-layout?style=flat-square)](https://goreportcard.com/report/github.com/luno/jettison)
+[![Go Report Card](https://goreportcard.com/badge/github.com/luno/jettison?style=flat-square)](https://goreportcard.com/report/github.com/luno/jettison)
 [![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](http://godoc.org/github.com/luno/jettison)
 
 ## What is it?
