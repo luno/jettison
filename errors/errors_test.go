@@ -9,7 +9,6 @@ import (
 
 	"github.com/luno/jettison"
 	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,7 +37,7 @@ func TestNew(t *testing.T) {
 			line := nextLine()
 			err := errors.New(tc.msg, tc.opts...)
 
-			je, ok := err.(*internal.JettisonError)
+			je, ok := err.(*errors.JettisonError)
 			require.True(t, ok)
 
 			assert.Len(t, je.Hops, 1)
@@ -95,7 +94,7 @@ func TestWrap(t *testing.T) {
 			}
 
 			// We expect the returned error to be a Jettison error value.
-			je, ok := err.(*internal.JettisonError)
+			je, ok := err.(*errors.JettisonError)
 			require.True(t, ok)
 
 			assert.Len(t, je.Hops, tc.expectedHopsCount)

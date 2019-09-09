@@ -1,3 +1,5 @@
+// Package models contains representations of Jettison objects that are passed
+// to loggers.
 package models
 
 import "time"

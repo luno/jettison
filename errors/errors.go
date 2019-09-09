@@ -44,7 +44,7 @@ func New(msg string, ol ...jettison.Option) error {
 		o.Apply(&h)
 	}
 
-	return &internal.JettisonError{
+	return &JettisonError{
 		Hops: []models.Hop{h},
 	}
 }
@@ -56,9 +56,9 @@ func Wrap(err error, msg string, ol ...jettison.Option) error {
 
 	// If err is a jettison error, we want to append to it's current segment's
 	// list of errors. Othewise we want to just create a new Jettison error.
-	je, ok := err.(*internal.JettisonError)
+	je, ok := err.(*JettisonError)
 	if !ok {
-		je = &internal.JettisonError{
+		je = &JettisonError{
 			Hops:        []models.Hop{internal.NewHop()},
 			OriginalErr: err,
 		}
@@ -128,7 +128,7 @@ func Unwrap(err error) error {
 // handling packages. This is best-effort - a jettison error that has been
 // passed over the wire will no longer have an OriginalError().
 func OriginalError(err error) error {
-	jerr, ok := err.(*internal.JettisonError)
+	jerr, ok := err.(*JettisonError)
 	if !ok {
 		return nil
 	}
@@ -140,7 +140,7 @@ func OriginalError(err error) error {
 // The error codes are returned in reverse-order of calls to Wrap(), i.e. the
 // code of the latest wrapped error comes first in the list.
 func GetCodes(err error) []string {
-	je, ok := err.(*internal.JettisonError)
+	je, ok := err.(*JettisonError)
 	if !ok {
 		return nil
 	}

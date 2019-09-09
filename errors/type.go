@@ -1,4 +1,4 @@
-package internal
+package errors
 
 import (
 	"errors"
@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	"github.com/luno/jettison"
-	pb "github.com/luno/jettison/internal/jettisonpb"
+	"github.com/luno/jettison/internal"
+	"github.com/luno/jettison/internal/jettisonpb"
 	"github.com/luno/jettison/models"
 	"golang.org/x/xerrors"
 	"google.golang.org/grpc/codes"
@@ -34,7 +35,7 @@ func WithStackTrace(trace []string) jettison.OptionFunc {
 	}
 }
 
-// JettisonError is our internal error representation. We use a separate type
+// JettisonError is the internal error representation. We use a separate type
 // so that we can implement the Go 2.0 error interfaces, and we also need to
 // implement the GRPCStatus() method so that jettison errors can be passed over
 // gRPC seamlessly.
@@ -60,7 +61,7 @@ func (je *JettisonError) GRPCStatus() *status.Status {
 
 	res := status.New(getDefaultCode(), msg)
 	for _, h := range je.Hops {
-		hpb, err := HopToProto(&h)
+		hpb, err := internal.HopToProto(&h)
 		if err != nil {
 			log.Printf("jettison/errors: Failed to marshal hop to protobuf: %v", err)
 			continue
@@ -273,6 +274,22 @@ func (je *JettisonError) As(target interface{}) bool {
 	return false
 }
 
+// GetKey returns the value of the first jettison key/value pair with the
+// given key in the error chain.
+func (je *JettisonError) GetKey(key string) (string, bool) {
+	for _, h := range je.Hops {
+		for _, e := range h.Errors {
+			for _, p := range e.Parameters {
+				if p.Key == key {
+					return p.Value, true
+				}
+			}
+		}
+	}
+
+	return "", false
+}
+
 // FromStatus unmarshals a *grpc.Status into a jettison error object,
 // returning true if and only if no unexpected details were found on the
 // status.
@@ -283,12 +300,12 @@ func FromStatus(s *status.Status) (*JettisonError, error) {
 
 	var res JettisonError
 	for _, d := range s.Details() {
-		spb, ok := d.(*pb.Hop)
+		spb, ok := d.(*jettisonpb.Hop)
 		if !ok {
 			return nil, ErrInvalidError
 		}
 
-		s, err := HopFromProto(spb)
+		s, err := internal.HopFromProto(spb)
 		if err != nil {
 			return nil, err
 		}

@@ -3,7 +3,6 @@ package errors
 import (
 	"testing"
 
-	"github.com/luno/jettison/internal"
 	"github.com/stretchr/testify/require"
 )
 
@@ -11,7 +10,7 @@ import (
 // Adding anything to this file might break the test.
 func TestStack(t *testing.T) {
 	err := stack(5)
-	je, ok := err.(*internal.JettisonError)
+	je, ok := err.(*JettisonError)
 	require.True(t, ok)
 
 	require.Equal(t, expected, je.Hops[0].StackTrace)
@@ -25,13 +24,13 @@ func stack(i int) error {
 }
 
 var expected = []string{
-	"github.com/luno/jettison/errors/stack_test.go:22",
-	"github.com/luno/jettison/errors/stack_test.go:24",
-	"github.com/luno/jettison/errors/stack_test.go:24",
-	"github.com/luno/jettison/errors/stack_test.go:24",
-	"github.com/luno/jettison/errors/stack_test.go:24",
-	"github.com/luno/jettison/errors/stack_test.go:24",
-	"github.com/luno/jettison/errors/stack_test.go:13",
+	"github.com/luno/jettison/errors/stack_test.go:21",
+	"github.com/luno/jettison/errors/stack_test.go:23",
+	"github.com/luno/jettison/errors/stack_test.go:23",
+	"github.com/luno/jettison/errors/stack_test.go:23",
+	"github.com/luno/jettison/errors/stack_test.go:23",
+	"github.com/luno/jettison/errors/stack_test.go:23",
+	"github.com/luno/jettison/errors/stack_test.go:12",
 	"testing/testing.go:865",
 	"runtime/asm_amd64.s:1337",
 }

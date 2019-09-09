@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-stack/stack"
 	"github.com/luno/jettison"
+	"github.com/luno/jettison/errors"
 	jerrors "github.com/luno/jettison/errors"
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/models"
@@ -57,9 +58,9 @@ func Info(ctx context.Context, msg string, ol ...jettison.Option) {
 func Error(ctx context.Context, err error, ol ...jettison.Option) {
 	opts := append(ol, internal.ContextOptions(ctx)...)
 
-	je, ok := err.(*internal.JettisonError)
+	je, ok := err.(*errors.JettisonError)
 	if !ok {
-		je, ok = jerrors.New(err.Error()).(*internal.JettisonError)
+		je, ok = jerrors.New(err.Error()).(*errors.JettisonError)
 	}
 	if !ok {
 		log.Printf("jettison/log: failed to convert error to jettison error: %v", err)

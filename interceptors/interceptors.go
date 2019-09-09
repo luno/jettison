@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/models"
 	"google.golang.org/grpc"
@@ -97,7 +98,7 @@ func withNewHop(err error) error {
 		return err
 	}
 
-	je, statusErr := internal.FromStatus(status)
+	je, statusErr := errors.FromStatus(status)
 	if statusErr != nil {
 		log.Printf("jettison/interceptors: Error converting grpc status: %v", err)
 		return err

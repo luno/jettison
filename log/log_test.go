@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/luno/jettison"
+	"github.com/luno/jettison/errors"
 	jerrors "github.com/luno/jettison/errors"
-	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
 	jlog "github.com/luno/jettison/log"
 	"github.com/stretchr/testify/assert"
@@ -82,7 +82,7 @@ func TestError(t *testing.T) {
 			err: jerrors.New("test",
 				jettison.WithSource("testsource"),
 				jerrors.WithBinary("testservice"),
-				internal.WithStackTrace([]string{"teststacktrace"})),
+				errors.WithStackTrace([]string{"teststacktrace"})),
 		},
 		{
 			name: "error_code",
@@ -90,7 +90,7 @@ func TestError(t *testing.T) {
 				jettison.WithSource("testsource"),
 				jerrors.WithBinary("testservice"),
 				jerrors.WithCode("testcode"),
-				internal.WithStackTrace([]string{"teststacktrace"})),
+				errors.WithStackTrace([]string{"teststacktrace"})),
 		},
 	}
 

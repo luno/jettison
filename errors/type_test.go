@@ -1,10 +1,9 @@
-package internal_test
+package errors_test
 
 import (
 	"testing"
 
 	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/models"
 	"github.com/stretchr/testify/assert"
@@ -70,7 +69,7 @@ func TestToFromStatus(t *testing.T) {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
-			s := internal.JettisonError{
+			s := errors.JettisonError{
 				Hops: []models.Hop{
 					{
 						Binary: "service",
@@ -87,7 +86,7 @@ func TestToFromStatus(t *testing.T) {
 				return
 			}
 
-			s2, err := internal.FromStatus(statusFromErr)
+			s2, err := errors.FromStatus(statusFromErr)
 			assert.NoError(t, err)
 			assert.Equal(t, len(s.Hops), len(s2.Hops))
 			assert.Equal(t, s.Hops[0].Binary, s2.Hops[0].Binary)
@@ -198,7 +197,7 @@ func TestUnwrap(t *testing.T) {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
-			je, ok := tc.err.(*internal.JettisonError)
+			je, ok := tc.err.(*errors.JettisonError)
 			require.True(t, ok)
 
 			assert.Equal(t, tc.expCodes, errors.GetCodes(je))
@@ -221,24 +220,36 @@ func (tep *testErrPtr) Error() string {
 func TestAs(t *testing.T) {
 	tep := testErrPtr("custom error type with pointer")
 
-	var je *internal.JettisonError
+	var je *errors.JettisonError
 	err0 := testErr("custom error type")
 	err1 := &tep
-	err2 := errors.New("jettison error").(*internal.JettisonError)
+	err2 := errors.New("jettison error").(*errors.JettisonError)
 
-	je = errors.Wrap(err0, "wrap").(*internal.JettisonError)
+	je = errors.Wrap(err0, "wrap").(*errors.JettisonError)
 	assert.True(t, je.As(&err0))
 	assert.True(t, go_2_errors.As(je, &err0))
 	assert.False(t, je.As(&err1))
 
-	je = errors.Wrap(err1, "wrap").(*internal.JettisonError)
+	je = errors.Wrap(err1, "wrap").(*errors.JettisonError)
 	assert.True(t, je.As(&err1))
 	assert.True(t, go_2_errors.As(je, &err1))
 	assert.False(t, je.As(&err0))
 
-	je = errors.Wrap(err2, "wrap").(*internal.JettisonError)
+	je = errors.Wrap(err2, "wrap").(*errors.JettisonError)
 	assert.True(t, je.As(&err2))
 	assert.True(t, go_2_errors.As(je, &err2))
 	assert.False(t, je.As(&err0))
 	assert.False(t, je.As(&err1))
+}
+
+func TestGetKey(t *testing.T) {
+	err := errors.New("test", j.KV("key", "value")).(*errors.JettisonError)
+
+	v, ok := err.GetKey("key")
+	assert.True(t, ok)
+	assert.Equal(t, "value", v)
+
+	v, ok = err.GetKey("nonexistent")
+	assert.False(t, ok)
+	assert.Zero(t, v)
 }
