@@ -46,6 +46,16 @@ func TestLog(t *testing.T) {
 				jlog.WithLevel(jlog.LevelError),
 			},
 		},
+		{
+			name: "message_with_unordered_parameters",
+			msg:  "test_message",
+			opts: []jettison.Option{
+				jettison.WithKeyValueString("a", "c"),
+				jettison.WithKeyValueString("c", "d"),
+				jettison.WithKeyValueString("d", "c"),
+				jettison.WithKeyValueString("c", "a"),
+			},
+		},
 	}
 
 	for _, tc := range testCases {

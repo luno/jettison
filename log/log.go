@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"time"
 
 	"github.com/go-stack/stack"
@@ -40,6 +41,11 @@ func Info(ctx context.Context, msg string, ol ...jettison.Option) {
 	for _, o := range opts {
 		o.Apply(&l)
 	}
+
+	// Sort the parameters for consistent logging.
+	sort.Slice(l.Parameters, func(i, j int) bool {
+		return l.Parameters[i].Key < l.Parameters[j].Key
+	})
 
 	logger.Log(Log(l))
 }
@@ -82,6 +88,11 @@ func Error(ctx context.Context, err error, ol ...jettison.Option) {
 			}
 		}
 	}
+
+	// Sort the parameters for consistent logging.
+	sort.Slice(l.Parameters, func(i, j int) bool {
+		return l.Parameters[i].Key < l.Parameters[j].Key
+	})
 
 	// Add the most recent error code in the chain to the log's root.
 	codes := jerrors.GetCodes(err)
