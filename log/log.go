@@ -10,7 +10,6 @@ import (
 	"github.com/go-stack/stack"
 	"github.com/luno/jettison"
 	"github.com/luno/jettison/errors"
-	jerrors "github.com/luno/jettison/errors"
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/models"
 )
@@ -60,14 +59,14 @@ func Error(ctx context.Context, err error, ol ...jettison.Option) {
 
 	je, ok := err.(*errors.JettisonError)
 	if !ok {
-		je, ok = jerrors.New(err.Error()).(*errors.JettisonError)
+		je, ok = errors.New(err.Error()).(*errors.JettisonError)
 	}
 	if !ok {
 		log.Printf("jettison/log: failed to convert error to jettison error: %v", err)
 		// best-effort, will just log err.Err() wrapped as a Jettison log
 	}
 
-	l := newLog(je.Error(), LevelError, 4)
+	l := newLog(je.Error(), LevelError, 2)
 	for _, o := range opts {
 		o.Apply(&l)
 	}
@@ -96,7 +95,7 @@ func Error(ctx context.Context, err error, ol ...jettison.Option) {
 	})
 
 	// Add the most recent error code in the chain to the log's root.
-	codes := jerrors.GetCodes(err)
+	codes := errors.GetCodes(err)
 	if len(codes) > 0 {
 		l.ErrorCode = &codes[0]
 	}
