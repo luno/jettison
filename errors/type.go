@@ -3,6 +3,8 @@ package errors
 import (
 	"errors"
 	"flag"
+	"fmt"
+	"io"
 	"log"
 	"reflect"
 	"strings"
@@ -77,6 +79,30 @@ func (je *JettisonError) GRPCStatus() *status.Status {
 	return res
 }
 
+// Format satisfies the fmt.Formatter interface providing customizable formatting:
+//   %s, %v formats all wrapped error messages concatenated with ": ".
+//   %+v, %#v does the above but also adds error parameters; "(k1=v1, k2=v2)".
+func (je *JettisonError) Format(state fmt.State, c rune) {
+	withParams := state.Flag(int('#')) || state.Flag(int('+'))
+	p := &printer{Writer: state, detailed: withParams}
+	next := je
+	for {
+		res := next.FormatError(p)
+		if res == nil {
+			return
+		}
+
+		_, _ = p.Write([]byte(": "))
+
+		jerr, ok := res.(*JettisonError)
+		if !ok {
+			_, _ = p.Write([]byte(res.Error()))
+			return
+		}
+		next = jerr
+	}
+}
+
 // FormatError implements the Formatter interface for optionally detailed
 // error message rendering - see the Go 2 error printing draft proposal for
 // details.
@@ -87,33 +113,24 @@ func (je *JettisonError) FormatError(p xerrors.Printer) error {
 	}
 
 	msg := "%s"
-	args := []interface{}{je}
+	args := []interface{}{le.Message}
 	if p.Detail() && len(le.Parameters) > 0 {
 		var fmts []string
 		for _, kv := range le.Parameters {
 			fmts = append(fmts, "%s")
-			args = append(args, kv.Key+" "+kv.Value)
+			args = append(args, kv.Key+"="+kv.Value)
 		}
 
 		msg += "(" + strings.Join(fmts, ", ") + ")"
 	}
 
-	msg += ":"
 	p.Printf(msg, args...)
-	return unwrap(je)
+	return je.Unwrap()
 }
 
+// Error satisfies the built-in error interface and returns the default error format.
 func (je *JettisonError) Error() string {
-	// TODO(guy): Once support for the FormatError interface is added to the
-	// fmt package, we should just use `fmt.Sprintf("%v", err)` here.
-	var res []string
-	for _, h := range je.Hops {
-		for _, e := range h.Errors {
-			res = append(res, e.Message)
-		}
-	}
-
-	return strings.Join(res, ": ")
+	return fmt.Sprintf("%v", je)
 }
 
 func (je *JettisonError) String() string {
@@ -328,10 +345,30 @@ func unwrap(je *JettisonError) *JettisonError {
 	if !ok {
 		return nil
 	}
-
 	return res
 }
 
 func getDefaultCode() codes.Code {
 	return codes.Code(*defaultCode)
 }
+
+// printer implements xerrors.Printer interface.
+type printer struct {
+	io.Writer
+	detailed bool
+}
+
+func (p *printer) Print(args ...interface{}) {
+	_, _ = p.Write([]byte(fmt.Sprint(args...)))
+}
+
+func (p *printer) Printf(format string, args ...interface{}) {
+	_, _ = p.Write([]byte(fmt.Sprintf(format, args...)))
+}
+
+func (p *printer) Detail() bool {
+	return p.detailed
+}
+
+var _ fmt.Formatter = (*JettisonError)(nil)
+var _ xerrors.Printer = (*printer)(nil)

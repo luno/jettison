@@ -2,7 +2,10 @@
 // to loggers.
 package models
 
-import "time"
+import (
+	"sort"
+	"time"
+)
 
 type Level string
 
@@ -53,6 +56,10 @@ func (h *Hop) SetKey(key, value string) {
 	h.Errors[0].Parameters = append(h.Errors[0].Parameters, KeyValue{
 		Key:   key,
 		Value: value,
+	})
+
+	sort.Slice(h.Errors[0].Parameters, func(i, j int) bool {
+		return h.Errors[0].Parameters[i].Key < h.Errors[0].Parameters[j].Key
 	})
 }
 

@@ -1,6 +1,8 @@
 package errors_test
 
 import (
+	"database/sql"
+	"fmt"
 	"testing"
 
 	"github.com/luno/jettison/errors"
@@ -163,9 +165,9 @@ func TestError(t *testing.T) {
 
 func TestUnwrap(t *testing.T) {
 	id0 := errors.New("id0")
-	id1 := errors.New("id1", errors.WithCode("id1"))
-	id2 := errors.Wrap(id1, "id2", errors.WithCode("id2"))
-	id3 := errors.Wrap(id2, "id3", errors.WithCode("id3"))
+	id1 := errors.New("id1", errors.WithCode("code1"))
+	id2 := errors.Wrap(id1, "id2")
+	id3 := errors.Wrap(id2, "id3", errors.WithCode("code3"))
 
 	testCases := []struct {
 		name     string
@@ -173,23 +175,24 @@ func TestUnwrap(t *testing.T) {
 		expCodes []string
 	}{
 		{
-			name: "no code, no wrap",
-			err:  id0,
+			name:     "default code, no wrap",
+			err:      id0,
+			expCodes: []string{"id0"},
 		},
 		{
-			name:     "code, no wrap",
+			name:     "custom code, no wrap",
 			err:      id1,
-			expCodes: []string{"id1"},
+			expCodes: []string{"code1"},
 		},
 		{
-			name:     "code, wrapped once",
+			name:     "wrapped once",
 			err:      id2,
-			expCodes: []string{"id2", "id1"},
+			expCodes: []string{"id2", "code1"},
 		},
 		{
-			name:     "code, wrapped twice",
+			name:     "wrapped twice",
 			err:      id3,
-			expCodes: []string{"id3", "id2", "id1"},
+			expCodes: []string{"code3", "id2", "code1"},
 		},
 	}
 
@@ -252,4 +255,21 @@ func TestGetKey(t *testing.T) {
 	v, ok = err.GetKey("nonexistent")
 	assert.False(t, ok)
 	assert.Zero(t, v)
+}
+
+func TestFormat(t *testing.T) {
+	err1 := errors.New("root error", j.MKV{"p1": "v1", "p2": "v2"})
+	err2 := errors.Wrap(err1, "wrap one", j.KV("w", "w1"))
+	err3 := errors.Wrap(err2, "wrap two")
+	err4 := errors.Wrap(err3, "wrap three")
+
+	assert.Equal(t, "wrap three: wrap two: wrap one: root error", err4.Error())
+	assert.Equal(t, "wrap three: wrap two: wrap one: root error", fmt.Sprintf("%v", err4))
+	assert.Equal(t, "wrap three: wrap two: wrap one(w=w1): root error(p1=v1, p2=v2)", fmt.Sprintf("%+v", err4))
+
+	err5 := errors.Wrap(sql.ErrNoRows, "wrap sql error", j.KV("w", "w1"))
+
+	assert.Equal(t, "wrap sql error: sql: no rows in result set", err5.Error())
+	assert.Equal(t, "wrap sql error: sql: no rows in result set", fmt.Sprintf("%s", err5))
+	assert.Equal(t, "wrap sql error(w=w1): sql: no rows in result set", fmt.Sprintf("%#v", err5))
 }

@@ -22,6 +22,7 @@ func WithBinary(bin string) jettison.OptionFunc {
 // WithCode sets an error code on the latest error in the chain. A code should
 // uniquely identity an error, the intention being to provide a notion of
 // equality for jettison errors (see Is() for more details).
+// Note the default code (error message) doesn't provide strong unique guarantees.
 func WithCode(code string) jettison.OptionFunc {
 	return func(d jettison.Details) {
 		h, ok := d.(*models.Hop)
@@ -69,9 +70,6 @@ func Wrap(err error, msg string, ol ...jettison.Option) error {
 	} else {
 		// We don't want to mutate everyone's copy of the error.
 		je = je.Clone()
-
-		// If this is the first wrap, we don't have an original error yet.
-		je.OriginalErr = err
 	}
 
 	// If the current hop doesn't yet have a stack trace, add one.

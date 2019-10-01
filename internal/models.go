@@ -13,6 +13,7 @@ func NewError(msg string) models.Error {
 	return models.Error{
 		Message: msg,
 		Source:  fmt.Sprintf("%+v", stack.Caller(2)),
+		Code:    msg,
 	}
 }
 
