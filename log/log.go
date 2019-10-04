@@ -54,6 +54,7 @@ func Info(ctx context.Context, msg string, ol ...jettison.Option) {
 // If the error is not already a Jettison error, it is converted into one and
 // then logged. Any jettison key/value pairs contained in the given context are
 // included in the log.
+// NOTE: Error panics if err is nil.
 func Error(ctx context.Context, err error, ol ...jettison.Option) {
 	opts := append(ol, internal.ContextOptions(ctx)...)
 
