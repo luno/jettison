@@ -5,6 +5,7 @@ package testpb;
 service Test {
   rpc ErrorWithCode(ErrorWithCodeRequest) returns (Empty) {}
   rpc WrapErrorWithCode(WrapErrorWithCodeRequest) returns (Empty) {}
+  rpc StreamThenError(StreamRequest) returns (stream Empty) {}
 }
 
 message ErrorWithCodeRequest {
@@ -14,6 +15,11 @@ message ErrorWithCodeRequest {
 message WrapErrorWithCodeRequest {
   string code = 1;
   int64 wraps = 2;
+}
+
+message StreamRequest {
+  int64 response_count = 1;
+  string code = 2;
 }
 
 message Empty {}

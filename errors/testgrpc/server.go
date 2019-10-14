@@ -14,7 +14,7 @@ import (
 
 type Server struct{}
 
-func NewServer(t *testing.T, l net.Listener) *Server {
+func NewServer(t *testing.T, l net.Listener) (*Server, func()) {
 	grpcSrv := grpc.NewServer(
 		grpc.UnaryInterceptor(interceptors.UnaryServerInterceptor),
 		grpc.StreamInterceptor(interceptors.StreamServerInterceptor))
@@ -29,7 +29,9 @@ func NewServer(t *testing.T, l net.Listener) *Server {
 		}
 	}()
 
-	return srv
+	return srv, func() {
+		grpcSrv.GracefulStop()
+	}
 }
 
 func (srv *Server) ErrorWithCode(ctx context.Context,
@@ -47,4 +49,14 @@ func (srv *Server) WrapErrorWithCode(ctx context.Context,
 	}
 
 	return nil, err
+}
+
+func (srv *Server) StreamThenError(req *testpb.StreamRequest, ss testpb.Test_StreamThenErrorServer) error {
+	for i := 0; i < int(req.ResponseCount); i++ {
+		err := ss.Send(&testpb.Empty{})
+		if err != nil {
+			return err
+		}
+	}
+	return errors.New("error with code", j.C(req.Code))
 }

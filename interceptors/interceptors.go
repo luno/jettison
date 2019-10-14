@@ -24,14 +24,19 @@ func UnaryClientInterceptor(ctx context.Context, method string,
 }
 
 // StreamClientInterceptor returns an interceptor that inserts a new hop
-// on any Jettison error it encounters while creating gRPC streams, and packs
-// any jettison metadata in the context into gRPC metadata on the call.
+// on any Jettison error it encounters while creating the client stream, and packs
+// any jettison metadata in the context into gRPC metadata on the call. It also
+// wraps the returned grpc.ClientStream to support Jettison errors.
 func StreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc,
 	cc *grpc.ClientConn, method string, streamer grpc.Streamer,
 	opts ...grpc.CallOption) (grpc.ClientStream, error) {
 
 	res, err := streamer(withMetadata(ctx), desc, cc, method, opts...)
-	return res, withNewHop(err)
+	if err != nil {
+		return nil, withNewHop(err)
+	}
+
+	return &clientStream{ClientStream: res}, nil
 }
 
 // UnaryServerInterceptor returns an interceptor that unpacks any jettison
@@ -120,4 +125,18 @@ type serverStream struct {
 
 func (ss *serverStream) Context() context.Context {
 	return fromMetadata(ss.ServerStream.Context())
+}
+
+// clientStream is a wrapper of a grpc.ClientStream implementation that
+// inserts a new hop on any Jettison error it encounters while streaming.
+type clientStream struct {
+	grpc.ClientStream
+}
+
+func (cs *clientStream) SendMsg(m interface{}) error {
+	return withNewHop(cs.ClientStream.SendMsg(m))
+}
+
+func (cs *clientStream) RecvMsg(m interface{}) error {
+	return withNewHop(cs.ClientStream.RecvMsg(m))
 }
