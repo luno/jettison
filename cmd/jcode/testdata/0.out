@@ -1,0 +1,35 @@
+package testdata
+
+import (
+	"fmt"
+
+	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/j"
+	_ "github.com/luno/protocp"
+)
+
+const c = "ignored constant"
+
+var ErrInvalidCode1 = errors.New("invalid code", j.C("{code1}"))
+
+var (
+	// ErrMissingCode has a missing code.
+	ErrMissingCode = errors.New("missing code", j.C("{code1}"))
+	// ErrPass1 has a correct code.
+	ErrPass1     = errors.New("pass", errors.WithCode("{code0}"))
+	ErrPass2     = errors.New("pass", j.C("{code0}"))
+	OtherIgnored = other.New("ignored", errors.WithCode("{code0}"))
+
+	// TODO(corver): Add support for this
+	Err1, Err2 = errors.New("ignored"), errors.New("ignored")
+)
+
+// ErrInvalidCode2 has an incorrect code.
+var ErrInvalidCode2 = errors.New("invalid code",
+	j.C("{code1}"))
+
+func f() {
+	var ErrIgnored = errors.New("ignored errored", errors.WithCode("Not a good code"))
+	ErrAlsoIgnored := errors.New("ignored errored")
+	fmt.Println(ErrIgnored, ErrAlsoIgnored)
+}

@@ -1,0 +1,9 @@
+package testdata
+
+import (
+	"github.com/luno/jettison/errors"
+
+	"github.com/luno/jettison/j"
+)
+
+var errMissingCode = errors.New("missing code", j.C("{code1}"))
