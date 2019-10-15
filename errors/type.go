@@ -308,10 +308,12 @@ func (je *JettisonError) GetKey(key string) (string, bool) {
 }
 
 // FromStatus unmarshals a *grpc.Status into a jettison error object,
-// returning true if and only if no unexpected details were found on the
+// returning a nil error if and only if no unexpected details were found on the
 // status.
 func FromStatus(s *status.Status) (*JettisonError, error) {
 	if s == nil {
+		return nil, ErrInvalidError
+	} else if len(s.Details()) == 0 {
 		return nil, ErrInvalidError
 	}
 

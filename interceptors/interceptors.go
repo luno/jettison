@@ -2,10 +2,10 @@ package interceptors
 
 import (
 	"context"
-	"log"
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/internal"
+	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/models"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -20,7 +20,7 @@ func UnaryClientInterceptor(ctx context.Context, method string,
 	opts ...grpc.CallOption) error {
 
 	err := invoker(withMetadata(ctx), method, req, reply, cc, opts...)
-	return withNewHop(err)
+	return intercept(err)
 }
 
 // StreamClientInterceptor returns an interceptor that inserts a new hop
@@ -33,7 +33,7 @@ func StreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc,
 
 	res, err := streamer(withMetadata(ctx), desc, cc, method, opts...)
 	if err != nil {
-		return nil, withNewHop(err)
+		return nil, intercept(err)
 	}
 
 	return &clientStream{ClientStream: res}, nil
@@ -93,23 +93,23 @@ func fromMetadata(ctx context.Context) context.Context {
 	return ctx
 }
 
-func withNewHop(err error) error {
+// intercept converts all non-nil errors into jettison errors. If a valid jettison error was sent over the wire
+// a new hop is added otherwise the error is wrapped.
+func intercept(err error) error {
 	if err == nil {
 		return nil
 	}
 
-	status, ok := status.FromError(err)
+	s, ok := status.FromError(err)
 	if !ok {
-		return err
+		return errors.Wrap(err, "non-grpc error")
 	}
 
-	je, statusErr := errors.FromStatus(status)
-	if statusErr != nil {
-		log.Printf("jettison/interceptors: Error converting grpc status: %v", err)
-		return err
-	}
-	if len(je.Hops) == 0 {
-		return err
+	je, statusErr := errors.FromStatus(s)
+	if errors.Is(statusErr, errors.ErrInvalidError) {
+		return errors.Wrap(err, "grpc status error", j.KS("code", s.Code().String()))
+	} else if statusErr != nil {
+		return errors.Wrap(err, "invalid jettison error", j.KS("err", statusErr.Error()))
 	}
 
 	// Push a new hop to the front of the queue.
@@ -134,9 +134,9 @@ type clientStream struct {
 }
 
 func (cs *clientStream) SendMsg(m interface{}) error {
-	return withNewHop(cs.ClientStream.SendMsg(m))
+	return intercept(cs.ClientStream.SendMsg(m))
 }
 
 func (cs *clientStream) RecvMsg(m interface{}) error {
-	return withNewHop(cs.ClientStream.RecvMsg(m))
+	return intercept(cs.ClientStream.RecvMsg(m))
 }

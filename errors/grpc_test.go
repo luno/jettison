@@ -96,3 +96,27 @@ func makeTestStreamWithError(name string, count int) func(t *testing.T) {
 		assert.True(t, errors.Is(err, ref))
 	}
 }
+
+func TestWrappingGrpcError(t *testing.T) {
+	// Get an open port
+	l, err := net.Listen("tcp", "")
+	require.NoError(t, err)
+	require.NoError(t, l.Close())
+
+	// Nothing is listening
+	cl, err := testgrpc.NewClient(t, l.Addr().String())
+	require.NoError(t, err)
+	defer cl.Close()
+
+	err = cl.ErrorWithCode("")
+	require.NotNil(t, err)
+
+	jerr := new(errors.JettisonError)
+	require.True(t, errors.As(err, &jerr))
+
+	require.Equal(t, "grpc status error", jerr.Hops[0].Errors[0].Code)
+	require.Equal(t, "code", jerr.Hops[0].Errors[0].Parameters[0].Key)
+	require.Equal(t, "Unavailable", jerr.Hops[0].Errors[0].Parameters[0].Value)
+
+	require.Contains(t, jerr.Hops[0].Errors[1].Message, "rpc error: code = Unavailable desc = all SubConns are in TransientFailure")
+}
