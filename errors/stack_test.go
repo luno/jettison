@@ -31,6 +31,6 @@ var expected = []string{
 	"github.com/luno/jettison/errors/stack_test.go:23",
 	"github.com/luno/jettison/errors/stack_test.go:23",
 	"github.com/luno/jettison/errors/stack_test.go:12",
-	"testing/testing.go:865",
-	"runtime/asm_amd64.s:1337",
+	"testing/testing.go:909",
+	"runtime/asm_amd64.s:1357",
 }

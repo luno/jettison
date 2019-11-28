@@ -33,6 +33,21 @@ func WithLevel(level models.Level) jettison.OptionFunc {
 	}
 }
 
+// WithError returns a jettison option to add a structured error as part of
+// Info logging. See Error for more details. It only works when provided
+// as option to log package functions. Using this option while Error logging
+// is not recommended.
+func WithError(err error) jettison.OptionFunc {
+	return func(details jettison.Details) {
+		l, ok := details.(*models.Log)
+		if !ok {
+			log.Printf("jettison/log: WithError option not applicable to: %T", details)
+			return
+		}
+		addErrorHops(l, err)
+	}
+}
+
 // Info writes a structured jettison log to the logger. Any jettison
 // key/value pairs contained in the given context are included in the log.
 func Info(ctx context.Context, msg string, ol ...jettison.Option) {
@@ -57,37 +72,11 @@ func Info(ctx context.Context, msg string, ol ...jettison.Option) {
 // NOTE: Error panics if err is nil.
 func Error(ctx context.Context, err error, ol ...jettison.Option) {
 	opts := append(ol, internal.ContextOptions(ctx)...)
+	opts = append(ol, WithError(err))
 
-	je, ok := err.(*errors.JettisonError)
-	if !ok {
-		je, ok = errors.New(err.Error()).(*errors.JettisonError)
-	}
-	if !ok {
-		log.Printf("jettison/log: failed to convert error to jettison error: %v", err)
-		// best-effort, will just log err.Err() wrapped as a Jettison log
-	}
-
-	l := newLog(je.Error(), LevelError, 2)
+	l := newLog(err.Error(), LevelError, 2)
 	for _, o := range opts {
 		o.Apply(&l)
-	}
-
-	for _, h := range je.Hops {
-		l.Hops = append(l.Hops, h)
-	}
-
-	// Bubble up all nested parameters in the list of hops to the log's root
-	// parameters list for ease of use. Newer parameters come first.
-	for _, h := range je.Hops {
-		for _, e := range h.Errors {
-			if e.Parameters == nil {
-				continue
-			}
-
-			for _, k := range e.Parameters {
-				l.Parameters = append(l.Parameters, k)
-			}
-		}
 	}
 
 	// Sort the parameters for consistent logging.
@@ -102,6 +91,37 @@ func Error(ctx context.Context, err error, ol ...jettison.Option) {
 	}
 
 	logger.Log(Log(l))
+}
+
+// addErrorHops tries to convert the error to a jettison error
+// and then adds the error as hops to the log. It also adds
+// the error parameters log's root.
+func addErrorHops(l *models.Log, err error) {
+	je, ok := err.(*errors.JettisonError)
+	if !ok {
+		je, ok = errors.New(err.Error()).(*errors.JettisonError)
+	}
+	if !ok {
+		log.Printf("jettison/log: failed to convert error to jettison error: %v", err)
+		// best-effort, will just log err.Err() wrapped as a Jettison log
+	}
+
+	for _, h := range je.Hops {
+		l.Hops = append(l.Hops, h)
+	}
+	// Bubble up all nested parameters in the list of hops to the log's root
+	// parameters list for ease of use. Newer parameters come first.
+	for _, h := range je.Hops {
+		for _, e := range h.Errors {
+			if e.Parameters == nil {
+				continue
+			}
+
+			for _, k := range e.Parameters {
+				l.Parameters = append(l.Parameters, k)
+			}
+		}
+	}
 }
 
 // ContextWith returns a new context with the given jettison options appended

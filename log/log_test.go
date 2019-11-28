@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/luno/jettison"
-	"github.com/luno/jettison/errors"
 	jerrors "github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
 	jlog "github.com/luno/jettison/log"
@@ -56,6 +55,16 @@ func TestLog(t *testing.T) {
 				jettison.WithKeyValueString("c", "a"),
 			},
 		},
+		{
+			name: "message_with_error",
+			msg:  "test_message",
+			opts: []jettison.Option{
+				jlog.WithError(jerrors.New("test",
+					jettison.WithSource("testsource"),
+					jerrors.WithBinary("testservice"),
+					jerrors.WithStackTrace([]string{"teststacktrace"}))),
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -82,7 +91,7 @@ func TestError(t *testing.T) {
 			err: jerrors.New("test",
 				jettison.WithSource("testsource"),
 				jerrors.WithBinary("testservice"),
-				errors.WithStackTrace([]string{"teststacktrace"})),
+				jerrors.WithStackTrace([]string{"teststacktrace"})),
 		},
 		{
 			name: "error_code",
@@ -90,7 +99,7 @@ func TestError(t *testing.T) {
 				jettison.WithSource("testsource"),
 				jerrors.WithBinary("testservice"),
 				jerrors.WithCode("testcode"),
-				errors.WithStackTrace([]string{"teststacktrace"})),
+				jerrors.WithStackTrace([]string{"teststacktrace"})),
 		},
 	}
 
