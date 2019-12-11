@@ -72,7 +72,7 @@ func Info(ctx context.Context, msg string, ol ...jettison.Option) {
 // NOTE: Error panics if err is nil.
 func Error(ctx context.Context, err error, ol ...jettison.Option) {
 	opts := append(ol, internal.ContextOptions(ctx)...)
-	opts = append(ol, WithError(err))
+	opts = append(opts, WithError(err))
 
 	l := newLog(err.Error(), LevelError, 2)
 	for _, o := range opts {

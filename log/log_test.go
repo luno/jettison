@@ -25,6 +25,7 @@ func TestLog(t *testing.T) {
 	testCases := []struct {
 		name string
 		msg  string
+		ctx  context.Context
 		opts []jettison.Option
 	}{
 		{
@@ -65,6 +66,11 @@ func TestLog(t *testing.T) {
 					jerrors.WithStackTrace([]string{"teststacktrace"}))),
 			},
 		},
+		{
+			name: "message_with_context",
+			ctx:  jlog.ContextWith(context.Background(), j.KS("ctx_key", "ctx_val")),
+			msg:  "test_message",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -73,7 +79,7 @@ func TestLog(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			buf := new(bytes.Buffer)
 			jlog.SetDefaultLoggerForTesting(t, buf, jettison.WithSource("testsource"))
-			jlog.Info(nil, tc.msg, tc.opts...)
+			jlog.Info(tc.ctx, tc.msg, tc.opts...)
 
 			verifyOutput(t, "log_"+tc.name, buf.Bytes())
 		})
@@ -84,6 +90,7 @@ func TestError(t *testing.T) {
 	defer jlog.SetDefaultLoggerForTesting(t, os.Stdout)
 	testCases := []struct {
 		name string
+		ctx  context.Context
 		err  error
 	}{
 		{
@@ -101,6 +108,14 @@ func TestError(t *testing.T) {
 				jerrors.WithCode("testcode"),
 				jerrors.WithStackTrace([]string{"teststacktrace"})),
 		},
+		{
+			name: "context",
+			ctx:  jlog.ContextWith(context.Background(), j.KS("ctx_key", "ctx_val")),
+			err: jerrors.New("test",
+				jettison.WithSource("testsource"),
+				jerrors.WithBinary("testservice"),
+				jerrors.WithStackTrace([]string{"teststacktrace"})),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -109,7 +124,7 @@ func TestError(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			buf := new(bytes.Buffer)
 			jlog.SetDefaultLoggerForTesting(t, buf)
-			jlog.Error(nil, tc.err, jettison.WithSource("testsource"))
+			jlog.Error(tc.ctx, tc.err, jettison.WithSource("testsource"))
 
 			verifyOutput(t, "error_"+tc.name, buf.Bytes())
 		})
