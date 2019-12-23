@@ -43,11 +43,22 @@ func TestAssert(t *testing.T) {
 }
 
 func TestFailLog(t *testing.T) {
-	expected := `No error in chain matches expected:
+	t.Run("log without message", func(t *testing.T) {
+		expected := `No error in chain matches expected:
 expected: EOF
 actual:   io: read/write on closed pipe
 `
-	assert.Equal(t, expected, failLog(io.EOF, io.ErrClosedPipe))
+		assert.Equal(t, expected, failLog(io.EOF, io.ErrClosedPipe))
+	})
+
+	t.Run("log with message", func(t *testing.T) {
+		expected := `No error in chain matches expected:
+expected: EOF
+actual:   io: read/write on closed pipe
+message:  errors in chain check
+`
+		assert.Equal(t, expected, failLog(io.EOF, io.ErrClosedPipe, "errors in chain check"))
+	})
 }
 
 func TestPretty(t *testing.T) {
@@ -90,4 +101,58 @@ func TestPretty(t *testing.T) {
 			assert.Equal(t, tc.expected, pretty(tc.err))
 		})
 	}
+}
+
+func Test_messageFromMsg(t *testing.T) {
+	type args struct {
+		msg []interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "without message",
+			args: args{
+				msg: makeInterfaceSlice(),
+			},
+
+			want: "",
+		},
+		{
+			name: "with message",
+			args: args{
+				msg: makeInterfaceSlice("check the message"),
+			},
+
+			want: "check the message",
+		},
+		{
+			name: "with non a string message",
+			args: args{
+				msg: makeInterfaceSlice(42),
+			},
+
+			want: "42",
+		},
+		{
+			name: "with more than one argument",
+			args: args{
+				msg: makeInterfaceSlice("first argument", 42),
+			},
+
+			want: "first argument 42",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := messageFromMsgs(tt.args.msg...)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func makeInterfaceSlice(al ...interface{}) []interface{} {
+	return al
 }

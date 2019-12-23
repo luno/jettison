@@ -17,11 +17,11 @@ import (
 // will be marked failed if it does not.
 //
 //    jtest.Assert(t, ErrWhatIExpect, err)
-func Assert(t *testing.T, expected, actual error) bool {
+func Assert(t *testing.T, expected, actual error, msgs ...interface{}) bool {
 	t.Helper()
 
 	if !errors.Is(actual, expected) {
-		t.Error(failLog(expected, actual))
+		t.Error(failLog(expected, actual, msgs))
 		return false
 	}
 	return true
@@ -32,17 +32,24 @@ func Assert(t *testing.T, expected, actual error) bool {
 // fails.
 //
 //    jtest.Require(t, ErrWhatIExpect, err)
-func Require(t *testing.T, expected, actual error) {
+func Require(t *testing.T, expected, actual error, msg ...interface{}) {
 	t.Helper()
-	if !Assert(t, expected, actual) {
+	if !Assert(t, expected, actual, msg...) {
 		t.FailNow()
 	}
 }
 
-func failLog(expected, actual error) string {
-	return fmt.Sprintf("No error in chain matches expected:\n"+
+func failLog(expected, actual error, msgs ...interface{}) string {
+	l := fmt.Sprintf("No error in chain matches expected:\n"+
 		"expected: %+v\n"+
 		"actual:   %+v\n", pretty(expected), pretty(actual))
+
+	message := messageFromMsgs(msgs...)
+	if message != "" {
+		l += fmt.Sprintf("message:  %+v\n", message)
+	}
+
+	return l
 }
 
 func pretty(err error) string {
@@ -68,4 +75,39 @@ func pretty(err error) string {
 		panic(err)
 	}
 	return msg + "\n" + string(b)
+}
+
+func messageFromMsgs(msgs ...interface{}) string {
+	if len(msgs) == 0 {
+		return ""
+	}
+
+	if len(msgs) == 1 {
+		m := msgs[0]
+		if msgAsStr, ok := m.(string); ok {
+			return msgAsStr
+		}
+
+		return fmt.Sprintf("%v", m)
+	}
+
+	if len(msgs) > 1 {
+		var msg string
+
+		for _, m := range msgs {
+			if msg != "" {
+				msg += " "
+			}
+
+			if msgAsStr, ok := m.(string); ok {
+				msg += msgAsStr
+				continue
+			}
+
+			msg += fmt.Sprintf("%v", m)
+		}
+
+		return msg
+	}
+	return ""
 }
