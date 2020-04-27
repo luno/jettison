@@ -1,5 +1,5 @@
 # Jettison
-[![Go Report Card](https://goreportcard.com/badge/github.com/golang-standards/project-layout?style=flat-square)](https://goreportcard.com/report/github.com/luno/jettison)
+[![Go Report Card](https://goreportcard.com/badge/github.com/luno/jettison?style=flat-square)](https://goreportcard.com/report/github.com/luno/jettison)
 [![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](http://godoc.org/github.com/luno/jettison)
 
 ## What is it?
@@ -40,7 +40,7 @@ import (
     "github.com/luno/jettison/errors"
 )
 
-func Example() error {{ "ExampleErrors" | code }}
+func ExampleNew() {{ "ExampleNew" | code }}
 ```
 
 ### Logs
@@ -57,7 +57,9 @@ import (
     "github.com/luno/jettison/log"
 )
 
-func Example(ctx context.Context) {{ "ExampleLog" | code }}
+func ExampleInfo() {{ "ExampleInfo" | code }}
+
+func ExampleError() {{ "ExampleError" | code }}
 ```
 
 An example log written via `log.Info`:
@@ -121,5 +123,7 @@ import (
     "github.com/luno/jettison/j"
 )
 
-func Example() error {{ "ExampleUtilities" | code }}
+func ExampleKS() {{ "ExampleKS" | code }}
+
+func ExampleKV() {{ "ExampleKV" | code }}
 ```

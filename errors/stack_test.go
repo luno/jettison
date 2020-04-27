@@ -1,10 +1,20 @@
 package errors
 
 import (
+	"encoding/json"
+	"flag"
+	"io/ioutil"
+	"path"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var writeGoldenFiles = flag.Bool("write-golden-files", false,
+	"Whether or not to overwrite golden files with test output.")
+
+//go:generate go test . -write-golden-files
 
 // TestStack tests the stack trace including line numbers.
 // Adding anything to this file might break the test.
@@ -13,7 +23,10 @@ func TestStack(t *testing.T) {
 	je, ok := err.(*JettisonError)
 	require.True(t, ok)
 
-	require.Equal(t, expected, je.Hops[0].StackTrace)
+	bb, err := json.MarshalIndent(je.Hops[0].StackTrace, "", "  ")
+	require.NoError(t, err)
+
+	verifyOutput(t, "log_"+t.Name(), bb)
 }
 
 func stack(i int) error {
@@ -23,14 +36,20 @@ func stack(i int) error {
 	return stack(i - 1)
 }
 
-var expected = []string{
-	"github.com/luno/jettison/errors/stack_test.go:21",
-	"github.com/luno/jettison/errors/stack_test.go:23",
-	"github.com/luno/jettison/errors/stack_test.go:23",
-	"github.com/luno/jettison/errors/stack_test.go:23",
-	"github.com/luno/jettison/errors/stack_test.go:23",
-	"github.com/luno/jettison/errors/stack_test.go:23",
-	"github.com/luno/jettison/errors/stack_test.go:12",
-	"testing/testing.go:909",
-	"runtime/asm_amd64.s:1357",
+func verifyOutput(t *testing.T, goldenFileName string, output []byte) {
+	flag.Parse()
+	goldenFilePath := path.Join("testdata", goldenFileName+".golden")
+
+	if *writeGoldenFiles {
+		err := ioutil.WriteFile(goldenFilePath, output, 0777)
+		require.NoError(t, err)
+
+		// Nothing to check if we're writing.
+		return
+	}
+
+	contents, err := ioutil.ReadFile(goldenFilePath)
+	require.NoError(t, err, "Error reading golden file %s: %v", goldenFilePath, err)
+
+	assert.Equal(t, string(contents), string(output))
 }

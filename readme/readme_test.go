@@ -5,6 +5,7 @@ package readme
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/luno/jettison"
 	"github.com/luno/jettison/errors"
@@ -12,7 +13,7 @@ import (
 	"github.com/luno/jettison/log"
 )
 
-func ExampleErrors() error {
+func ExampleNew() {
 	// Construct your error as usual, with additional metadata.
 	err := errors.New("something went wrong",
 		jettison.WithKeyValueString("key", "value"),
@@ -23,13 +24,18 @@ func ExampleErrors() error {
 		jettison.WithKeyValueString("another_key", "another_value"))
 
 	// Pass it around - including over gRPC - like you would any other error.
-	return err
 }
 
-func ExampleLog(ctx context.Context) {
+func ExampleInfo() {
+	ctx := context.Background()
+
 	// You can log general info as you normally would.
 	log.Info(ctx, "entering the example function",
 		jettison.WithKeyValueString("key", "value"))
+}
+
+func ExampleError() {
+	ctx := context.Background()
 
 	err := errors.New("a jettison error",
 		jettison.WithKeyValueString("key", "value"),
@@ -41,8 +47,24 @@ func ExampleLog(ctx context.Context) {
 		jettison.WithKeyValueString("another_key", "another_value"))
 }
 
-func ExampleUtilities() error {
-	return errors.New("using the aliases",
-		j.KV("int_key", 1),
+func ExampleKS() {
+	err := errors.New("using j.KS",
 		j.KS("string_key", "value"))
+
+	fmt.Printf("%%+v: %+v\n", err)
+	fmt.Printf("%%#v: %#v\n", err)
+	// Output:
+	// %+v: using j.KS(string_key=value)
+	// %#v: using j.KS(string_key=value)
+}
+
+func ExampleKV() {
+	err := errors.New("using j.KV",
+		j.KV("int_key", 1))
+
+	fmt.Printf("%%+v: %+v\n", err)
+	fmt.Printf("%%#v: %#v\n", err)
+	// Output:
+	// %+v: using j.KV(int_key=1)
+	// %#v: using j.KV(int_key=1)
 }

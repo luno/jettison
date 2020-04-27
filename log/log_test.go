@@ -15,10 +15,13 @@ import (
 	"github.com/luno/jettison/j"
 	jlog "github.com/luno/jettison/log"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var writeGoldenFiles = flag.Bool("write-golden-files", false,
 	"Whether or not to overwrite golden files with test output.")
+
+//go:generate go test . -write-golden-files
 
 func TestLog(t *testing.T) {
 	defer jlog.SetDefaultLoggerForTesting(t, os.Stdout)
@@ -173,19 +176,18 @@ func TestDeprecated(t *testing.T) {
 
 func verifyOutput(t *testing.T, goldenFileName string, output []byte) {
 	flag.Parse()
-	goldenFilePath := path.Join("testdata", goldenFileName)
+	goldenFilePath := path.Join("testdata", goldenFileName+".golden")
 
 	if *writeGoldenFiles {
-		ioutil.WriteFile(goldenFilePath, output, 0777)
+		err := ioutil.WriteFile(goldenFilePath, output, 0777)
+		require.NoError(t, err)
 
 		// Nothing to check if we're writing.
 		return
 	}
 
 	contents, err := ioutil.ReadFile(goldenFilePath)
-	if err != nil {
-		t.Errorf("Error reading golden file %s: %v", goldenFilePath, err)
-	}
+	require.NoError(t, err, "Error reading golden file %s: %v", goldenFilePath, err)
 
 	assert.Equal(t, string(contents), string(output))
 }
