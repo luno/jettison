@@ -34,7 +34,37 @@ func Assert(t *testing.T, expected, actual error, msgs ...interface{}) bool {
 //    jtest.Require(t, ErrWhatIExpect, err)
 func Require(t *testing.T, expected, actual error, msg ...interface{}) {
 	t.Helper()
+
 	if !Assert(t, expected, actual, msg...) {
+		t.FailNow()
+	}
+}
+
+// AssertNil asserts that the specified error is nil. The test will be marked
+// failed if it does not. It is shorthand for `jtest.Assert(t, nil, err)`,
+// although it provides slightly clearer failure output.
+//
+//    jtest.AssertNil(t, err)
+func AssertNil(t *testing.T, actual error, msgs ...interface{}) bool {
+	t.Helper()
+
+	if actual != nil {
+		t.Error(failNilLog(nil, actual, msgs))
+		return false
+	}
+	return true
+}
+
+// RequireNil asserts that the specified error is nil. The test will be marked
+// failed if it does not, and execution will be stopped. It is shorthand for
+// `jtest.Require(t, nil, err)`, although it provides slightly clearer failure
+// output.
+//
+//    jtest.RequireNil(t, err)
+func RequireNil(t *testing.T, actual error, msg ...interface{}) {
+	t.Helper()
+
+	if !AssertNil(t, actual, msg...) {
 		t.FailNow()
 	}
 }
@@ -44,12 +74,14 @@ func failLog(expected, actual error, msgs ...interface{}) string {
 		"expected: %+v\n"+
 		"actual:   %+v\n", pretty(expected), pretty(actual))
 
-	message := messageFromMsgs(msgs...)
-	if message != "" {
-		l += fmt.Sprintf("message:  %+v\n", message)
-	}
+	return l + messageFromMsgs(msgs...)
+}
 
-	return l
+func failNilLog(actual error, msgs ...interface{}) string {
+	l := fmt.Sprintf("Unexpected non-nil error:\n"+
+		"actual:   %+v\n", pretty(actual))
+
+	return l + messageFromMsgs(msgs...)
 }
 
 func pretty(err error) string {
@@ -82,32 +114,21 @@ func messageFromMsgs(msgs ...interface{}) string {
 		return ""
 	}
 
+	msg := "message:  "
+
 	if len(msgs) == 1 {
 		m := msgs[0]
-		if msgAsStr, ok := m.(string); ok {
-			return msgAsStr
-		}
 
-		return fmt.Sprintf("%v", m)
+		return msg + fmt.Sprintf("%v\n", m)
 	}
 
-	if len(msgs) > 1 {
-		var msg string
-
-		for _, m := range msgs {
-			if msg != "" {
-				msg += " "
-			}
-
-			if msgAsStr, ok := m.(string); ok {
-				msg += msgAsStr
-				continue
-			}
-
-			msg += fmt.Sprintf("%v", m)
+	for i, m := range msgs {
+		if i > 0 {
+			msg += " "
 		}
 
-		return msg
+		msg += fmt.Sprintf("%v", m)
 	}
-	return ""
+
+	return msg + "\n"
 }
