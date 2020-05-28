@@ -49,7 +49,7 @@ func AssertNil(t *testing.T, actual error, msgs ...interface{}) bool {
 	t.Helper()
 
 	if actual != nil {
-		t.Error(failNilLog(nil, actual, msgs))
+		t.Error(failNilLog(actual, msgs))
 		return false
 	}
 	return true
