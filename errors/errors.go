@@ -34,6 +34,28 @@ func WithCode(code string) jettison.OptionFunc {
 	}
 }
 
+// WithoutStackTrace clears the stacktrace if this is the first
+// error in the chain. This is useful for sentinel errors
+// with useless init-time stacktrace allowing a proper
+// stacktrace to be added when wrapping them.
+//
+// Example
+//  var ErrFoo = errors.New("foo", errors.WithoutStackTrace()) // Clear useless init-time stack trace.
+//
+//  func bar() error {
+//    return errors.Wrap(ErrFoo, "bar") // Wrapping ErrFoo adds a proper stack trace.
+//  }
+func WithoutStackTrace() jettison.OptionFunc {
+	return func(d jettison.Details) {
+		h, ok := d.(*models.Hop)
+		if !ok || len(h.Errors) > 1 {
+			return
+		}
+
+		h.StackTrace = nil
+	}
+}
+
 func New(msg string, ol ...jettison.Option) error {
 	h := internal.NewHop()
 	h.StackTrace = internal.GetStackTrace(2)

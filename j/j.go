@@ -50,9 +50,14 @@ func (m MKS) Apply(details jettison.Details) {
 	}
 }
 
-// C is an alias for jettison/errors.WithCode.
-func C(code string) jettison.Option {
-	return errors.WithCode(code)
+// C is an alias for jettison/errors.WithCode. Since this
+// should only be used with sentinel errors it also clears the useless
+// init-time stack trace allowing wrapping to add proper stack trace.
+func C(code string) jettison.OptionFunc {
+	return func(details jettison.Details) {
+		errors.WithCode(code)(details)
+		errors.WithoutStackTrace()(details)
+	}
 }
 
 var nosprints = map[reflect.Kind]bool{

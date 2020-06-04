@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"runtime"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/luno/jettison"
@@ -318,4 +319,21 @@ func TestUnwrapCompatibility(t *testing.T) {
 	assert.True(t, errors.Is(err5, err3))
 	assert.True(t, errors.Is(err5, err3Clone))
 	assert.True(t, errors.Is(err5, err4))
+}
+
+var ErrFoo = errors.New("foo", errors.WithoutStackTrace())
+
+func TestWithoutStackTrace(t *testing.T) {
+	je := ErrFoo.(*errors.JettisonError)
+	require.Empty(t, je.Hops[0].StackTrace)
+
+	// ErrFoo doesn't have stacktrace, but is has a source.
+	source := je.Hops[0].Errors[0].Source
+	require.True(t, strings.HasPrefix(source, "github.com/luno/jettison/errors/errors_test.go"))
+
+	err := errors.Wrap(ErrFoo, "wrap adds stack trace")
+	je = err.(*errors.JettisonError)
+	require.Len(t, je.Hops, 1)
+	require.Len(t, je.Hops[0].Errors, 2)
+	require.NotEmpty(t, je.Hops[0].StackTrace)
 }

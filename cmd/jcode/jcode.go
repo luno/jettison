@@ -71,7 +71,7 @@ func main() {
 	for _, file := range flag.Args() {
 		res, err := checkFile(file, fp, *rewrite)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
+			fmt.Fprintf(os.Stderr, "%+v\n", err)
 			os.Exit(statusError)
 		}
 		if res.pass {
@@ -83,7 +83,7 @@ func main() {
 		if *rewrite {
 			err := ioutil.WriteFile(file, res.out, 0644)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err.Error())
+				fmt.Fprintf(os.Stderr, "%+v\n", err)
 				os.Exit(statusError)
 			}
 		} else {
@@ -160,7 +160,7 @@ func checkFile(file string, fp formatParams, rewrite bool) (checkResult, error) 
 		if gd.Tok == token.VAR {
 			// var block
 			for _, s := range gd.Specs {
-				// Check for jettison error sentinel: Name = errors.New().
+				// Check for jettison sentinel errors: var ErrFoo = errors.New("foo").
 				vp, ok := s.(*dst.ValueSpec)
 				if !ok {
 					continue
@@ -225,20 +225,20 @@ func checkInstance(jettisonPkg string, pkg string, varName string, ce *dst.CallE
 	}
 	ce2, ok := ce.Args[1].(*dst.CallExpr)
 	if !ok {
-		return "", errors.New("invalid second argument")
+		return "", errors.New("invalid second argument, expect j.C")
 	}
 	se2, ok := ce2.Fun.(*dst.SelectorExpr)
 	if !ok {
-		return "", errors.New("invalid second argument")
+		return "", errors.New("invalid second argument, expect j.C")
 	}
 	selExp := fmt.Sprintf("%s.%s", se2.X, se2.Sel)
 	if selExp != jettisonPkg+".WithCode" && selExp != "j.C" {
-		return "", errors.New("invalid second argument")
+		return "", errors.New("invalid second argument, expect j.C")
 	}
 
 	bl, ok := ce2.Args[0].(*dst.BasicLit)
 	if !ok {
-		return "", errors.New("invalid code argument")
+		return "", errors.New("invalid code argument, expect string")
 	}
 
 	if !format.valid(pkg, varName, strings.Trim(bl.Value, "\"")) {

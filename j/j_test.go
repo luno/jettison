@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luno/jettison/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -157,4 +158,17 @@ var tests = []struct {
 		Input:  func() {},
 		Output: "<func>",
 	},
+}
+
+var ErrFoo = errors.New("foo", C("123"))
+
+func TestC(t *testing.T) {
+	je := ErrFoo.(*errors.JettisonError)
+	require.Empty(t, je.Hops[0].StackTrace)
+	require.Equal(t, "123", je.Hops[0].Errors[0].Code)
+
+	err := errors.Wrap(ErrFoo, "wrap adds stacktrace")
+	je = err.(*errors.JettisonError)
+	require.NotEmpty(t, je.Hops[0].StackTrace)
+	require.True(t, errors.Is(err, ErrFoo))
 }
