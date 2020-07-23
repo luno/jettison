@@ -1,7 +1,6 @@
 package log_test
 
 import (
-	"os"
 	"testing"
 
 	"github.com/luno/jettison"
@@ -21,7 +20,6 @@ func (tl *testLogger) Log(l log.Log) string {
 }
 
 func TestAddLoggers(t *testing.T) {
-	defer log.SetDefaultLoggerForTesting(t, os.Stdout)
 	tl := new(testLogger)
 	log.SetLogger(tl)
 
@@ -30,6 +28,7 @@ func TestAddLoggers(t *testing.T) {
 
 	assert.Equal(t, "message,info,some,param,", toStr(tl.logs[0]))
 	assert.Equal(t, "errMsg,error,", toStr(tl.logs[1]))
+
 }
 
 func toStr(l log.Log) string {

@@ -99,6 +99,7 @@ func Error(ctx context.Context, err error, ol ...jettison.Option) {
 func addErrorHops(l *models.Log, err error) {
 	je, ok := err.(*errors.JettisonError)
 	if !ok {
+		// FIXME(corver): Stacktraces of errors created here do not make sense, rather create without it.
 		je, ok = errors.New(err.Error()).(*errors.JettisonError)
 	}
 	if !ok {

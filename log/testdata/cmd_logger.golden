@@ -1,0 +1,13 @@
+I 16:00:16.449 g/l/j/log/cmdlogger_test.go:18: this is an info message[ctx_key=ctx_val,info_key=info_val]
+[1;31mE 16:00:16.449 g/l/j/log/cmdlogger_test.go:19: EOF[ctx_key=ctx_val][0m
+[1;31m  - github.com/luno/jettison/log/log.go:103[0m
+[1;31m  - github.com/luno/jettison/log/log.go:47[0m
+[1;31m  - github.com/luno/github-jettison/jettison.go:16[0m
+[1;31m  - github.com/luno/jettison/log/log.go:79[0m
+[1;31m  - github.com/luno/jettison/log/cmdlogger_test.go:19[0m
+[1;31m  - testing/testing.go:991[0m
+[1;31m  - runtime/asm_amd64.s:1373[0m
+[1;31mE 16:00:16.449 g/l/j/log/cmdlogger_test.go:20: example error[ctx_key=ctx_val][0m
+[1;31m  - github.com/luno/jettison/log/cmdlogger_test.go:20[0m
+[1;31m  - testing/testing.go:991[0m
+[1;31m  - runtime/asm_amd64.s:1373[0m

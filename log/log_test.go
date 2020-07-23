@@ -6,7 +6,6 @@ import (
 	"flag"
 	"io/ioutil"
 	stdlib_log "log"
-	"os"
 	"path"
 	"testing"
 
@@ -24,7 +23,6 @@ var writeGoldenFiles = flag.Bool("write-golden-files", false,
 //go:generate go test . -write-golden-files
 
 func TestLog(t *testing.T) {
-	defer jlog.SetDefaultLoggerForTesting(t, os.Stdout)
 	testCases := []struct {
 		name string
 		msg  string
@@ -90,7 +88,6 @@ func TestLog(t *testing.T) {
 }
 
 func TestError(t *testing.T) {
-	defer jlog.SetDefaultLoggerForTesting(t, os.Stdout)
 	testCases := []struct {
 		name string
 		ctx  context.Context
@@ -136,7 +133,6 @@ func TestError(t *testing.T) {
 
 func TestDeprecated(t *testing.T) {
 	opts := []jettison.Option{jettison.WithSource("testsource")}
-	defer jlog.SetDefaultLoggerForTesting(t, os.Stdout, opts...)
 
 	testCases := []struct {
 		name   string
@@ -194,7 +190,7 @@ func verifyOutput(t *testing.T, goldenFileName string, output []byte) {
 
 func BenchmarkInfoCtx(b *testing.B) {
 	var buf bytes.Buffer
-	defer jlog.SetDefaultLoggerForTesting(nil, &buf)
+	jlog.SetDefaultLoggerForTesting(b, &buf)
 
 	ctx := context.Background()
 	ctx = jlog.ContextWith(ctx, j.KV("key1", "v1"))
@@ -208,7 +204,7 @@ func BenchmarkInfoCtx(b *testing.B) {
 
 func BenchmarkErrorCtx(b *testing.B) {
 	var buf bytes.Buffer
-	defer jlog.SetDefaultLoggerForTesting(nil, &buf)
+	jlog.SetDefaultLoggerForTesting(b, &buf)
 
 	ctx := context.Background()
 	ctx = jlog.ContextWith(ctx, j.KV("key1", "v1"))

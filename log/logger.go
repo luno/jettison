@@ -12,14 +12,24 @@ import (
 	"github.com/luno/jettison/models"
 )
 
-var logger Logger = newJSONLogger(os.Stdout)
+// logger is the global logger. It defaults to a human friendly command line logger.
+var logger Logger = newCmdLogger(os.Stdout)
 
 // Log sub-types the internal log struct for the public interface.
 type Log models.Log
 
+// Logger does logging of log lines.
 type Logger interface {
 	// Log logs the given log and returns a string of what was written.
 	Log(Log) string
+}
+
+// LoggerFunc is an adapter to allow the use of
+// ordinary functions as Logger.
+type LoggerFunc func(Log) string
+
+func (f LoggerFunc) Log(l Log) string {
+	return f(l)
 }
 
 // SetLogger sets the global logger.
@@ -27,12 +37,25 @@ func SetLogger(l Logger) {
 	logger = l
 }
 
-func SetDefaultLoggerForTesting(_ testing.TB, w io.Writer,
+
+func SetCmdLoggerForTesting(t testing.TB, w io.Writer) {
+	logger = newCmdLogger(w)
+
+	t.Cleanup(func() {
+		logger = newCmdLogger(os.Stdout)
+	})
+}
+
+func SetDefaultLoggerForTesting(t testing.TB, w io.Writer,
 	opts ...jettison.Option) {
 
 	l := newJSONLogger(w, opts...)
 	l.scrubTimestamp = true
 	logger = l
+
+	t.Cleanup(func() {
+		logger = newCmdLogger(os.Stdout)
+	})
 }
 
 func newJSONLogger(w io.Writer, opts ...jettison.Option) *jsonLogger {
