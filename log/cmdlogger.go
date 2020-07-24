@@ -1,51 +1,55 @@
 package log
 
 import (
-"fmt"
+	"fmt"
 	"io"
 	"log"
-"strings"
+	"strings"
 
-"github.com/luno/jettison/errors"
-"github.com/luno/jettison/models"
-"gopkg.in/yaml.v2"
+	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/models"
+	"gopkg.in/yaml.v2"
 )
 
-const errorRedBold = "\033[1;31m%s\033[0m"
-
-// newCmdLogger returns a human friendly command line logger.
-func newCmdLogger(w io.Writer) LoggerFunc {
-	return func(l Log) string {
-		return cmdLog(log.New(w, "", 0), l)
+// newCmdLogger returns a stdout human friendly command line logger
+// with colored errors if a terminal is detected.
+func newCmdLogger(w io.Writer, stripTime bool) *cmdLogger {
+	return &cmdLogger{
+		logger:    log.New(w, "", 0),
+		stripTime: stripTime,
 	}
 }
 
-func cmdLog(logger *log.Logger, l Log) string {
+type cmdLogger struct {
+	logger    *log.Logger
+	stripTime bool
+}
+
+func (c *cmdLogger) Log(l Log) string {
+	timestamp := l.Timestamp.Format("15:04:05.000")
+	if c.stripTime {
+		timestamp = "00:00:00.000"
+	}
+
 	text := fmt.Sprintf("%s %s %s: %s",
 		strings.ToUpper(string(l.Level))[:1],
-		l.Timestamp.Format("15:04:05.000"),
+		timestamp,
 		conciseSource(l.Source),
 		makeMsg(l),
 	)
 
 	if len(l.Hops) > 0 {
-		hops, err := yamlHops(l.Hops)
+		hops, err := yamlStacks(l.Hops)
 		if err != nil {
-			logger.Printf("error printing hops: %v", err)
+			c.logger.Printf("error printing hops: %v", err)
+		} else if hops == "" {
+			text += " (error without stack trace)"
 		} else {
 			text += "\n" + hops
 		}
 	}
 
-	if l.Level == LevelError {
-		var lines []string
-		for _, line := range strings.Split(text, "\n") {
-			lines = append(lines, fmt.Sprintf(errorRedBold, line))
-		}
-		text = strings.Join(lines, "\n")
-	}
-
-	logger.Print(text)
+	c.logger.Print(text)
 
 	return text
 }
@@ -84,13 +88,19 @@ func conciseSource(source string) string {
 	return strings.Join(res, "/")
 }
 
-// yamlHops returns the stack traces of the hops as indented yaml.
-func yamlHops(hops []models.Hop) (string, error) {
+// yamlStacks returns the stack traces of the hops as indented yaml.
+func yamlStacks(hops []models.Hop) (string, error) {
 	var v interface{}
 	if len(hops) == 0 {
 		return "", errors.New("missing hops")
 	} else if len(hops) == 1 {
 		// If single binary (no network hops), just print the stack.
+
+		if len(hops[0].StackTrace) == 0 {
+			// No stack trace (probably non-jettison error)
+			return "", nil
+		}
+
 		v = hops[0].StackTrace
 	} else {
 		// Else if network hops, print binaries with stacks.
@@ -109,6 +119,7 @@ func yamlHops(hops []models.Hop) (string, error) {
 		return "", err
 	}
 
+	// Indent yaml stacks
 	res := "  " + strings.TrimSpace(string(b))
 	res = strings.Replace(res, "\n", "\n  ", -1)
 	return res, nil

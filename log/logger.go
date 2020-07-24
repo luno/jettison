@@ -13,7 +13,7 @@ import (
 )
 
 // logger is the global logger. It defaults to a human friendly command line logger.
-var logger Logger = newCmdLogger(os.Stdout)
+var logger Logger = newCmdLogger(os.Stdout, false)
 
 // Log sub-types the internal log struct for the public interface.
 type Log models.Log
@@ -24,37 +24,30 @@ type Logger interface {
 	Log(Log) string
 }
 
-// LoggerFunc is an adapter to allow the use of
-// ordinary functions as Logger.
-type LoggerFunc func(Log) string
-
-func (f LoggerFunc) Log(l Log) string {
-	return f(l)
-}
-
 // SetLogger sets the global logger.
 func SetLogger(l Logger) {
 	logger = l
 }
 
-
 func SetCmdLoggerForTesting(t testing.TB, w io.Writer) {
-	logger = newCmdLogger(w)
+	cached := logger
+	logger = newCmdLogger(w, true)
 
 	t.Cleanup(func() {
-		logger = newCmdLogger(os.Stdout)
+		logger = cached
 	})
 }
 
 func SetDefaultLoggerForTesting(t testing.TB, w io.Writer,
 	opts ...jettison.Option) {
+	cached := logger
 
 	l := newJSONLogger(w, opts...)
 	l.scrubTimestamp = true
 	logger = l
 
 	t.Cleanup(func() {
-		logger = newCmdLogger(os.Stdout)
+		logger = cached
 	})
 }
 

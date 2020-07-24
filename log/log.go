@@ -99,8 +99,7 @@ func Error(ctx context.Context, err error, ol ...jettison.Option) {
 func addErrorHops(l *models.Log, err error) {
 	je, ok := err.(*errors.JettisonError)
 	if !ok {
-		// FIXME(corver): Stacktraces of errors created here do not make sense, rather create without it.
-		je, ok = errors.New(err.Error()).(*errors.JettisonError)
+		je, ok = errors.New(err.Error(), errors.WithoutStackTrace()).(*errors.JettisonError)
 	}
 	if !ok {
 		log.Printf("jettison/log: failed to convert error to jettison error: %v", err)
