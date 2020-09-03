@@ -13,7 +13,7 @@ import (
 )
 
 // logger is the global logger. It defaults to a human friendly command line logger.
-var logger Logger = newCmdLogger(os.Stdout, false)
+var logger Logger = newCmdLogger(os.Stderr, false)
 
 // Log sub-types the internal log struct for the public interface.
 type Log models.Log
