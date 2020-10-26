@@ -34,7 +34,7 @@ type MKV map[string]interface{}
 
 func (m MKV) Apply(details jettison.Details) {
 	for key, value := range m {
-		details.SetKey(key, sprint(value))
+		jettison.WithKeyValueString(key, sprint(value)).Apply(details)
 	}
 }
 
@@ -46,7 +46,7 @@ type MKS map[string]string
 
 func (m MKS) Apply(details jettison.Details) {
 	for key, value := range m {
-		details.SetKey(key, value)
+		jettison.WithKeyValueString(key, value).Apply(details)
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luno/jettison"
 	"github.com/luno/jettison/errors"
 	"github.com/stretchr/testify/require"
 )
@@ -171,4 +172,65 @@ func TestC(t *testing.T) {
 	je = err.(*errors.JettisonError)
 	require.NotEmpty(t, je.Hops[0].StackTrace)
 	require.True(t, errors.Is(err, ErrFoo))
+}
+
+type details struct {
+	kv map[string]string
+}
+
+func (d details) SetKey(key, value string) {
+	d.kv[key] = value
+}
+
+func (d details) SetSource(_ string) {}
+
+func TestOptions(t *testing.T) {
+	testCases := []struct {
+		name string
+		opts []jettison.Option
+	}{
+		{
+			name: "test_mkv",
+			opts: []jettison.Option{MKV{
+				"foo":      "foo",
+				"grpc-BAR": "bar",
+			}},
+		},
+		{
+			name: "test_mks",
+			opts: []jettison.Option{MKS{
+				"foo":      "foo",
+				"grpc-BAR": "bar",
+			}},
+		},
+		{
+			name: "test_kv",
+			opts: []jettison.Option{
+				KV("foo", "foo"),
+				KV("grpc-BAR", "bar"),
+			},
+		},
+		{
+			name: "test_ks",
+			opts: []jettison.Option{
+				KS("foo", "foo"),
+				KS("grpc-BAR", "bar"),
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			kv := make(map[string]string)
+			for _, opt := range tc.opts {
+				opt.Apply(details{kv})
+			}
+			require.Equal(t,
+				fmt.Sprint(map[string]string{
+					"foo": "foo",
+					"bar": "bar",
+				}),
+				fmt.Sprint(kv),
+			)
+		})
+	}
 }
