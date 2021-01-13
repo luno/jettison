@@ -113,7 +113,9 @@ func intercept(err error) error {
 	}
 
 	// Push a new hop to the front of the queue.
-	je.Hops = append([]models.Hop{internal.NewHop()}, je.Hops...)
+	h := internal.NewHop()
+	h.StackTrace = internal.GetStackTrace(4)
+	je.Hops = append([]models.Hop{h}, je.Hops...)
 	return je
 }
 

@@ -1,11 +1,13 @@
 package errors_test
 
 import (
+	"encoding/json"
 	"net"
 	"testing"
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/errors/testgrpc"
+	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -55,6 +57,39 @@ func TestWrapOverGrpc(t *testing.T) {
 	ref := errors.New("reference", j.C("1"))
 	assert.True(t, errors.Is(errTrue, ref))
 	assert.False(t, errors.Is(errFalse, ref))
+}
+
+func TestClientStacktrace(t *testing.T) {
+	l, err := net.Listen("tcp", "")
+	require.NoError(t, err)
+	defer l.Close()
+
+	_, stop := testgrpc.NewServer(t, l)
+	defer stop()
+
+	cl, err := testgrpc.NewClient(t, l.Addr().String())
+	require.NoError(t, err)
+	defer cl.Close()
+
+	err = cl.ErrorWithCode("1")
+	require.Error(t, err)
+
+	je, ok := err.(*errors.JettisonError)
+	require.True(t, ok)
+	require.Len(t, je.Hops, 2)
+
+	bb, err := json.MarshalIndent(je.Hops[0].StackTrace, "", "  ")
+	require.NoError(t, err)
+
+	expected := `[
+  "github.com/luno/jettison/errors/testpb/test.pb.go:220",
+  "github.com/luno/jettison/errors/testgrpc/client.go:37",
+  "github.com/luno/jettison/errors/grpc_test.go:74",
+  "testing/testing.go:X",
+  "runtime/asm_X.s:X"
+]`
+
+	require.Equal(t, expected, string(internal.StripTestStacks(t, bb)))
 }
 
 func TestStreamThenError(t *testing.T) {

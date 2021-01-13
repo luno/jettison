@@ -7,6 +7,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/luno/jettison/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +27,7 @@ func TestStack(t *testing.T) {
 	bb, err := json.MarshalIndent(je.Hops[0].StackTrace, "", "  ")
 	require.NoError(t, err)
 
-	verifyOutput(t, "log_"+t.Name(), bb)
+	verifyOutput(t, "log_"+t.Name(), internal.StripTestStacks(t, bb))
 }
 
 func stack(i int) error {
@@ -37,6 +38,7 @@ func stack(i int) error {
 }
 
 func verifyOutput(t *testing.T, goldenFileName string, output []byte) {
+	t.Helper()
 	flag.Parse()
 	goldenFilePath := path.Join("testdata", goldenFileName+".golden")
 

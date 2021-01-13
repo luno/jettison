@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/log"
 )
 
@@ -23,5 +24,5 @@ func TestSourceError(t *testing.T) {
 	buf := new(bytes.Buffer)
 	log.SetDefaultLoggerForTesting(t, buf)
 	log.Error(nil, errors.New("test error"))
-	verifyOutput(t, "source_error", buf.Bytes())
+	verifyOutput(t, "source_error", internal.StripTestStacks(t, buf.Bytes()))
 }

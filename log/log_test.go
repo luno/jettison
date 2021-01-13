@@ -171,6 +171,7 @@ func TestDeprecated(t *testing.T) {
 }
 
 func verifyOutput(t *testing.T, goldenFileName string, output []byte) {
+	t.Helper()
 	flag.Parse()
 	goldenFilePath := path.Join("testdata", goldenFileName+".golden")
 
