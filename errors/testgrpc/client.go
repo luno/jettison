@@ -33,6 +33,10 @@ func (cl *Client) Close() error {
 	return cl.conn.Close()
 }
 
+func (cl *Client) ClientPB() testpb.TestClient {
+	return cl.cl
+}
+
 func (cl *Client) ErrorWithCode(code string) error {
 	_, err := cl.cl.ErrorWithCode(context.Background(),
 		&testpb.ErrorWithCodeRequest{

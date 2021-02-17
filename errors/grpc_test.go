@@ -1,14 +1,17 @@
 package errors_test
 
 import (
+	"context"
 	"encoding/json"
 	"net"
 	"testing"
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/errors/testgrpc"
+	"github.com/luno/jettison/errors/testpb"
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
+	"github.com/luno/jettison/jtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -83,8 +86,8 @@ func TestClientStacktrace(t *testing.T) {
 
 	expected := `[
   "github.com/luno/jettison/errors/testpb/test.pb.go:220",
-  "github.com/luno/jettison/errors/testgrpc/client.go:37",
-  "github.com/luno/jettison/errors/grpc_test.go:74",
+  "github.com/luno/jettison/errors/testgrpc/client.go:41",
+  "github.com/luno/jettison/errors/grpc_test.go:77",
   "testing/testing.go:X",
   "runtime/asm_X.s:X"
 ]`
@@ -154,4 +157,39 @@ func TestWrappingGrpcError(t *testing.T) {
 	require.Equal(t, "Unavailable", jerr.Hops[0].Errors[0].Parameters[0].Value)
 
 	require.Contains(t, jerr.Hops[0].Errors[1].Message, "rpc error: code = Unavailable desc = all SubConns are in TransientFailure")
+}
+
+func TestContextCanceled(t *testing.T) {
+	l, err := net.Listen("tcp", "")
+	require.NoError(t, err)
+	defer l.Close()
+
+	_, stop := testgrpc.NewServer(t, l)
+	defer stop()
+
+	cl, err := testgrpc.NewClient(t, l.Addr().String())
+	require.NoError(t, err)
+	defer cl.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	sc, err := cl.ClientPB().StreamThenError(ctx, &testpb.StreamRequest{ResponseCount: 100000})
+	jtest.RequireNil(t, err)
+
+	_, err = sc.Recv()
+	jtest.RequireNil(t, err)
+
+	cancel()
+
+	for {
+		//
+		_, err := sc.Recv()
+		if err == nil {
+			// Gobble buffered responses
+			continue
+		}
+		jtest.Require(t, context.Canceled, err)
+		break
+	}
+
 }

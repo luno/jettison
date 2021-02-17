@@ -8,6 +8,7 @@ import (
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/models"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
@@ -103,6 +104,12 @@ func intercept(err error) error {
 	s, ok := status.FromError(err)
 	if !ok {
 		return errors.Wrap(err, "non-grpc error")
+	}
+
+	if s.Code() == codes.Canceled {
+		return errors.Wrap(context.Canceled, "grpc error")
+	} else if s.Code() == codes.DeadlineExceeded {
+		return errors.Wrap(context.DeadlineExceeded, "grpc error")
 	}
 
 	je, statusErr := errors.FromStatus(s)
