@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-stack/stack"
 )
@@ -17,8 +18,28 @@ func GetStackTrace(skip int) []string {
 		if i >= maxStackTraceDepth {
 			break
 		}
-		res = append(res, fmt.Sprintf("%+v", c))
+
+		var fnName string
+		if c.Frame().Func != nil {
+			fnName = " " + sanitiseFnName(c.Frame().Func.Name())
+		}
+
+		res = append(res, fmt.Sprintf("%+v%s", c, fnName))
 	}
 
 	return res
+}
+
+// sanitiseFnName returns a function name including receiver (if applicable) but
+// excluding package name.
+func sanitiseFnName(name string) string {
+	if lastslash := strings.LastIndex(name, "/"); lastslash >= 0 {
+		name = name[lastslash+1:]
+	}
+	if period := strings.Index(name, "."); period >= 0 {
+		name = name[period+1:]
+	}
+
+	name = strings.Replace(name, "·", ".", -1)
+	return name
 }

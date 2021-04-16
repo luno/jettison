@@ -1,11 +1,11 @@
 [
-  "github.com/luno/jettison/errors/stack_test.go:35",
-  "github.com/luno/jettison/errors/stack_test.go:37",
-  "github.com/luno/jettison/errors/stack_test.go:37",
-  "github.com/luno/jettison/errors/stack_test.go:37",
-  "github.com/luno/jettison/errors/stack_test.go:37",
-  "github.com/luno/jettison/errors/stack_test.go:37",
-  "github.com/luno/jettison/errors/stack_test.go:23",
-  "testing/testing.go:X",
-  "runtime/asm_X.s:X"
+  "github.com/luno/jettison/errors/stack_test.go:35 stack",
+  "github.com/luno/jettison/errors/stack_test.go:37 stack",
+  "github.com/luno/jettison/errors/stack_test.go:37 stack",
+  "github.com/luno/jettison/errors/stack_test.go:37 stack",
+  "github.com/luno/jettison/errors/stack_test.go:37 stack",
+  "github.com/luno/jettison/errors/stack_test.go:37 stack",
+  "github.com/luno/jettison/errors/stack_test.go:23 TestStack",
+  "testing/testing.go:X tRunner",
+  "runtime/asm_X.s:X goexit"
 ]

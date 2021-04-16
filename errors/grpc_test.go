@@ -85,11 +85,11 @@ func TestClientStacktrace(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := `[
-  "github.com/luno/jettison/errors/testpb/test.pb.go:220",
+  "github.com/luno/jettison/errors/testpb/test.pb.go:220 (*testClient).ErrorWithCode",
   "github.com/luno/jettison/errors/testgrpc/client.go:41",
-  "github.com/luno/jettison/errors/grpc_test.go:77",
-  "testing/testing.go:X",
-  "runtime/asm_X.s:X"
+  "github.com/luno/jettison/errors/grpc_test.go:77 TestClientStacktrace",
+  "testing/testing.go:X tRunner",
+  "runtime/asm_X.s:X goexit"
 ]`
 
 	require.Equal(t, expected, string(internal.StripTestStacks(t, bb)))
