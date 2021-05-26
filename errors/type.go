@@ -9,13 +9,14 @@ import (
 	"reflect"
 	"strings"
 
+	"golang.org/x/xerrors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/luno/jettison"
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/internal/jettisonpb"
 	"github.com/luno/jettison/models"
-	"golang.org/x/xerrors"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -69,11 +70,12 @@ func (je *JettisonError) GRPCStatus() *status.Status {
 			continue
 		}
 
-		res, err = res.WithDetails(hpb)
+		withDetails, err := res.WithDetails(hpb)
 		if err != nil {
 			log.Printf("jettison/errors: Failed to add details to gRPC status: %v", err)
 			continue
 		}
+		res = withDetails
 	}
 
 	return res

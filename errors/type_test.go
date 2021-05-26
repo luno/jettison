@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/j"
-	"github.com/luno/jettison/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	go_2_errors "golang.org/x/exp/errors"
 	gstatus "google.golang.org/grpc/status"
+
+	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/j"
+	"github.com/luno/jettison/models"
 )
 
 func TestToFromStatus(t *testing.T) {
@@ -272,4 +273,24 @@ func TestFormat(t *testing.T) {
 	assert.Equal(t, "wrap sql error: sql: no rows in result set", err5.Error())
 	assert.Equal(t, "wrap sql error: sql: no rows in result set", fmt.Sprintf("%s", err5))
 	assert.Equal(t, "wrap sql error(w=w1): sql: no rows in result set", fmt.Sprintf("%#v", err5))
+}
+
+func TestNonUTF8CharsInHop(t *testing.T) {
+	err := errors.JettisonError{
+		Hops: []models.Hop{
+			{
+				Binary: "service",
+				Errors: []models.Error{
+					{
+						Message: "msg1",
+						Source:  "source1",
+						Parameters: []models.KeyValue{
+							{Key: "key1", Value: "a\xc5z"},
+						},
+					},
+				},
+			},
+		},
+	}
+	assert.NotNil(t, err.GRPCStatus())
 }
