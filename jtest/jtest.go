@@ -9,15 +9,16 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luno/jettison/errors"
 	"gopkg.in/yaml.v2"
+
+	"github.com/luno/jettison/errors"
 )
 
 // Assert asserts that the specified error matches the expected one. The test
 // will be marked failed if it does not.
 //
 //    jtest.Assert(t, ErrWhatIExpect, err)
-func Assert(t *testing.T, expected, actual error, msgs ...interface{}) bool {
+func Assert(t testing.TB, expected, actual error, msgs ...interface{}) bool {
 	t.Helper()
 
 	if !errors.Is(actual, expected) {
@@ -32,7 +33,7 @@ func Assert(t *testing.T, expected, actual error, msgs ...interface{}) bool {
 // fails.
 //
 //    jtest.Require(t, ErrWhatIExpect, err)
-func Require(t *testing.T, expected, actual error, msg ...interface{}) {
+func Require(t testing.TB, expected, actual error, msg ...interface{}) {
 	t.Helper()
 
 	if !Assert(t, expected, actual, msg...) {
@@ -45,7 +46,7 @@ func Require(t *testing.T, expected, actual error, msg ...interface{}) {
 // although it provides slightly clearer failure output.
 //
 //    jtest.AssertNil(t, err)
-func AssertNil(t *testing.T, actual error, msgs ...interface{}) bool {
+func AssertNil(t testing.TB, actual error, msgs ...interface{}) bool {
 	t.Helper()
 
 	if actual != nil {
@@ -61,7 +62,7 @@ func AssertNil(t *testing.T, actual error, msgs ...interface{}) bool {
 // output.
 //
 //    jtest.RequireNil(t, err)
-func RequireNil(t *testing.T, actual error, msg ...interface{}) {
+func RequireNil(t testing.TB, actual error, msg ...interface{}) {
 	t.Helper()
 
 	if !AssertNil(t, actual, msg...) {
