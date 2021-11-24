@@ -48,6 +48,21 @@ func WithError(err error) jettison.OptionFunc {
 	}
 }
 
+// WithStackTrace returns a jettison option to add a stacktrace as a hop to the log.
+// It only works when provided as option to log package functions.
+func WithStackTrace() jettison.OptionFunc {
+	return func(details jettison.Details) {
+		l, ok := details.(*models.Log)
+		if !ok {
+			log.Printf("jettison/log: WithStackTrace option not applicable to: %T", details)
+			return
+		}
+		h := internal.NewHop()
+		h.StackTrace = internal.GetStackTrace(2)
+		l.Hops = append(l.Hops, h)
+	}
+}
+
 // Info writes a structured jettison log to the logger. Any jettison
 // key/value pairs contained in the given context are included in the log.
 func Info(ctx context.Context, msg string, ol ...jettison.Option) {
