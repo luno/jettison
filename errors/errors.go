@@ -1,6 +1,8 @@
 package errors
 
 import (
+	"errors"
+
 	"github.com/luno/jettison"
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/models"
@@ -112,9 +114,9 @@ func Wrap(err error, msg string, ol ...jettison.Option) error {
 	return je
 }
 
-// Is is an alias of golang.org/x/errors.Is()
+// Is is an alias of the standard library's errors.Is() function.
 func Is(err, target error) bool {
-	return xerrors.Is(err, target)
+	return errors.Is(err, target)
 }
 
 // IsAny returns true if Is(err, target) is true for any of the targets.
@@ -128,19 +130,20 @@ func IsAny(err error, targets ...error) bool {
 	return false
 }
 
-// As is an alias of golang.org/x/exp/errors.As().
+// As is an alias of the standard library's errors.As() function.
 func As(err error, target interface{}) bool {
-	return xerrors.As(err, target)
+	return errors.As(err, target)
 }
 
 // Opaque is an alias of golang.org/x/exp/errors.Opaque().
+// Deprecated. See https://github.com/golang/go/issues/29934#issuecomment-489682919
 func Opaque(err error) error {
 	return xerrors.Opaque(err)
 }
 
-// Unwrap is an alias of golang.org/x/exp/errors.Unwrap().
+// Unwrap is an alias of the standard library's errors.Unwrap() function.
 func Unwrap(err error) error {
-	return xerrors.Unwrap(err)
+	return errors.Unwrap(err)
 }
 
 // OriginalError returns the non-jettison error wrapped by the given one,
