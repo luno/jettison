@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-stack/stack"
+
 	"github.com/luno/jettison"
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/internal"
@@ -45,6 +46,13 @@ func WithError(err error) jettison.OptionFunc {
 			return
 		}
 		addErrorHops(l, err)
+
+		// Add the most recent error code in the chain to the log's root.
+		codes := errors.GetCodes(err)
+		if len(codes) > 0 {
+			l.ErrorCode = &codes[0]
+		}
+
 	}
 }
 
@@ -63,20 +71,15 @@ func WithStackTrace() jettison.OptionFunc {
 	}
 }
 
+func Debug(ctx context.Context, msg string, opts ...jettison.Option) {
+	l := makeLog(ctx, msg, LevelDebug, opts...)
+	logger.Log(Log(l))
+}
+
 // Info writes a structured jettison log to the logger. Any jettison
 // key/value pairs contained in the given context are included in the log.
-func Info(ctx context.Context, msg string, ol ...jettison.Option) {
-	l := newLog(msg, LevelInfo, 2)
-	opts := append(ol, internal.ContextOptions(ctx)...)
-	for _, o := range opts {
-		o.Apply(&l)
-	}
-
-	// Sort the parameters for consistent logging.
-	sort.Slice(l.Parameters, func(i, j int) bool {
-		return l.Parameters[i].Key < l.Parameters[j].Key
-	})
-
+func Info(ctx context.Context, msg string, opts ...jettison.Option) {
+	l := makeLog(ctx, msg, LevelInfo, opts...)
 	logger.Log(Log(l))
 }
 
@@ -85,11 +88,15 @@ func Info(ctx context.Context, msg string, ol ...jettison.Option) {
 // then logged. Any jettison key/value pairs contained in the given context are
 // included in the log.
 // NOTE: Error panics if err is nil.
-func Error(ctx context.Context, err error, ol ...jettison.Option) {
-	opts := append(ol, internal.ContextOptions(ctx)...)
+func Error(ctx context.Context, err error, opts ...jettison.Option) {
 	opts = append(opts, WithError(err))
+	l := makeLog(ctx, err.Error(), LevelError, opts...)
+	logger.Log(Log(l))
+}
 
-	l := newLog(err.Error(), LevelError, 2)
+func makeLog(ctx context.Context, msg string, lvl models.Level, opts ...jettison.Option) models.Log {
+	opts = append(opts, internal.ContextOptions(ctx)...)
+	l := newLog(msg, lvl, 3)
 	for _, o := range opts {
 		o.Apply(&l)
 	}
@@ -99,13 +106,7 @@ func Error(ctx context.Context, err error, ol ...jettison.Option) {
 		return l.Parameters[i].Key < l.Parameters[j].Key
 	})
 
-	// Add the most recent error code in the chain to the log's root.
-	codes := errors.GetCodes(err)
-	if len(codes) > 0 {
-		l.ErrorCode = &codes[0]
-	}
-
-	logger.Log(Log(l))
+	return l
 }
 
 // addErrorHops tries to convert the error to a jettison error
@@ -158,3 +159,25 @@ func newLog(msg string, level models.Level, stackSkip int) models.Log {
 		Timestamp: time.Now(),
 	}
 }
+
+type Interface interface {
+	Debug(ctx context.Context, msg string, ol ...jettison.Option)
+	Info(ctx context.Context, msg string, ol ...jettison.Option)
+	Error(ctx context.Context, err error, ol ...jettison.Option)
+}
+
+type Jettison struct{}
+
+func (j Jettison) Debug(ctx context.Context, msg string, ol ...jettison.Option) {
+	Debug(ctx, msg, ol...)
+}
+
+func (j Jettison) Info(ctx context.Context, msg string, ol ...jettison.Option) {
+	Info(ctx, msg, ol...)
+}
+
+func (j Jettison) Error(ctx context.Context, err error, ol ...jettison.Option) {
+	Error(ctx, err, ol...)
+}
+
+var _ Interface = (*Jettison)(nil)
