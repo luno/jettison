@@ -15,6 +15,7 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
+
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
 )
@@ -185,7 +186,10 @@ func checkFile(file string, fp formatParams, rewrite bool) (checkResult, error) 
 				msg, err := checkInstance(jettisonPkg, pkg, varName, ce, fp)
 				if err != nil {
 					return checkResult{}, errors.Wrap(err, "error checking instance",
-						j.KV("pos", fmt.Sprintf("%v", ce)))
+						j.MKV{
+							"pos": fmt.Sprintf("%+v", ce),
+							"var": varName,
+						})
 				}
 				if msg != "" {
 					msgs = append(msgs, fmt.Sprintf("%s: %s: %s (fixed)", file, varName, msg))

@@ -89,12 +89,14 @@ func (je *JettisonError) Format(state fmt.State, c rune) {
 	p := &printer{Writer: state, detailed: withParams}
 	next := je
 	for {
+		pre := p.written
 		res := next.FormatError(p)
 		if res == nil {
 			return
 		}
-
-		_, _ = p.Write([]byte(": "))
+		if p.written > pre {
+			_, _ = p.Write([]byte(": "))
+		}
 
 		jerr, ok := res.(*JettisonError)
 		if !ok {
@@ -360,14 +362,17 @@ func getDefaultCode() codes.Code {
 type printer struct {
 	io.Writer
 	detailed bool
+	written  int
 }
 
 func (p *printer) Print(args ...interface{}) {
-	_, _ = p.Write([]byte(fmt.Sprint(args...)))
+	w, _ := p.Write([]byte(fmt.Sprint(args...)))
+	p.written += w
 }
 
 func (p *printer) Printf(format string, args ...interface{}) {
-	_, _ = p.Write([]byte(fmt.Sprintf(format, args...)))
+	w, _ := p.Write([]byte(fmt.Sprintf(format, args...)))
+	p.written += w
 }
 
 func (p *printer) Detail() bool {

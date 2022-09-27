@@ -3,17 +3,19 @@ package errors_test
 import (
 	stdlib_errors "errors"
 	"fmt"
+	"io"
 	"runtime"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/luno/jettison"
-	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/j"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
+
+	"github.com/luno/jettison"
+	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/j"
 )
 
 func TestNew(t *testing.T) {
@@ -61,6 +63,7 @@ func TestWrap(t *testing.T) {
 		expectNil          bool
 		expectedHopsCount  int
 		expectedErrorCount int // in the latest hop
+		expectedMessage    string
 	}{
 		{
 			name:      "nil err",
@@ -73,6 +76,7 @@ func TestWrap(t *testing.T) {
 			msg:                "errors: second",
 			expectedHopsCount:  1,
 			expectedErrorCount: 2,
+			expectedMessage:    "errors: second: errors: first",
 		},
 		{
 			name:               "Jettison err",
@@ -80,6 +84,49 @@ func TestWrap(t *testing.T) {
 			msg:                "errors: second",
 			expectedHopsCount:  1,
 			expectedErrorCount: 2,
+			expectedMessage:    "errors: second: errors: first",
+		},
+		{name: "wrap empty message",
+			err:                errors.New("test value"),
+			msg:                "",
+			expectedHopsCount:  1,
+			expectedErrorCount: 2,
+			expectedMessage:    "test value",
+		},
+		{name: "wrap empty message, with stdlib error",
+			err:                stdlib_errors.New("test value"),
+			msg:                "",
+			expectedHopsCount:  1,
+			expectedErrorCount: 2,
+			expectedMessage:    "test value",
+		},
+		{name: "wrap known error",
+			err:                io.EOF,
+			msg:                "end of file",
+			expectedHopsCount:  1,
+			expectedErrorCount: 2,
+			expectedMessage:    "end of file: EOF",
+		},
+		{name: "wrap options message, ignores options",
+			err:                errors.New("test value", j.KV("key", "value")),
+			msg:                "hello",
+			expectedHopsCount:  1,
+			expectedErrorCount: 2,
+			expectedMessage:    "hello: test value",
+		},
+		{name: "wrap wrapped message",
+			err:                errors.Wrap(errors.New("test value"), "world"),
+			msg:                "hello",
+			expectedHopsCount:  1,
+			expectedErrorCount: 3,
+			expectedMessage:    "hello: world: test value",
+		},
+		{name: "double empty wrapped message",
+			err:                errors.Wrap(errors.New("test value"), ""),
+			msg:                "",
+			expectedHopsCount:  1,
+			expectedErrorCount: 3,
+			expectedMessage:    "test value",
 		},
 	}
 
@@ -105,6 +152,8 @@ func TestWrap(t *testing.T) {
 			assert.Equal(t,
 				"github.com/luno/jettison/errors/errors_test.go:"+line,
 				je.Hops[0].Errors[0].Source)
+
+			assert.Equal(t, tc.expectedMessage, err.Error())
 		})
 	}
 }
@@ -321,17 +370,17 @@ func TestUnwrapCompatibility(t *testing.T) {
 	assert.True(t, errors.Is(err5, err4))
 }
 
-var ErrFoo = errors.New("foo", errors.WithoutStackTrace())
-
 func TestWithoutStackTrace(t *testing.T) {
-	je := ErrFoo.(*errors.JettisonError)
+	errFoo := errors.New("foo", errors.WithoutStackTrace())
+
+	je := errFoo.(*errors.JettisonError)
 	require.Empty(t, je.Hops[0].StackTrace)
 
 	// ErrFoo doesn't have stacktrace, but is has a source.
 	source := je.Hops[0].Errors[0].Source
 	require.True(t, strings.HasPrefix(source, "github.com/luno/jettison/errors/errors_test.go"))
 
-	err := errors.Wrap(ErrFoo, "wrap adds stack trace")
+	err := errors.Wrap(errFoo, "wrap adds stack trace")
 	je = err.(*errors.JettisonError)
 	require.Len(t, je.Hops, 1)
 	require.Len(t, je.Hops[0].Errors, 2)
