@@ -81,7 +81,7 @@ func (h *Hop) Clone() Hop {
 		res.Errors = append(res.Errors, e.Clone())
 	}
 
-	return *h
+	return res
 }
 
 type Error struct {
