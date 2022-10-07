@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -62,7 +63,16 @@ func (je *JettisonError) GRPCStatus() *status.Status {
 		msg = le.Message
 	}
 
-	res := status.New(getDefaultCode(), msg)
+	c := getDefaultCode()
+	switch je.OriginalErr {
+	case context.Canceled:
+		c = codes.Canceled
+	case context.DeadlineExceeded:
+		c = codes.DeadlineExceeded
+	}
+
+	res := status.New(c, msg)
+
 	for _, h := range je.Hops {
 		hpb, err := internal.HopToProto(&h)
 		if err != nil {

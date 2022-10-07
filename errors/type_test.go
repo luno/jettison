@@ -1,6 +1,7 @@
 package errors_test
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"testing"
@@ -8,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	go_2_errors "golang.org/x/exp/errors"
+	"google.golang.org/grpc/codes"
 	gstatus "google.golang.org/grpc/status"
 
 	"github.com/luno/jettison/errors"
@@ -293,4 +295,41 @@ func TestNonUTF8CharsInHop(t *testing.T) {
 		},
 	}
 	assert.NotNil(t, err.GRPCStatus())
+}
+
+func TestGRPCStatus(t *testing.T) {
+	testCases := []struct {
+		name      string
+		err       error
+		expStatus *gstatus.Status
+	}{
+		{name: "new error",
+			err:       errors.New("hello"),
+			expStatus: gstatus.New(codes.Unknown, "hello"),
+		},
+		{name: "wrapped deadline exceeded error",
+			err:       errors.Wrap(context.DeadlineExceeded, ""),
+			expStatus: gstatus.New(codes.DeadlineExceeded, ""),
+		},
+		{name: "wrapped canceled error",
+			err:       errors.Wrap(context.Canceled, ""),
+			expStatus: gstatus.New(codes.Canceled, ""),
+		},
+		{name: "double wrapped",
+			err:       errors.Wrap(errors.Wrap(context.Canceled, ""), ""),
+			expStatus: gstatus.New(codes.Canceled, ""),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			stater, ok := tc.err.(interface{ GRPCStatus() *gstatus.Status })
+			require.True(t, ok)
+
+			s := stater.GRPCStatus()
+
+			assert.Equal(t, tc.expStatus.Code(), s.Code())
+			assert.Equal(t, tc.expStatus.Message(), s.Message())
+		})
+	}
 }
