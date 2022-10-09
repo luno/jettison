@@ -9,12 +9,13 @@ import (
 	"path"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/luno/jettison"
 	jerrors "github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
 	jlog "github.com/luno/jettison/log"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var writeGoldenFiles = flag.Bool("write-golden-files", false,
@@ -93,6 +94,10 @@ func TestError(t *testing.T) {
 		ctx  context.Context
 		err  error
 	}{
+		{
+			name: "nil_error",
+			err:  nil,
+		},
 		{
 			name: "message_only",
 			err: jerrors.New("test",

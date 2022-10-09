@@ -87,9 +87,14 @@ func Info(ctx context.Context, msg string, opts ...jettison.Option) {
 // If the error is not already a Jettison error, it is converted into one and
 // then logged. Any jettison key/value pairs contained in the given context are
 // included in the log.
-// NOTE: Error panics if err is nil.
+// If err is nil, a new error is created.
 func Error(ctx context.Context, err error, opts ...jettison.Option) {
-	opts = append(opts, WithError(err))
+	if err != nil {
+		opts = append(opts, WithError(err))
+	} else {
+		err = errors.New("nil error logged - this is probably a bug")
+		opts = append(opts, WithStackTrace())
+	}
 	l := makeLog(ctx, err.Error(), LevelError, opts...)
 	logger.Log(Log(l))
 }
