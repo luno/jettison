@@ -6,14 +6,15 @@ import (
 	"net"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/errors/testgrpc"
 	"github.com/luno/jettison/errors/testpb"
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/jtest"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewOverGrpc(t *testing.T) {
@@ -87,7 +88,7 @@ func TestClientStacktrace(t *testing.T) {
 	expected := `[
   "github.com/luno/jettison/errors/testpb/test.pb.go:220 (*testClient).ErrorWithCode",
   "github.com/luno/jettison/errors/testgrpc/client.go:41",
-  "github.com/luno/jettison/errors/grpc_test.go:77 TestClientStacktrace",
+  "github.com/luno/jettison/errors/grpc_test.go:78 TestClientStacktrace",
   "testing/testing.go:X tRunner",
   "runtime/asm_X.s:X goexit"
 ]`
@@ -155,8 +156,6 @@ func TestWrappingGrpcError(t *testing.T) {
 	require.Equal(t, "grpc status error", jerr.Hops[0].Errors[0].Code)
 	require.Equal(t, "code", jerr.Hops[0].Errors[0].Parameters[0].Key)
 	require.Equal(t, "Unavailable", jerr.Hops[0].Errors[0].Parameters[0].Value)
-
-	require.Contains(t, jerr.Hops[0].Errors[1].Message, "rpc error: code = Unavailable desc = all SubConns are in TransientFailure")
 }
 
 func TestContextCanceled(t *testing.T) {

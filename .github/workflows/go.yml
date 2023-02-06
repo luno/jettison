@@ -1,0 +1,44 @@
+name: Go
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        go: ['1.18', '1.19']
+
+    services:
+      etcd:
+        image: bitnami/etcd:latest
+        env:
+          ALLOW_NONE_AUTHENTICATION: "yes"
+          ETCD_ADVERTISE_CLIENT_URLS: "http://localhost:2379"
+        ports:
+          - 2379
+
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go }}
+        id: go
+
+      - name: Vet
+        run: make vet
+
+      - name: Test
+        run: make test
+        env:
+          TESTING_ETCD_ENDPOINTS: "http://localhost:${{ job.services.etcd.ports[2379] }}"

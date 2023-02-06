@@ -3,22 +3,29 @@ module github.com/luno/jettison
 go 1.18
 
 require (
-	github.com/dave/dst v0.23.1
-	github.com/go-stack/stack v1.8.0
-	github.com/golang/protobuf v1.3.2
-	github.com/stretchr/testify v1.3.0
-	golang.org/x/exp/errors v0.0.0-20190306152737-a1d7652674e8
-	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
-	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7
-	google.golang.org/grpc v1.22.1
-	gopkg.in/yaml.v2 v2.2.4
+	github.com/dave/dst v0.27.0
+	github.com/go-stack/stack v1.8.1
+	github.com/golang/protobuf v1.5.2
+	github.com/stretchr/testify v1.8.1
+	golang.org/x/exp/errors v0.0.0-20220706164943-b4a6d9510983
+	golang.org/x/net v0.1.0
+	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f
+	google.golang.org/grpc v1.48.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
-	github.com/davecgh/go-spew v1.1.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/kr/pretty v0.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a // indirect
-	golang.org/x/text v0.3.0 // indirect
-	golang.org/x/tools v0.0.0-20190524140312-2c0ae7006135 // indirect
-	google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8 // indirect
+	github.com/rogpeppe/go-internal v1.8.1 // indirect
+	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
+	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/text v0.4.0 // indirect
+	golang.org/x/tools v0.1.12 // indirect
+	google.golang.org/genproto v0.0.0-20220711132622-b6f31b0ceb50 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
+	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

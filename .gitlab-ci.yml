@@ -1,0 +1,19 @@
+image: golang:latest
+
+stages:
+  - test
+
+vet:
+  stage: test
+  script:
+    - make vet
+
+unit_test:
+  parallel:
+    matrix:
+      - GO: ["1.18", "1.19"]
+  image:
+    name: golang:$GO
+  stage: test
+  script:
+    - make test
