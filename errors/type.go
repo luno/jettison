@@ -92,8 +92,9 @@ func (je *JettisonError) GRPCStatus() *status.Status {
 }
 
 // Format satisfies the fmt.Formatter interface providing customizable formatting:
-//   %s, %v formats all wrapped error messages concatenated with ": ".
-//   %+v, %#v does the above but also adds error parameters; "(k1=v1, k2=v2)".
+//
+//	%s, %v formats all wrapped error messages concatenated with ": ".
+//	%+v, %#v does the above but also adds error parameters; "(k1=v1, k2=v2)".
 func (je *JettisonError) Format(state fmt.State, c rune) {
 	withParams := state.Flag(int('#')) || state.Flag(int('+'))
 	p := &printer{Writer: state, detailed: withParams}

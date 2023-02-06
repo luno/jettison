@@ -96,11 +96,7 @@ func (e *Error) Clone() Error {
 	res := *e
 
 	res.Parameters = make([]KeyValue, len(e.Parameters))
-	if e.Parameters != nil {
-		for _, p := range e.Parameters {
-			res.Parameters = append(res.Parameters, p)
-		}
-	}
+	copy(res.Parameters, e.Parameters)
 
 	return res
 }
