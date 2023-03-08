@@ -46,6 +46,10 @@ func WithStackTrace(trace []string) jettison.OptionFunc {
 //
 // See https://github.com/grpc/grpc-go/blob/master/status/status.go#L130.
 type JettisonError struct {
+	message  string
+	err      error
+	metadata models.Metadata
+
 	Hops []models.Hop
 
 	// If we've wrapped a non-Jettison error, we lose interop with other error
@@ -167,6 +171,9 @@ func (je *JettisonError) LatestError() (models.Error, bool) {
 // Clone returns a copy of the jettison error that can be safely mutated.
 func (je *JettisonError) Clone() *JettisonError {
 	res := JettisonError{
+		message:     je.message,
+		err:         je.err,
+		metadata:    je.metadata,
 		OriginalErr: je.OriginalErr,
 	}
 

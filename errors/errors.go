@@ -2,11 +2,14 @@ package errors
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
+
+	"golang.org/x/xerrors"
 
 	"github.com/luno/jettison"
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/models"
-	"golang.org/x/xerrors"
 )
 
 // WithBinary sets the binary of the current hop to the given value.
@@ -42,11 +45,12 @@ func WithCode(code string) jettison.OptionFunc {
 // stacktrace to be added when wrapping them.
 //
 // Example
-//  var ErrFoo = errors.New("foo", errors.WithoutStackTrace()) // Clear useless init-time stack trace.
 //
-//  func bar() error {
-//    return errors.Wrap(ErrFoo, "bar") // Wrapping ErrFoo adds a proper stack trace.
-//  }
+//	var ErrFoo = errors.New("foo", errors.WithoutStackTrace()) // Clear useless init-time stack trace.
+//
+//	func bar() error {
+//	  return errors.Wrap(ErrFoo, "bar") // Wrapping ErrFoo adds a proper stack trace.
+//	}
 func WithoutStackTrace() jettison.OptionFunc {
 	return func(d jettison.Details) {
 		h, ok := d.(*models.Hop)
@@ -64,13 +68,16 @@ func New(msg string, ol ...jettison.Option) error {
 	h.Errors = []models.Error{
 		internal.NewError(msg),
 	}
+	md := newMetadata()
 
 	for _, o := range ol {
 		o.Apply(&h)
 	}
 
 	return &JettisonError{
-		Hops: []models.Hop{h},
+		message:  msg,
+		metadata: md,
+		Hops:     []models.Hop{h},
 	}
 }
 
@@ -84,6 +91,9 @@ func Wrap(err error, msg string, ol ...jettison.Option) error {
 	je, ok := err.(*JettisonError)
 	if !ok {
 		je = &JettisonError{
+			message:  msg,
+			metadata: newMetadata(),
+
 			Hops:        []models.Hop{internal.NewHop()},
 			OriginalErr: err,
 		}
@@ -94,7 +104,9 @@ func Wrap(err error, msg string, ol ...jettison.Option) error {
 	} else {
 		// We don't want to mutate everyone's copy of the error.
 		je = je.Clone()
+		je.message = msg
 	}
+	je.err = err
 
 	// If the current hop doesn't yet have a stack trace, add one.
 	if je.Hops[0].StackTrace == nil {
@@ -112,6 +124,16 @@ func Wrap(err error, msg string, ol ...jettison.Option) error {
 	}
 
 	return je
+}
+
+func newMetadata() models.Metadata {
+	return models.Metadata{
+		Hops: []models.Hop{{
+			Binary:     filepath.Base(os.Args[0]),
+			StackTrace: internal.GetStackTrace(3),
+		}},
+		KV: make(map[string]string),
+	}
 }
 
 // Is is an alias of the standard library's errors.Is() function.

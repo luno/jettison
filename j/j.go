@@ -28,8 +28,8 @@ func KS(key string, value string) jettison.Option {
 // like slices, maps, structs are not printed since it is considered
 // bad practice.
 //
-//  Usage:
-//    log.InfoCtx(ctx, "msg", j.MKV{"k1": 1, "k2": "v"})
+//	Usage:
+//	  log.InfoCtx(ctx, "msg", j.MKV{"k1": 1, "k2": "v"})
 type MKV map[string]interface{}
 
 func (m MKV) Apply(details jettison.Details) {
@@ -40,8 +40,8 @@ func (m MKV) Apply(details jettison.Details) {
 
 // MKS is a multi jettison key value string option.
 //
-//  Usage:
-//    log.InfoCtx(ctx, "msg", j.MKS{"k1": "v1", "k2": "v2"})
+//	Usage:
+//	  log.InfoCtx(ctx, "msg", j.MKS{"k1": "v1", "k2": "v2"})
 type MKS map[string]string
 
 func (m MKS) Apply(details jettison.Details) {
