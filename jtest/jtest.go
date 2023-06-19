@@ -17,7 +17,7 @@ import (
 // Assert asserts that the specified error matches the expected one. The test
 // will be marked failed if it does not.
 //
-//    jtest.Assert(t, ErrWhatIExpect, err)
+//	jtest.Assert(t, ErrWhatIExpect, err)
 func Assert(t testing.TB, expected, actual error, msgs ...interface{}) bool {
 	t.Helper()
 
@@ -25,6 +25,9 @@ func Assert(t testing.TB, expected, actual error, msgs ...interface{}) bool {
 		t.Error(failLog(expected, actual, msgs))
 		return false
 	}
+
+	assertJettisonErrors(t, expected, actual, msgs...)
+
 	return true
 }
 
@@ -32,7 +35,7 @@ func Assert(t testing.TB, expected, actual error, msgs ...interface{}) bool {
 // will be marked failed if it does not. It also stops test execution when it
 // fails.
 //
-//    jtest.Require(t, ErrWhatIExpect, err)
+//	jtest.Require(t, ErrWhatIExpect, err)
 func Require(t testing.TB, expected, actual error, msg ...interface{}) {
 	t.Helper()
 
@@ -41,11 +44,49 @@ func Require(t testing.TB, expected, actual error, msg ...interface{}) {
 	}
 }
 
+func assertJettisonErrors(t testing.TB, expected, actual error, msgs ...interface{}) {
+	jExpErr, expIsJError := expected.(*errors.JettisonError)
+	if !expIsJError {
+		// If expected error is not a jettison error, no need to compare further.
+		return
+	}
+
+	expectedKeys := jExpErr.GetKeys()
+	if len(expectedKeys) == 0 {
+		// If we have no keys in the expected error, then we don't want to compare further.
+		return
+	}
+
+	jActErr, actIsJError := actual.(*errors.JettisonError)
+	if !actIsJError {
+		// If actual error is not a jettison error, no need to compare further.
+		return
+	}
+
+	// If both errs are jettison errors, we want to assert all the expected jettison keys are present in the actual error.
+	for _, expKey := range expectedKeys {
+		expValue, present := jActErr.GetKey(expKey)
+		if !present {
+			t.Fatalf("expected key '%v' present in GetKeys(), but was not found with GetKey()", expKey)
+		}
+
+		actualValue, present := jActErr.GetKey(expKey)
+		if !present {
+			t.Error(failJKeyNotPresent(actual, msgs))
+		}
+
+		if expValue != actualValue {
+			t.Error(failJKeyValuesMismatch(expKey, expValue, actualValue, msgs))
+			return
+		}
+	}
+}
+
 // AssertNil asserts that the specified error is nil. The test will be marked
 // failed if it does not. It is shorthand for `jtest.Assert(t, nil, err)`,
 // although it provides slightly clearer failure output.
 //
-//    jtest.AssertNil(t, err)
+//	jtest.AssertNil(t, err)
 func AssertNil(t testing.TB, actual error, msgs ...interface{}) bool {
 	t.Helper()
 
@@ -61,7 +102,7 @@ func AssertNil(t testing.TB, actual error, msgs ...interface{}) bool {
 // `jtest.Require(t, nil, err)`, although it provides slightly clearer failure
 // output.
 //
-//    jtest.RequireNil(t, err)
+//	jtest.RequireNil(t, err)
 func RequireNil(t testing.TB, actual error, msg ...interface{}) {
 	t.Helper()
 
@@ -81,6 +122,21 @@ func failLog(expected, actual error, msgs ...interface{}) string {
 func failNilLog(actual error, msgs ...interface{}) string {
 	l := fmt.Sprintf("Unexpected non-nil error:\n"+
 		"actual:   %+v\n", pretty(actual))
+
+	return l + messageFromMsgs(msgs...)
+}
+
+func failJKeyNotPresent(actual error, msgs ...interface{}) string {
+	l := fmt.Sprintf("Expected jettison key not present in actual error:\n"+
+		"actual:   %+v\n", pretty(actual))
+
+	return l + messageFromMsgs(msgs...)
+}
+
+func failJKeyValuesMismatch(key, expected, actual string, msgs ...interface{}) string {
+	l := fmt.Sprintf("jettison values differ for key '%v':\n"+
+		"expected: %+v\n"+
+		"actual:   %+v\n", key, expected, actual)
 
 	return l + messageFromMsgs(msgs...)
 }

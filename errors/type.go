@@ -329,6 +329,20 @@ func (je *JettisonError) GetKey(key string) (string, bool) {
 	return "", false
 }
 
+// GetKeys returns all the jettison keys in the error chain.
+func (je *JettisonError) GetKeys() []string {
+	keys := make([]string, 0)
+	for _, h := range je.Hops {
+		for _, e := range h.Errors {
+			for _, p := range e.Parameters {
+				keys = append(keys, p.Key)
+			}
+		}
+	}
+
+	return keys
+}
+
 // FromStatus unmarshals a *grpc.Status into a jettison error object,
 // returning a nil error if and only if no unexpected details were found on the
 // status.
