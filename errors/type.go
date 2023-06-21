@@ -329,6 +329,21 @@ func (je *JettisonError) GetKey(key string) (string, bool) {
 	return "", false
 }
 
+// GetKeyValues returns all the jettison keys in the error chain.
+// Note that if two errors have the same key, only the earliest will be stored.
+func (je *JettisonError) GetKeyValues() map[string]string {
+	keyValues := make(map[string]string)
+	for _, h := range je.Hops {
+		for _, e := range h.Errors {
+			for _, p := range e.Parameters {
+				keyValues[p.Key] = p.Value
+			}
+		}
+	}
+
+	return keyValues
+}
+
 // FromStatus unmarshals a *grpc.Status into a jettison error object,
 // returning a nil error if and only if no unexpected details were found on the
 // status.
@@ -397,5 +412,7 @@ func (p *printer) Detail() bool {
 	return p.detailed
 }
 
-var _ fmt.Formatter = (*JettisonError)(nil)
-var _ xerrors.Printer = (*printer)(nil)
+var (
+	_ fmt.Formatter   = (*JettisonError)(nil)
+	_ xerrors.Printer = (*printer)(nil)
+)
