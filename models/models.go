@@ -43,13 +43,26 @@ func (l *Log) SetSource(src string) {
 
 // Metadata is the extra info available at each level of the error tree
 type Metadata struct {
-	// Hops is a list of binaries that this error has been through
-	Hops []Hop `json:"hops"`
+	// Trace is info on the source of the error
+	Trace Hop `json:"trace"`
 	// Code is an identifier for the type of error
 	Code string `json:"code"`
-	// KV is a basic map of extra info in the error
-	KV map[string]string `json:"kv"`
+	// KV is a list of extra info in the error
+	KV []KeyValue `json:"kv"`
 }
+
+func (m *Metadata) SetKey(key, value string) {
+	if m == nil {
+		return
+	}
+	m.KV = append(m.KV, KeyValue{
+		Key:   key,
+		Value: value,
+	})
+}
+
+// SetSource updates the source of the most recently added error in the hop.
+func (m *Metadata) SetSource(string) {}
 
 type Hop struct {
 	Binary     string   `json:"binary" protocp:"1"`

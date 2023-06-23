@@ -186,10 +186,7 @@ func checkFile(file string, fp formatParams, rewrite bool) (checkResult, error) 
 				msg, err := checkInstance(jettisonPkg, pkg, varName, ce, fp)
 				if err != nil {
 					return checkResult{}, errors.Wrap(err, "error checking instance",
-						j.MKV{
-							"pos": fmt.Sprintf("%+v", ce),
-							"var": varName,
-						})
+						j.MKV{"file": file, "var": varName})
 				}
 				if msg != "" {
 					msgs = append(msgs, fmt.Sprintf("%s: %s: %s (fixed)", file, varName, msg))

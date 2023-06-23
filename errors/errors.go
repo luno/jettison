@@ -15,12 +15,12 @@ import (
 // WithBinary sets the binary of the current hop to the given value.
 func WithBinary(bin string) jettison.OptionFunc {
 	return func(d jettison.Details) {
-		h, ok := d.(*models.Hop)
-		if !ok {
-			return
+		switch det := d.(type) {
+		case *models.Hop:
+			det.Binary = bin
+		case *models.Metadata:
+			det.Trace.Binary = bin
 		}
-
-		h.Binary = bin
 	}
 }
 
@@ -30,12 +30,14 @@ func WithBinary(bin string) jettison.OptionFunc {
 // Note the default code (error message) doesn't provide strong unique guarantees.
 func WithCode(code string) jettison.OptionFunc {
 	return func(d jettison.Details) {
-		h, ok := d.(*models.Hop)
-		if !ok || len(h.Errors) == 0 {
-			return
+		switch det := d.(type) {
+		case *models.Hop:
+			if len(det.Errors) > 0 {
+				det.Errors[0].Code = code
+			}
+		case *models.Metadata:
+			det.Code = code
 		}
-
-		h.Errors[0].Code = code
 	}
 }
 
@@ -53,12 +55,14 @@ func WithCode(code string) jettison.OptionFunc {
 //	}
 func WithoutStackTrace() jettison.OptionFunc {
 	return func(d jettison.Details) {
-		h, ok := d.(*models.Hop)
-		if !ok || len(h.Errors) > 1 {
-			return
+		switch det := d.(type) {
+		case *models.Hop:
+			if len(det.Errors) <= 1 {
+				det.StackTrace = nil
+			}
+		case *models.Metadata:
+			det.Trace = models.Hop{}
 		}
-
-		h.StackTrace = nil
 	}
 }
 
@@ -72,6 +76,7 @@ func New(msg string, ol ...jettison.Option) error {
 
 	for _, o := range ol {
 		o.Apply(&h)
+		o.Apply(&md)
 	}
 
 	return &JettisonError{
@@ -91,9 +96,6 @@ func Wrap(err error, msg string, ol ...jettison.Option) error {
 	je, ok := err.(*JettisonError)
 	if !ok {
 		je = &JettisonError{
-			message:  msg,
-			metadata: newMetadata(),
-
 			Hops:        []models.Hop{internal.NewHop()},
 			OriginalErr: err,
 		}
@@ -103,10 +105,9 @@ func Wrap(err error, msg string, ol ...jettison.Option) error {
 		}
 	} else {
 		// We don't want to mutate everyone's copy of the error.
+		// When we only use nested errors, this stage will not be necessary, we'll always create a new struct
 		je = je.Clone()
-		je.message = msg
 	}
-	je.err = err
 
 	// If the current hop doesn't yet have a stack trace, add one.
 	if je.Hops[0].StackTrace == nil {
@@ -119,21 +120,61 @@ func Wrap(err error, msg string, ol ...jettison.Option) error {
 		je.Hops[0].Errors...,
 	)
 
+	var md models.Metadata
+	// We only need to add a trace when wrapping sentinel or non-jettison errors
+	// for the first time
+	if _, has := hasTrace(err); !has {
+		md.Trace = trace()
+	}
+
 	for _, o := range ol {
 		o.Apply(&je.Hops[0])
+		o.Apply(&md)
 	}
+
+	// For the nested wrapping we're only interested in wrapping this error message,
+	// so we can overwrite the nested fields.
+	je.message = msg
+	je.err = err
+	je.metadata = md
 
 	return je
 }
 
 func newMetadata() models.Metadata {
 	return models.Metadata{
-		Hops: []models.Hop{{
+		Trace: models.Hop{
 			Binary:     filepath.Base(os.Args[0]),
 			StackTrace: internal.GetStackTrace(3),
-		}},
-		KV: make(map[string]string),
+		},
 	}
+}
+
+func trace() models.Hop {
+	return models.Hop{
+		Binary: filepath.Base(os.Args[0]),
+		// Skip GetStackTrace, trace, and New/Wrap
+		StackTrace: internal.GetStackTrace(3),
+	}
+}
+
+type unwrapper interface {
+	Unwrap() error
+}
+
+func hasTrace(err error) (models.Hop, bool) {
+	e := err
+	for e != nil {
+		if je, ok := e.(*JettisonError); ok && je.metadata.Trace.Binary != "" {
+			return je.metadata.Trace, true
+		}
+		if un, ok := e.(unwrapper); ok {
+			e = un.Unwrap()
+		} else {
+			break
+		}
+	}
+	return models.Hop{}, false
 }
 
 // Is is an alias of the standard library's errors.Is() function.

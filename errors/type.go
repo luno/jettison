@@ -30,12 +30,12 @@ var (
 // WithStackTrace sets the stack trace of the current hop to the given value.
 func WithStackTrace(trace []string) jettison.OptionFunc {
 	return func(d jettison.Details) {
-		h, ok := d.(*models.Hop)
-		if !ok {
-			return
+		switch det := d.(type) {
+		case *models.Hop:
+			det.StackTrace = trace
+		case *models.Metadata:
+			det.Trace.StackTrace = trace
 		}
-
-		h.StackTrace = trace
 	}
 }
 

@@ -7,9 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/luno/jettison"
 	"github.com/luno/jettison/errors"
-	"github.com/stretchr/testify/require"
+	"github.com/luno/jettison/models"
 )
 
 // fmtonly tests sprint if fmt.Formatter but not fmt.Stringer.
@@ -161,17 +164,17 @@ var tests = []struct {
 	},
 }
 
-var ErrFoo = errors.New("foo", C("123"))
-
 func TestC(t *testing.T) {
-	je := ErrFoo.(*errors.JettisonError)
+	var errFoo = errors.New("foo", C("123"))
+
+	je := errFoo.(*errors.JettisonError)
 	require.Empty(t, je.Hops[0].StackTrace)
 	require.Equal(t, "123", je.Hops[0].Errors[0].Code)
 
-	err := errors.Wrap(ErrFoo, "wrap adds stacktrace")
+	err := errors.Wrap(errFoo, "wrap adds stacktrace")
 	je = err.(*errors.JettisonError)
 	require.NotEmpty(t, je.Hops[0].StackTrace)
-	require.True(t, errors.Is(err, ErrFoo))
+	require.True(t, errors.Is(err, errFoo))
 }
 
 type details struct {
@@ -231,6 +234,35 @@ func TestOptions(t *testing.T) {
 				}),
 				fmt.Sprint(kv),
 			)
+		})
+	}
+}
+
+func TestMetadata(t *testing.T) {
+	testCases := []struct {
+		name    string
+		options []jettison.Option
+		expMeta models.Metadata
+	}{
+		{name: "kv metadata",
+			options: []jettison.Option{MKV{"test": "value"}},
+			expMeta: models.Metadata{KV: []models.KeyValue{
+				{Key: "test", Value: "value"},
+			}},
+		},
+		{name: "code",
+			options: []jettison.Option{C("onetwothree")},
+			expMeta: models.Metadata{Code: "onetwothree"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var md models.Metadata
+			for _, o := range tc.options {
+				o.Apply(&md)
+			}
+			assert.Equal(t, tc.expMeta, md)
 		})
 	}
 }

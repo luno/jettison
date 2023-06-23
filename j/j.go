@@ -30,7 +30,7 @@ func KS(key string, value string) jettison.Option {
 //
 //	Usage:
 //	  log.InfoCtx(ctx, "msg", j.MKV{"k1": 1, "k2": "v"})
-type MKV map[string]interface{}
+type MKV map[string]any
 
 func (m MKV) Apply(details jettison.Details) {
 	for key, value := range m {
