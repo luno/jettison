@@ -190,5 +190,4 @@ func TestContextCanceled(t *testing.T) {
 		jtest.Require(t, context.Canceled, err)
 		break
 	}
-
 }

@@ -2,6 +2,5 @@
 // that use Jettison to communicate structed errors. You can run the example
 // with the following command:
 //
-//   `go run github.com/luno/jettison/example`
-//
+//	`go run github.com/luno/jettison/example`
 package main

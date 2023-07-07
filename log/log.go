@@ -52,7 +52,6 @@ func WithError(err error) jettison.OptionFunc {
 		if len(codes) > 0 {
 			l.ErrorCode = &codes[0]
 		}
-
 	}
 }
 

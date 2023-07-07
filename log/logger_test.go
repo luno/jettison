@@ -3,10 +3,11 @@ package log_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/luno/jettison"
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/log"
-	"github.com/stretchr/testify/assert"
 )
 
 type testLogger struct {
@@ -28,7 +29,6 @@ func TestAddLoggers(t *testing.T) {
 
 	assert.Equal(t, "message,info,some,param,", toStr(tl.logs[0]))
 	assert.Equal(t, "errMsg,error,", toStr(tl.logs[1]))
-
 }
 
 func toStr(l log.Log) string {

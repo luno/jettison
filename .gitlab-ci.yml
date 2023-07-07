@@ -8,6 +8,11 @@ vet:
   script:
     - make vet
 
+check_fmt:
+  stage: test
+  script:
+    - make checkfmt
+
 unit_test:
   parallel:
     matrix:

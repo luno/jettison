@@ -3,14 +3,15 @@ package interceptors
 import (
 	"context"
 
-	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/internal"
-	"github.com/luno/jettison/j"
-	"github.com/luno/jettison/models"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+
+	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/internal"
+	"github.com/luno/jettison/j"
+	"github.com/luno/jettison/models"
 )
 
 // UnaryClientInterceptor returns an interceptor that inserts a new hop
@@ -18,8 +19,8 @@ import (
 // jettison metadata in the context into gRPC metadata on the call.
 func UnaryClientInterceptor(ctx context.Context, method string,
 	req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker,
-	opts ...grpc.CallOption) error {
-
+	opts ...grpc.CallOption,
+) error {
 	err := invoker(withMetadata(ctx), method, req, reply, cc, opts...)
 	return intercept(err)
 }
@@ -30,8 +31,8 @@ func UnaryClientInterceptor(ctx context.Context, method string,
 // wraps the returned grpc.ClientStream to support Jettison errors.
 func StreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc,
 	cc *grpc.ClientConn, method string, streamer grpc.Streamer,
-	opts ...grpc.CallOption) (grpc.ClientStream, error) {
-
+	opts ...grpc.CallOption,
+) (grpc.ClientStream, error) {
 	res, err := streamer(withMetadata(ctx), desc, cc, method, opts...)
 	if err != nil {
 		return nil, intercept(err)
@@ -44,16 +45,16 @@ func StreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc,
 // gRPC metadata into the context passed to the server.
 func UnaryServerInterceptor(ctx context.Context, req interface{},
 	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (
-	interface{}, error) {
-
+	interface{}, error,
+) {
 	return handler(fromMetadata(ctx), req)
 }
 
 // StreamServerInterceptor returns an interceptor that unpacks any jettison
 // gRPC metadata into the context passed to the server.
 func StreamServerInterceptor(srv interface{}, ss grpc.ServerStream,
-	info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-
+	info *grpc.StreamServerInfo, handler grpc.StreamHandler,
+) error {
 	return handler(srv, &serverStream{ServerStream: ss})
 }
 

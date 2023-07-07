@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"go/token"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"strings"
@@ -82,7 +81,7 @@ func main() {
 			fmt.Println("  ", msg)
 		}
 		if *rewrite {
-			err := ioutil.WriteFile(file, res.out, 0644)
+			err := os.WriteFile(file, res.out, 0o644)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%+v\n", err)
 				os.Exit(statusError)

@@ -165,7 +165,7 @@ var tests = []struct {
 }
 
 func TestC(t *testing.T) {
-	var errFoo = errors.New("foo", C("123"))
+	errFoo := errors.New("foo", C("123"))
 
 	je := errFoo.(*errors.JettisonError)
 	require.Empty(t, je.Hops[0].StackTrace)
@@ -244,13 +244,15 @@ func TestMetadata(t *testing.T) {
 		options []jettison.Option
 		expMeta models.Metadata
 	}{
-		{name: "kv metadata",
+		{
+			name:    "kv metadata",
 			options: []jettison.Option{MKV{"test": "value"}},
 			expMeta: models.Metadata{KV: []models.KeyValue{
 				{Key: "test", Value: "value"},
 			}},
 		},
-		{name: "code",
+		{
+			name:    "code",
 			options: []jettison.Option{C("onetwothree")},
 			expMeta: models.Metadata{Code: "onetwothree"},
 		},

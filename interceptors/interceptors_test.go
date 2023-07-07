@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/luno/jettison/jtest"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/luno/jettison/jtest"
 )
 
 func TestErrIntercept(t *testing.T) {
@@ -16,11 +17,13 @@ func TestErrIntercept(t *testing.T) {
 		expErr  error
 	}{
 		{name: "nil is nil"},
-		{name: "grpc status canceled gets context error",
+		{
+			name:    "grpc status canceled gets context error",
 			testErr: status.Error(codes.Canceled, ""),
 			expErr:  context.Canceled,
 		},
-		{name: "grpc status deadline exceeded gets context error",
+		{
+			name:    "grpc status deadline exceeded gets context error",
 			testErr: status.Error(codes.DeadlineExceeded, ""),
 			expErr:  context.DeadlineExceeded,
 		},

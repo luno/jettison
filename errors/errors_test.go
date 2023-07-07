@@ -85,42 +85,48 @@ func TestWrap(t *testing.T) {
 			expectedErrorCount: 2,
 			expectedMessage:    "errors: second: errors: first",
 		},
-		{name: "wrap empty message",
+		{
+			name:               "wrap empty message",
 			err:                New("test value"),
 			msg:                "",
 			expectedHopsCount:  1,
 			expectedErrorCount: 2,
 			expectedMessage:    "test value",
 		},
-		{name: "wrap empty message, with stdlib error",
+		{
+			name:               "wrap empty message, with stdlib error",
 			err:                stdlib_errors.New("test value"),
 			msg:                "",
 			expectedHopsCount:  1,
 			expectedErrorCount: 2,
 			expectedMessage:    "test value",
 		},
-		{name: "wrap known error",
+		{
+			name:               "wrap known error",
 			err:                io.EOF,
 			msg:                "end of file",
 			expectedHopsCount:  1,
 			expectedErrorCount: 2,
 			expectedMessage:    "end of file: EOF",
 		},
-		{name: "wrap options message, ignores options",
+		{
+			name:               "wrap options message, ignores options",
 			err:                New("test value", jettison.WithKeyValueString("key", "value")),
 			msg:                "hello",
 			expectedHopsCount:  1,
 			expectedErrorCount: 2,
 			expectedMessage:    "hello: test value",
 		},
-		{name: "wrap wrapped message",
+		{
+			name:               "wrap wrapped message",
 			err:                Wrap(New("test value"), "world"),
 			msg:                "hello",
 			expectedHopsCount:  1,
 			expectedErrorCount: 3,
 			expectedMessage:    "hello: world: test value",
 		},
-		{name: "double empty wrapped message",
+		{
+			name:               "double empty wrapped message",
 			err:                Wrap(New("test value"), ""),
 			msg:                "",
 			expectedHopsCount:  1,
@@ -393,32 +399,38 @@ func TestErrorMetadata(t *testing.T) {
 		expMetadata models.Metadata
 		expNoTrace  bool
 	}{
-		{name: "new kv",
-			err: New("one", jettison.WithKeyValueString("test", "val")),
+		{
+			name: "new kv",
+			err:  New("one", jettison.WithKeyValueString("test", "val")),
 			expMetadata: models.Metadata{
 				KV: []models.KeyValue{{Key: "test", Value: "val"}},
 			},
 		},
-		{name: "new code",
-			err: New("one", WithCode("code")),
+		{
+			name: "new code",
+			err:  New("one", WithCode("code")),
 			expMetadata: models.Metadata{
 				Code: "code",
 			},
 		},
-		{name: "without stacktrace",
+		{
+			name:       "without stacktrace",
 			err:        New("one", WithoutStackTrace()),
 			expNoTrace: true,
 		},
-		{name: "wrap non-jettison, gets a trace",
-			err: Wrap(io.EOF, "hi"),
+		{
+			name: "wrap non-jettison, gets a trace",
+			err:  Wrap(io.EOF, "hi"),
 		},
-		{name: "wrap non-jettison, with kv",
-			err: Wrap(io.EOF, "hi", jettison.WithKeyValueString("key", "value")),
+		{
+			name: "wrap non-jettison, with kv",
+			err:  Wrap(io.EOF, "hi", jettison.WithKeyValueString("key", "value")),
 			expMetadata: models.Metadata{
 				KV: []models.KeyValue{{Key: "key", Value: "value"}},
 			},
 		},
-		{name: "wrapped with other options",
+		{
+			name: "wrapped with other options",
 			err: Wrap(
 				New("inner", jettison.WithKeyValueString("inner", "inner_value")),
 				"outer",

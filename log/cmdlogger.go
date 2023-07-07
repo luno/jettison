@@ -6,9 +6,10 @@ import (
 	"log"
 	"strings"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/models"
-	"gopkg.in/yaml.v2"
 )
 
 // newCmdLogger returns a stdout human friendly command line logger
@@ -73,7 +74,8 @@ func makeMsg(l Log) string {
 
 // conciseSource returns the source with the leading package
 // import path abbreviated to first letters only.
-//   github.com/luno/jettison/log/log.go:136 > g/l/j/l/log.go:136
+//
+//	github.com/luno/jettison/log/log.go:136 > g/l/j/l/log.go:136
 func conciseSource(source string) string {
 	split := strings.Split(source, "/")
 	var res []string

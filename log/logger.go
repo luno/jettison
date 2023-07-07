@@ -39,7 +39,8 @@ func SetCmdLoggerForTesting(t testing.TB, w io.Writer) {
 }
 
 func SetDefaultLoggerForTesting(t testing.TB, w io.Writer,
-	opts ...jettison.Option) {
+	opts ...jettison.Option,
+) {
 	cached := logger
 
 	l := newJSONLogger(w, opts...)

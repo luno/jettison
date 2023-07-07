@@ -303,19 +303,23 @@ func TestGRPCStatus(t *testing.T) {
 		err       error
 		expStatus *gstatus.Status
 	}{
-		{name: "new error",
+		{
+			name:      "new error",
 			err:       errors.New("hello"),
 			expStatus: gstatus.New(codes.Unknown, "hello"),
 		},
-		{name: "wrapped deadline exceeded error",
+		{
+			name:      "wrapped deadline exceeded error",
 			err:       errors.Wrap(context.DeadlineExceeded, ""),
 			expStatus: gstatus.New(codes.DeadlineExceeded, ""),
 		},
-		{name: "wrapped canceled error",
+		{
+			name:      "wrapped canceled error",
 			err:       errors.Wrap(context.Canceled, ""),
 			expStatus: gstatus.New(codes.Canceled, ""),
 		},
-		{name: "double wrapped",
+		{
+			name:      "double wrapped",
 			err:       errors.Wrap(errors.Wrap(context.Canceled, ""), ""),
 			expStatus: gstatus.New(codes.Canceled, ""),
 		},

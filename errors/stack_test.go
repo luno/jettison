@@ -3,13 +3,14 @@ package errors
 import (
 	"encoding/json"
 	"flag"
-	"io/ioutil"
+	"os"
 	"path"
 	"testing"
 
-	"github.com/luno/jettison/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/luno/jettison/internal"
 )
 
 var writeGoldenFiles = flag.Bool("write-golden-files", false,
@@ -43,14 +44,14 @@ func verifyOutput(t *testing.T, goldenFileName string, output []byte) {
 	goldenFilePath := path.Join("testdata", goldenFileName+".golden")
 
 	if *writeGoldenFiles {
-		err := ioutil.WriteFile(goldenFilePath, output, 0777)
+		err := os.WriteFile(goldenFilePath, output, 0o777)
 		require.NoError(t, err)
 
 		// Nothing to check if we're writing.
 		return
 	}
 
-	contents, err := ioutil.ReadFile(goldenFilePath)
+	contents, err := os.ReadFile(goldenFilePath)
 	require.NoError(t, err, "Error reading golden file %s: %v", goldenFilePath, err)
 
 	assert.Equal(t, string(contents), string(output))

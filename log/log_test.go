@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"flag"
-	"io/ioutil"
 	stdlib_log "log"
+	"os"
 	"path"
 	"testing"
 
@@ -183,14 +183,14 @@ func verifyOutput(t *testing.T, goldenFileName string, output []byte) {
 	goldenFilePath := path.Join("testdata", goldenFileName+".golden")
 
 	if *writeGoldenFiles {
-		err := ioutil.WriteFile(goldenFilePath, output, 0777)
+		err := os.WriteFile(goldenFilePath, output, 0o777)
 		require.NoError(t, err)
 
 		// Nothing to check if we're writing.
 		return
 	}
 
-	contents, err := ioutil.ReadFile(goldenFilePath)
+	contents, err := os.ReadFile(goldenFilePath)
 	require.NoError(t, err, "Error reading golden file %s: %v", goldenFilePath, err)
 
 	assert.Equal(t, string(contents), string(output))

@@ -4,12 +4,13 @@ import (
 	"context"
 	"net"
 
+	"google.golang.org/grpc"
+
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/example/examplepb"
 	"github.com/luno/jettison/interceptors"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/log"
-	"google.golang.org/grpc"
 )
 
 var _ examplepb.HopperServer = (*Server)(nil)
@@ -25,8 +26,8 @@ type Server struct {
 // hops, and then errors. This illustrates how errors are segmented by gRPC
 // call in Jettison.
 func (srv *Server) Hop(ctx context.Context, req *examplepb.HopRequest) (
-	*examplepb.Empty, error) {
-
+	*examplepb.Empty, error,
+) {
 	log.Info(ctx, "serverclient: Received a Hop request from a client")
 
 	if req.Hops <= 0 {

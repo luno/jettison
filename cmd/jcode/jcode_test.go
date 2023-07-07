@@ -3,10 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/luno/jettison/jtest"
 )
 
 var writeGoldenFiles = flag.Bool("write-golden-files", false,
@@ -57,12 +59,13 @@ func TestInOut(t *testing.T) {
 func verifyOutput(t *testing.T, golden string, output []byte) {
 	flag.Parse()
 	if *writeGoldenFiles {
-		ioutil.WriteFile(golden, output, 0644)
+		err := os.WriteFile(golden, output, 0o644)
+		jtest.RequireNil(t, err)
 		// Nothing to check if we're writing.
 		return
 	}
 
-	contents, err := ioutil.ReadFile(golden)
+	contents, err := os.ReadFile(golden)
 	if err != nil {
 		t.Errorf("Error reading golden file %s: %v", golden, err)
 	}

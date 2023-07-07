@@ -4,16 +4,19 @@ import (
 	"io"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
-	"github.com/stretchr/testify/require"
 )
 
-var errTest = errors.New("test error", j.C("ERR_48026e342952be11"))
-var errWrapped = errors.Wrap(io.ErrClosedPipe, "wrapping text")
+var (
+	errTest    = errors.New("test error", j.C("ERR_48026e342952be11"))
+	errWrapped = errors.Wrap(io.ErrClosedPipe, "wrapping text")
+)
 
 func TestAssert(t *testing.T) {
-	var errTest = errors.New("test error")
+	errTest := errors.New("test error")
 
 	tt := []struct {
 		name             string
@@ -44,7 +47,7 @@ func TestAssert(t *testing.T) {
 }
 
 func TestRequire(t *testing.T) {
-	var errTest = errors.New("test error")
+	errTest := errors.New("test error")
 
 	tt := []struct {
 		name             string
@@ -139,7 +142,7 @@ func TestPretty(t *testing.T) {
 			expected: `test error
 - code: ERR_48026e342952be11
   message: test error
-  source: github.com/luno/jettison/jtest/j_test.go:12
+  source: github.com/luno/jettison/jtest/j_test.go:14
   parameters: []
 `,
 		},
@@ -149,7 +152,7 @@ func TestPretty(t *testing.T) {
 			expected: `wrapping text: io: read/write on closed pipe
 - code: wrapping text
   message: wrapping text
-  source: github.com/luno/jettison/jtest/j_test.go:13
+  source: github.com/luno/jettison/jtest/j_test.go:15
   parameters: []
 - code: ""
   message: 'io: read/write on closed pipe'

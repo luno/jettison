@@ -35,8 +35,10 @@ func WithSource(src string) OptionFunc {
 	}
 }
 
-var allowedChars = "0123456789abcdefghijklmnopqrstuvwxyz-_."
-var allowedCharsMap map[rune]bool
+var (
+	allowedChars    = "0123456789abcdefghijklmnopqrstuvwxyz-_."
+	allowedCharsMap map[rune]bool
+)
 
 func init() {
 	allowedCharsMap = make(map[rune]bool)
