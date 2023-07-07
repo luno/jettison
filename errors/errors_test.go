@@ -447,15 +447,15 @@ func TestErrorMetadata(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			je := tc.err.(*JettisonError)
 			if tc.expNoTrace {
-				assert.Empty(t, je.metadata.Trace.Binary)
-				assert.Empty(t, je.metadata.Trace.StackTrace)
+				assert.Empty(t, je.Metadata.Trace.Binary)
+				assert.Empty(t, je.Metadata.Trace.StackTrace)
 			} else {
-				assert.NotEmpty(t, je.metadata.Trace.Binary)
-				assert.NotEmpty(t, je.metadata.Trace.StackTrace)
+				assert.NotEmpty(t, je.Metadata.Trace.Binary)
+				assert.NotEmpty(t, je.Metadata.Trace.StackTrace)
 			}
 			// Clear trace
-			je.metadata.Trace = models.Hop{}
-			assert.Equal(t, tc.expMetadata, je.metadata)
+			je.Metadata.Trace = models.Hop{}
+			assert.Equal(t, tc.expMetadata, je.Metadata)
 		})
 	}
 }

@@ -44,11 +44,15 @@ func (l *Log) SetSource(src string) {
 // Metadata is the extra info available at each level of the error tree
 type Metadata struct {
 	// Trace is info on the source of the error
-	Trace Hop `json:"trace"`
+	Trace Hop `json:"trace" protocp:"1"`
 	// Code is an identifier for the type of error
-	Code string `json:"code"`
+	Code string `json:"code" protocp:"2"`
 	// KV is a list of extra info in the error
-	KV []KeyValue `json:"kv"`
+	KV []KeyValue `json:"kv" protocp:"3"`
+}
+
+func (m *Metadata) IsZero() bool {
+	return m.Trace.IsZero() && m.Code == "" && len(m.KV) == 0
 }
 
 func (m *Metadata) SetKey(key, value string) {
@@ -68,6 +72,10 @@ type Hop struct {
 	Binary     string   `json:"binary" protocp:"1"`
 	StackTrace []string `json:"stack_trace,omitempty" protocp:"3"`
 	Errors     []Error  `json:"errors,omitempty" protocp:"2"`
+}
+
+func (h *Hop) IsZero() bool {
+	return h.Binary == "" && len(h.StackTrace) == 0 && len(h.Errors) == 0
 }
 
 // SetKey updates the parameters of the most recently added error in the hop.

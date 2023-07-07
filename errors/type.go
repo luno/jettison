@@ -46,9 +46,9 @@ func WithStackTrace(trace []string) jettison.OptionFunc {
 //
 // See https://github.com/grpc/grpc-go/blob/master/status/status.go#L130.
 type JettisonError struct {
-	message  string
-	err      error
-	metadata models.Metadata
+	Message  string
+	Err      error
+	Metadata models.Metadata
 
 	Hops []models.Hop
 
@@ -91,7 +91,7 @@ func (je *JettisonError) GRPCStatus() *status.Status {
 		}
 		res = withDetails
 	}
-
+	// TODO(adam): Include WrappedError details when services using FromStatus can handle it
 	return res
 }
 
@@ -171,9 +171,9 @@ func (je *JettisonError) LatestError() (models.Error, bool) {
 // Clone returns a copy of the jettison error that can be safely mutated.
 func (je *JettisonError) Clone() *JettisonError {
 	res := JettisonError{
-		message:     je.message,
-		err:         je.err,
-		metadata:    je.metadata,
+		Message:     je.Message,
+		Err:         je.Err,
+		Metadata:    je.Metadata,
 		OriginalErr: je.OriginalErr,
 	}
 
@@ -356,19 +356,26 @@ func FromStatus(s *status.Status) (*JettisonError, error) {
 
 	var res JettisonError
 	for _, d := range s.Details() {
-		spb, ok := d.(*jettisonpb.Hop)
-		if !ok {
-			return nil, ErrInvalidError
+		switch det := d.(type) {
+		case *jettisonpb.Hop:
+			hop, err := internal.HopFromProto(det)
+			if err != nil {
+				return nil, err
+			}
+			res.Hops = append(res.Hops, *hop)
+		case *jettisonpb.WrappedError:
+			je, err := ErrorFromProto(det)
+			if err == nil {
+				// TODO(adam): Just return je when we no longer rely on Hops
+				res.Message = je.Message
+				res.Metadata = je.Metadata
+				res.Err = je.Err
+			}
 		}
-
-		s, err := internal.HopFromProto(spb)
-		if err != nil {
-			return nil, err
-		}
-
-		res.Hops = append(res.Hops, *s)
 	}
-
+	if len(res.Hops) == 0 && res.Message == "" && res.Metadata.IsZero() && res.Err == nil {
+		return nil, Wrap(ErrInvalidError, "")
+	}
 	return &res, nil
 }
 

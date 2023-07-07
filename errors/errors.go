@@ -80,8 +80,8 @@ func New(msg string, ol ...jettison.Option) error {
 	}
 
 	return &JettisonError{
-		message:  msg,
-		metadata: md,
+		Message:  msg,
+		Metadata: md,
 		Hops:     []models.Hop{h},
 	}
 }
@@ -134,9 +134,9 @@ func Wrap(err error, msg string, ol ...jettison.Option) error {
 
 	// For the nested wrapping we're only interested in wrapping this error message,
 	// so we can overwrite the nested fields.
-	je.message = msg
-	je.err = err
-	je.metadata = md
+	je.Message = msg
+	je.Err = err
+	je.Metadata = md
 
 	return je
 }
@@ -162,11 +162,15 @@ type unwrapper interface {
 	Unwrap() error
 }
 
+type unwrapperList interface {
+	Unwrap() []error
+}
+
 func hasTrace(err error) (models.Hop, bool) {
 	e := err
 	for e != nil {
-		if je, ok := e.(*JettisonError); ok && je.metadata.Trace.Binary != "" {
-			return je.metadata.Trace, true
+		if je, ok := e.(*JettisonError); ok && je.Metadata.Trace.Binary != "" {
+			return je.Metadata.Trace, true
 		}
 		if un, ok := e.(unwrapper); ok {
 			e = un.Unwrap()

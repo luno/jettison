@@ -9,45 +9,74 @@ import (
 func HopToProto(namedInput *models.Hop) (*jettisonpb.Hop, error) {
 	var namedOutput *jettisonpb.Hop
 
-	var transformAndConvert models.Hop
-	if namedInput != nil {
-		transformAndConvert = *namedInput
+	var tmpInput *models.Hop
+	var tmpInput1 models.Hop
+
+	var tmpOutput1 jettisonpb.Hop
+	var tmpOutput *jettisonpb.Hop
+
+	var inputIsNil bool
+	tmpInput = namedInput
+	if tmpInput != nil {
+		tmpInput1 = *tmpInput
+	} else {
+		inputIsNil = true
 	}
-	var transformAndConvert1 jettisonpb.Hop
-	transformAndConvert1.Binary = transformAndConvert.Binary
-	for i := range transformAndConvert.Errors {
-		var tmpOutput *jettisonpb.Error
-		var transformAndConvert2 jettisonpb.Error
-		transformAndConvert2.Code = transformAndConvert.Errors[i].Code
-		transformAndConvert2.Message = transformAndConvert.Errors[i].Message
-		for i1 := range transformAndConvert.Errors[i].Parameters {
-			var tmpOutput1 *jettisonpb.KeyValue
-			var transformAndConvert3 jettisonpb.KeyValue
-			transformAndConvert3.Key = transformAndConvert.Errors[i].Parameters[i1].Key
-			transformAndConvert3.Value = transformAndConvert.Errors[i].Parameters[i1].Value
 
-			var transformAndConvert4 *jettisonpb.KeyValue
-			transformAndConvert4 = &transformAndConvert3
+	if !inputIsNil {
+		tmpOutput1.Binary = tmpInput1.Binary
+		for i := range tmpInput1.Errors {
+			var tmpOutput2 *jettisonpb.Error
 
-			tmpOutput1 = transformAndConvert4
+			var tmpInput2 models.Error
 
-			transformAndConvert2.Parameters = append(transformAndConvert2.Parameters, tmpOutput1)
+			var tmpOutput4 jettisonpb.Error
+			var tmpOutput3 *jettisonpb.Error
+
+			var inputIsNil1 bool
+			tmpInput2 = tmpInput1.Errors[i]
+
+			if !inputIsNil1 {
+				tmpOutput4.Code = tmpInput2.Code
+				tmpOutput4.Message = tmpInput2.Message
+				for i1 := range tmpInput2.Parameters {
+					var tmpOutput5 *jettisonpb.KeyValue
+
+					var tmpInput3 models.KeyValue
+
+					var tmpOutput7 jettisonpb.KeyValue
+					var tmpOutput6 *jettisonpb.KeyValue
+
+					var inputIsNil2 bool
+					tmpInput3 = tmpInput2.Parameters[i1]
+
+					if !inputIsNil2 {
+						tmpOutput7.Key = tmpInput3.Key
+						tmpOutput7.Value = tmpInput3.Value
+
+						tmpOutput6 = &tmpOutput7
+
+					}
+
+					tmpOutput5 = tmpOutput6
+					tmpOutput4.Parameters = append(tmpOutput4.Parameters, tmpOutput5)
+				}
+				tmpOutput4.Source = tmpInput2.Source
+
+				tmpOutput3 = &tmpOutput4
+
+			}
+
+			tmpOutput2 = tmpOutput3
+			tmpOutput1.Errors = append(tmpOutput1.Errors, tmpOutput2)
 		}
-		transformAndConvert2.Source = transformAndConvert.Errors[i].Source
+		tmpOutput1.StackTrace = ([]string)(tmpInput1.StackTrace)
 
-		var transformAndConvert3 *jettisonpb.Error
-		transformAndConvert3 = &transformAndConvert2
+		tmpOutput = &tmpOutput1
 
-		tmpOutput = transformAndConvert3
-
-		transformAndConvert1.Errors = append(transformAndConvert1.Errors, tmpOutput)
 	}
-	transformAndConvert1.StackTrace = ([]string)(transformAndConvert.StackTrace)
 
-	var transformAndConvert2 *jettisonpb.Hop
-	transformAndConvert2 = &transformAndConvert1
-
-	namedOutput = transformAndConvert2
+	namedOutput = tmpOutput
 
 	return namedOutput, nil
 }
@@ -55,47 +84,86 @@ func HopToProto(namedInput *models.Hop) (*jettisonpb.Hop, error) {
 func HopFromProto(namedInput *jettisonpb.Hop) (*models.Hop, error) {
 	var namedOutput *models.Hop
 
-	var transformAndConvert jettisonpb.Hop
-	if namedInput != nil {
-		transformAndConvert = *namedInput
+	var tmpInput *jettisonpb.Hop
+	var tmpInput1 jettisonpb.Hop
+
+	var tmpOutput1 models.Hop
+	var tmpOutput *models.Hop
+
+	var inputIsNil bool
+	tmpInput = namedInput
+	if tmpInput != nil {
+		tmpInput1.Binary = tmpInput.Binary
+		tmpInput1.StackTrace = tmpInput.StackTrace
+		tmpInput1.Errors = tmpInput.Errors
+	} else {
+		inputIsNil = true
 	}
-	var transformAndConvert1 models.Hop
-	transformAndConvert1.Binary = transformAndConvert.Binary
-	for i := range transformAndConvert.Errors {
-		var tmpOutput models.Error
-		var transformAndConvert2 jettisonpb.Error
-		if transformAndConvert.Errors[i] != nil {
-			transformAndConvert2 = *transformAndConvert.Errors[i]
-		}
-		var transformAndConvert3 models.Error
-		transformAndConvert3.Code = transformAndConvert2.Code
-		transformAndConvert3.Message = transformAndConvert2.Message
-		for i1 := range transformAndConvert2.Parameters {
-			var tmpOutput1 models.KeyValue
-			var transformAndConvert4 jettisonpb.KeyValue
-			if transformAndConvert2.Parameters[i1] != nil {
-				transformAndConvert4 = *transformAndConvert2.Parameters[i1]
+
+	if !inputIsNil {
+		tmpOutput1.Binary = tmpInput1.Binary
+		for i := range tmpInput1.Errors {
+			var tmpOutput2 models.Error
+
+			var tmpInput2 *jettisonpb.Error
+			var tmpInput3 jettisonpb.Error
+
+			var tmpOutput3 models.Error
+
+			var inputIsNil1 bool
+			tmpInput2 = tmpInput1.Errors[i]
+			if tmpInput2 != nil {
+				tmpInput3.Code = tmpInput2.Code
+				tmpInput3.Message = tmpInput2.Message
+				tmpInput3.Source = tmpInput2.Source
+				tmpInput3.Parameters = tmpInput2.Parameters
+			} else {
+				inputIsNil1 = true
 			}
-			var transformAndConvert5 models.KeyValue
-			transformAndConvert5.Key = transformAndConvert4.Key
-			transformAndConvert5.Value = transformAndConvert4.Value
 
-			tmpOutput1 = transformAndConvert5
+			if !inputIsNil1 {
+				tmpOutput3.Code = tmpInput3.Code
+				tmpOutput3.Message = tmpInput3.Message
+				for i1 := range tmpInput3.Parameters {
+					var tmpOutput4 models.KeyValue
 
-			transformAndConvert3.Parameters = append(transformAndConvert3.Parameters, tmpOutput1)
+					var tmpInput4 *jettisonpb.KeyValue
+					var tmpInput5 jettisonpb.KeyValue
+
+					var tmpOutput5 models.KeyValue
+
+					var inputIsNil2 bool
+					tmpInput4 = tmpInput3.Parameters[i1]
+					if tmpInput4 != nil {
+						tmpInput5.Key = tmpInput4.Key
+						tmpInput5.Value = tmpInput4.Value
+					} else {
+						inputIsNil2 = true
+					}
+
+					if !inputIsNil2 {
+						tmpOutput5.Key = tmpInput5.Key
+						tmpOutput5.Value = tmpInput5.Value
+
+					}
+
+					tmpOutput4 = tmpOutput5
+					tmpOutput3.Parameters = append(tmpOutput3.Parameters, tmpOutput4)
+				}
+				tmpOutput3.Source = tmpInput3.Source
+
+			}
+
+			tmpOutput2 = tmpOutput3
+			tmpOutput1.Errors = append(tmpOutput1.Errors, tmpOutput2)
 		}
-		transformAndConvert3.Source = transformAndConvert2.Source
+		tmpOutput1.StackTrace = ([]string)(tmpInput1.StackTrace)
 
-		tmpOutput = transformAndConvert3
+		tmpOutput = &tmpOutput1
 
-		transformAndConvert1.Errors = append(transformAndConvert1.Errors, tmpOutput)
 	}
-	transformAndConvert1.StackTrace = ([]string)(transformAndConvert.StackTrace)
 
-	var transformAndConvert2 *models.Hop
-	transformAndConvert2 = &transformAndConvert1
-
-	namedOutput = transformAndConvert2
+	namedOutput = tmpOutput
 
 	return namedOutput, nil
 }
@@ -103,32 +171,52 @@ func HopFromProto(namedInput *jettisonpb.Hop) (*models.Hop, error) {
 func ErrorToProto(namedInput *models.Error) (*jettisonpb.Error, error) {
 	var namedOutput *jettisonpb.Error
 
-	var transformAndConvert models.Error
-	if namedInput != nil {
-		transformAndConvert = *namedInput
+	var tmpInput *models.Error
+	var tmpInput1 models.Error
+
+	var tmpOutput1 jettisonpb.Error
+	var tmpOutput *jettisonpb.Error
+
+	var inputIsNil bool
+	tmpInput = namedInput
+	if tmpInput != nil {
+		tmpInput1 = *tmpInput
+	} else {
+		inputIsNil = true
 	}
-	var transformAndConvert1 jettisonpb.Error
-	transformAndConvert1.Code = transformAndConvert.Code
-	transformAndConvert1.Message = transformAndConvert.Message
-	for i := range transformAndConvert.Parameters {
-		var tmpOutput *jettisonpb.KeyValue
-		var transformAndConvert2 jettisonpb.KeyValue
-		transformAndConvert2.Key = transformAndConvert.Parameters[i].Key
-		transformAndConvert2.Value = transformAndConvert.Parameters[i].Value
 
-		var transformAndConvert3 *jettisonpb.KeyValue
-		transformAndConvert3 = &transformAndConvert2
+	if !inputIsNil {
+		tmpOutput1.Code = tmpInput1.Code
+		tmpOutput1.Message = tmpInput1.Message
+		for i := range tmpInput1.Parameters {
+			var tmpOutput2 *jettisonpb.KeyValue
 
-		tmpOutput = transformAndConvert3
+			var tmpInput2 models.KeyValue
 
-		transformAndConvert1.Parameters = append(transformAndConvert1.Parameters, tmpOutput)
+			var tmpOutput4 jettisonpb.KeyValue
+			var tmpOutput3 *jettisonpb.KeyValue
+
+			var inputIsNil1 bool
+			tmpInput2 = tmpInput1.Parameters[i]
+
+			if !inputIsNil1 {
+				tmpOutput4.Key = tmpInput2.Key
+				tmpOutput4.Value = tmpInput2.Value
+
+				tmpOutput3 = &tmpOutput4
+
+			}
+
+			tmpOutput2 = tmpOutput3
+			tmpOutput1.Parameters = append(tmpOutput1.Parameters, tmpOutput2)
+		}
+		tmpOutput1.Source = tmpInput1.Source
+
+		tmpOutput = &tmpOutput1
+
 	}
-	transformAndConvert1.Source = transformAndConvert.Source
 
-	var transformAndConvert2 *jettisonpb.Error
-	transformAndConvert2 = &transformAndConvert1
-
-	namedOutput = transformAndConvert2
+	namedOutput = tmpOutput
 
 	return namedOutput, nil
 }
@@ -136,33 +224,59 @@ func ErrorToProto(namedInput *models.Error) (*jettisonpb.Error, error) {
 func ErrorFromProto(namedInput *jettisonpb.Error) (*models.Error, error) {
 	var namedOutput *models.Error
 
-	var transformAndConvert jettisonpb.Error
-	if namedInput != nil {
-		transformAndConvert = *namedInput
+	var tmpInput *jettisonpb.Error
+	var tmpInput1 jettisonpb.Error
+
+	var tmpOutput1 models.Error
+	var tmpOutput *models.Error
+
+	var inputIsNil bool
+	tmpInput = namedInput
+	if tmpInput != nil {
+		tmpInput1.Code = tmpInput.Code
+		tmpInput1.Message = tmpInput.Message
+		tmpInput1.Source = tmpInput.Source
+		tmpInput1.Parameters = tmpInput.Parameters
+	} else {
+		inputIsNil = true
 	}
-	var transformAndConvert1 models.Error
-	transformAndConvert1.Code = transformAndConvert.Code
-	transformAndConvert1.Message = transformAndConvert.Message
-	for i := range transformAndConvert.Parameters {
-		var tmpOutput models.KeyValue
-		var transformAndConvert2 jettisonpb.KeyValue
-		if transformAndConvert.Parameters[i] != nil {
-			transformAndConvert2 = *transformAndConvert.Parameters[i]
+
+	if !inputIsNil {
+		tmpOutput1.Code = tmpInput1.Code
+		tmpOutput1.Message = tmpInput1.Message
+		for i := range tmpInput1.Parameters {
+			var tmpOutput2 models.KeyValue
+
+			var tmpInput2 *jettisonpb.KeyValue
+			var tmpInput3 jettisonpb.KeyValue
+
+			var tmpOutput3 models.KeyValue
+
+			var inputIsNil1 bool
+			tmpInput2 = tmpInput1.Parameters[i]
+			if tmpInput2 != nil {
+				tmpInput3.Key = tmpInput2.Key
+				tmpInput3.Value = tmpInput2.Value
+			} else {
+				inputIsNil1 = true
+			}
+
+			if !inputIsNil1 {
+				tmpOutput3.Key = tmpInput3.Key
+				tmpOutput3.Value = tmpInput3.Value
+
+			}
+
+			tmpOutput2 = tmpOutput3
+			tmpOutput1.Parameters = append(tmpOutput1.Parameters, tmpOutput2)
 		}
-		var transformAndConvert3 models.KeyValue
-		transformAndConvert3.Key = transformAndConvert2.Key
-		transformAndConvert3.Value = transformAndConvert2.Value
+		tmpOutput1.Source = tmpInput1.Source
 
-		tmpOutput = transformAndConvert3
+		tmpOutput = &tmpOutput1
 
-		transformAndConvert1.Parameters = append(transformAndConvert1.Parameters, tmpOutput)
 	}
-	transformAndConvert1.Source = transformAndConvert.Source
 
-	var transformAndConvert2 *models.Error
-	transformAndConvert2 = &transformAndConvert1
-
-	namedOutput = transformAndConvert2
+	namedOutput = tmpOutput
 
 	return namedOutput, nil
 }
@@ -170,18 +284,29 @@ func ErrorFromProto(namedInput *jettisonpb.Error) (*models.Error, error) {
 func KeyValueToProto(namedInput *models.KeyValue) (*jettisonpb.KeyValue, error) {
 	var namedOutput *jettisonpb.KeyValue
 
-	var transformAndConvert models.KeyValue
-	if namedInput != nil {
-		transformAndConvert = *namedInput
+	var tmpInput *models.KeyValue
+	var tmpInput1 models.KeyValue
+
+	var tmpOutput1 jettisonpb.KeyValue
+	var tmpOutput *jettisonpb.KeyValue
+
+	var inputIsNil bool
+	tmpInput = namedInput
+	if tmpInput != nil {
+		tmpInput1 = *tmpInput
+	} else {
+		inputIsNil = true
 	}
-	var transformAndConvert1 jettisonpb.KeyValue
-	transformAndConvert1.Key = transformAndConvert.Key
-	transformAndConvert1.Value = transformAndConvert.Value
 
-	var transformAndConvert2 *jettisonpb.KeyValue
-	transformAndConvert2 = &transformAndConvert1
+	if !inputIsNil {
+		tmpOutput1.Key = tmpInput1.Key
+		tmpOutput1.Value = tmpInput1.Value
 
-	namedOutput = transformAndConvert2
+		tmpOutput = &tmpOutput1
+
+	}
+
+	namedOutput = tmpOutput
 
 	return namedOutput, nil
 }
@@ -189,18 +314,279 @@ func KeyValueToProto(namedInput *models.KeyValue) (*jettisonpb.KeyValue, error) 
 func KeyValueFromProto(namedInput *jettisonpb.KeyValue) (*models.KeyValue, error) {
 	var namedOutput *models.KeyValue
 
-	var transformAndConvert jettisonpb.KeyValue
-	if namedInput != nil {
-		transformAndConvert = *namedInput
+	var tmpInput *jettisonpb.KeyValue
+	var tmpInput1 jettisonpb.KeyValue
+
+	var tmpOutput1 models.KeyValue
+	var tmpOutput *models.KeyValue
+
+	var inputIsNil bool
+	tmpInput = namedInput
+	if tmpInput != nil {
+		tmpInput1.Key = tmpInput.Key
+		tmpInput1.Value = tmpInput.Value
+	} else {
+		inputIsNil = true
 	}
-	var transformAndConvert1 models.KeyValue
-	transformAndConvert1.Key = transformAndConvert.Key
-	transformAndConvert1.Value = transformAndConvert.Value
 
-	var transformAndConvert2 *models.KeyValue
-	transformAndConvert2 = &transformAndConvert1
+	if !inputIsNil {
+		tmpOutput1.Key = tmpInput1.Key
+		tmpOutput1.Value = tmpInput1.Value
 
-	namedOutput = transformAndConvert2
+		tmpOutput = &tmpOutput1
+
+	}
+
+	namedOutput = tmpOutput
+
+	return namedOutput, nil
+}
+
+func MetadataToProto(namedInput *models.Metadata) (*jettisonpb.Metadata, error) {
+	var namedOutput *jettisonpb.Metadata
+
+	var tmpInput *models.Metadata
+	var tmpInput1 models.Metadata
+
+	var tmpOutput1 jettisonpb.Metadata
+	var tmpOutput *jettisonpb.Metadata
+
+	var inputIsNil bool
+	tmpInput = namedInput
+	if tmpInput != nil {
+		tmpInput1 = *tmpInput
+	} else {
+		inputIsNil = true
+	}
+
+	if !inputIsNil {
+		tmpOutput1.Code = tmpInput1.Code
+		for i := range tmpInput1.KV {
+			var tmpOutput2 *jettisonpb.KeyValue
+
+			var tmpInput2 models.KeyValue
+
+			var tmpOutput4 jettisonpb.KeyValue
+			var tmpOutput3 *jettisonpb.KeyValue
+
+			var inputIsNil1 bool
+			tmpInput2 = tmpInput1.KV[i]
+
+			if !inputIsNil1 {
+				tmpOutput4.Key = tmpInput2.Key
+				tmpOutput4.Value = tmpInput2.Value
+
+				tmpOutput3 = &tmpOutput4
+
+			}
+
+			tmpOutput2 = tmpOutput3
+			tmpOutput1.KeyValues = append(tmpOutput1.KeyValues, tmpOutput2)
+		}
+
+		var tmpInput2 models.Hop
+
+		var tmpOutput4 jettisonpb.Hop
+		var tmpOutput3 *jettisonpb.Hop
+
+		var inputIsNil1 bool
+		tmpInput2 = tmpInput1.Trace
+
+		if !inputIsNil1 {
+			tmpOutput4.Binary = tmpInput2.Binary
+			for i1 := range tmpInput2.Errors {
+				var tmpOutput5 *jettisonpb.Error
+
+				var tmpInput3 models.Error
+
+				var tmpOutput7 jettisonpb.Error
+				var tmpOutput6 *jettisonpb.Error
+
+				var inputIsNil2 bool
+				tmpInput3 = tmpInput2.Errors[i1]
+
+				if !inputIsNil2 {
+					tmpOutput7.Code = tmpInput3.Code
+					tmpOutput7.Message = tmpInput3.Message
+					for i2 := range tmpInput3.Parameters {
+						var tmpOutput8 *jettisonpb.KeyValue
+
+						var tmpInput4 models.KeyValue
+
+						var tmpOutput10 jettisonpb.KeyValue
+						var tmpOutput9 *jettisonpb.KeyValue
+
+						var inputIsNil3 bool
+						tmpInput4 = tmpInput3.Parameters[i2]
+
+						if !inputIsNil3 {
+							tmpOutput10.Key = tmpInput4.Key
+							tmpOutput10.Value = tmpInput4.Value
+
+							tmpOutput9 = &tmpOutput10
+
+						}
+
+						tmpOutput8 = tmpOutput9
+						tmpOutput7.Parameters = append(tmpOutput7.Parameters, tmpOutput8)
+					}
+					tmpOutput7.Source = tmpInput3.Source
+
+					tmpOutput6 = &tmpOutput7
+
+				}
+
+				tmpOutput5 = tmpOutput6
+				tmpOutput4.Errors = append(tmpOutput4.Errors, tmpOutput5)
+			}
+			tmpOutput4.StackTrace = ([]string)(tmpInput2.StackTrace)
+
+			tmpOutput3 = &tmpOutput4
+
+		}
+
+		tmpOutput1.Trace = tmpOutput3
+
+		tmpOutput = &tmpOutput1
+
+	}
+
+	namedOutput = tmpOutput
+
+	return namedOutput, nil
+}
+
+func MetadataFromProto(namedInput *jettisonpb.Metadata) (*models.Metadata, error) {
+	var namedOutput *models.Metadata
+
+	var tmpInput *jettisonpb.Metadata
+	var tmpInput1 jettisonpb.Metadata
+
+	var tmpOutput1 models.Metadata
+	var tmpOutput *models.Metadata
+
+	var inputIsNil bool
+	tmpInput = namedInput
+	if tmpInput != nil {
+		tmpInput1.Trace = tmpInput.Trace
+		tmpInput1.Code = tmpInput.Code
+		tmpInput1.KeyValues = tmpInput.KeyValues
+	} else {
+		inputIsNil = true
+	}
+
+	if !inputIsNil {
+		tmpOutput1.Code = tmpInput1.Code
+		for i := range tmpInput1.KeyValues {
+			var tmpOutput2 models.KeyValue
+
+			var tmpInput2 *jettisonpb.KeyValue
+			var tmpInput3 jettisonpb.KeyValue
+
+			var tmpOutput3 models.KeyValue
+
+			var inputIsNil1 bool
+			tmpInput2 = tmpInput1.KeyValues[i]
+			if tmpInput2 != nil {
+				tmpInput3.Key = tmpInput2.Key
+				tmpInput3.Value = tmpInput2.Value
+			} else {
+				inputIsNil1 = true
+			}
+
+			if !inputIsNil1 {
+				tmpOutput3.Key = tmpInput3.Key
+				tmpOutput3.Value = tmpInput3.Value
+
+			}
+
+			tmpOutput2 = tmpOutput3
+			tmpOutput1.KV = append(tmpOutput1.KV, tmpOutput2)
+		}
+
+		var tmpInput2 *jettisonpb.Hop
+		var tmpInput3 jettisonpb.Hop
+
+		var tmpOutput3 models.Hop
+
+		var inputIsNil1 bool
+		tmpInput2 = tmpInput1.Trace
+		if tmpInput2 != nil {
+			tmpInput3.Binary = tmpInput2.Binary
+			tmpInput3.StackTrace = tmpInput2.StackTrace
+			tmpInput3.Errors = tmpInput2.Errors
+		} else {
+			inputIsNil1 = true
+		}
+
+		if !inputIsNil1 {
+			tmpOutput3.Binary = tmpInput3.Binary
+			for i1 := range tmpInput3.Errors {
+				var tmpOutput4 models.Error
+
+				var tmpInput4 *jettisonpb.Error
+				var tmpInput5 jettisonpb.Error
+
+				var tmpOutput5 models.Error
+
+				var inputIsNil2 bool
+				tmpInput4 = tmpInput3.Errors[i1]
+				if tmpInput4 != nil {
+					tmpInput5.Code = tmpInput4.Code
+					tmpInput5.Message = tmpInput4.Message
+					tmpInput5.Source = tmpInput4.Source
+					tmpInput5.Parameters = tmpInput4.Parameters
+				} else {
+					inputIsNil2 = true
+				}
+
+				if !inputIsNil2 {
+					tmpOutput5.Code = tmpInput5.Code
+					tmpOutput5.Message = tmpInput5.Message
+					for i2 := range tmpInput5.Parameters {
+						var tmpOutput6 models.KeyValue
+
+						var tmpInput6 *jettisonpb.KeyValue
+						var tmpInput7 jettisonpb.KeyValue
+
+						var tmpOutput7 models.KeyValue
+
+						var inputIsNil3 bool
+						tmpInput6 = tmpInput5.Parameters[i2]
+						if tmpInput6 != nil {
+							tmpInput7.Key = tmpInput6.Key
+							tmpInput7.Value = tmpInput6.Value
+						} else {
+							inputIsNil3 = true
+						}
+
+						if !inputIsNil3 {
+							tmpOutput7.Key = tmpInput7.Key
+							tmpOutput7.Value = tmpInput7.Value
+
+						}
+
+						tmpOutput6 = tmpOutput7
+						tmpOutput5.Parameters = append(tmpOutput5.Parameters, tmpOutput6)
+					}
+					tmpOutput5.Source = tmpInput5.Source
+
+				}
+
+				tmpOutput4 = tmpOutput5
+				tmpOutput3.Errors = append(tmpOutput3.Errors, tmpOutput4)
+			}
+			tmpOutput3.StackTrace = ([]string)(tmpInput3.StackTrace)
+
+		}
+
+		tmpOutput1.Trace = tmpOutput3
+
+		tmpOutput = &tmpOutput1
+
+	}
+
+	namedOutput = tmpOutput
 
 	return namedOutput, nil
 }
