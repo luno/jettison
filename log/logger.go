@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luno/jettison"
 	"github.com/luno/jettison/models"
 )
 
@@ -39,7 +38,7 @@ func SetCmdLoggerForTesting(t testing.TB, w io.Writer) {
 }
 
 func SetDefaultLoggerForTesting(t testing.TB, w io.Writer,
-	opts ...jettison.Option,
+	opts ...Option,
 ) {
 	cached := logger
 
@@ -52,7 +51,7 @@ func SetDefaultLoggerForTesting(t testing.TB, w io.Writer,
 	})
 }
 
-func newJSONLogger(w io.Writer, opts ...jettison.Option) *jsonLogger {
+func newJSONLogger(w io.Writer, opts ...Option) *jsonLogger {
 	return &jsonLogger{
 		logger: log.New(w, "", 0),
 		opts:   opts,
@@ -64,14 +63,14 @@ type jsonLogger struct {
 	logger *log.Logger
 
 	// default options and other flags for testing
-	opts           []jettison.Option
+	opts           []Option
 	scrubTimestamp bool
 }
 
 func (jl *jsonLogger) Log(l Log) string {
 	il := models.Log(l)
 	for _, o := range jl.opts {
-		o.Apply(&il)
+		o.ApplyToLog(&il)
 	}
 	if jl.scrubTimestamp {
 		il.Timestamp = time.Time{}

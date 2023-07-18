@@ -6,21 +6,21 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/luno/jettison"
 	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/models"
 )
 
 // KV returns a jettison key value option the with default format of
 // a simple value or fmt.Stringer implementation. Complex values
 // like slices, maps, structs are not printed since it is considered
 // bad practice.
-func KV(key string, value interface{}) jettison.Option {
-	return jettison.WithKeyValueString(key, sprint(value))
+func KV(key string, value any) MKV {
+	return MKV{key: value}
 }
 
 // KS returns a jettison key value string option.
-func KS(key string, value string) jettison.Option {
-	return jettison.WithKeyValueString(key, value)
+func KS(key string, value string) MKV {
+	return MKV{key: value}
 }
 
 // MKV is a multi jettison key value option with default formats of
@@ -32,9 +32,27 @@ func KS(key string, value string) jettison.Option {
 //	  log.InfoCtx(ctx, "msg", j.MKV{"k1": 1, "k2": "v"})
 type MKV map[string]any
 
-func (m MKV) Apply(details jettison.Details) {
-	for key, value := range m {
-		jettison.WithKeyValueString(key, sprint(value)).Apply(details)
+func (m MKV) ContextKeys() []models.KeyValue {
+	res := make([]models.KeyValue, 0, len(m))
+	for k, v := range m {
+		res = append(res, models.KeyValue{Key: k, Value: sprint(v)})
+	}
+	return res
+}
+
+func (m MKV) ApplyToLog(log *models.Log) {
+	log.Parameters = append(log.Parameters, m.ContextKeys()...)
+}
+
+func (m MKV) ApplyToError(je *errors.JettisonError) {
+	kvs := m.ContextKeys()
+	je.Metadata.KV = append(je.Metadata.KV, kvs...)
+	if len(je.Hops) == 0 {
+		return
+	}
+	h := je.Hops[0]
+	for _, kv := range kvs {
+		h.SetKey(kv.Key, kv.Value)
 	}
 }
 
@@ -44,20 +62,35 @@ func (m MKV) Apply(details jettison.Details) {
 //	  log.InfoCtx(ctx, "msg", j.MKS{"k1": "v1", "k2": "v2"})
 type MKS map[string]string
 
-func (m MKS) Apply(details jettison.Details) {
-	for key, value := range m {
-		jettison.WithKeyValueString(key, value).Apply(details)
+func (m MKS) ContextKeys() []models.KeyValue {
+	res := make([]models.KeyValue, 0, len(m))
+	for k, v := range m {
+		res = append(res, models.KeyValue{Key: k, Value: v})
+	}
+	return res
+}
+
+func (m MKS) ApplyToLog(log *models.Log) {
+	log.Parameters = append(log.Parameters, m.ContextKeys()...)
+}
+
+func (m MKS) ApplyToError(je *errors.JettisonError) {
+	kvs := m.ContextKeys()
+	je.Metadata.KV = append(je.Metadata.KV, kvs...)
+	if len(je.Hops) == 0 {
+		return
+	}
+	h := je.Hops[0]
+	for _, kv := range kvs {
+		h.SetKey(kv.Key, kv.Value)
 	}
 }
 
 // C is an alias for jettison/errors.WithCode. Since this
 // should only be used with sentinel errors it also clears the useless
 // init-time stack trace allowing wrapping to add proper stack trace.
-func C(code string) jettison.OptionFunc {
-	return func(details jettison.Details) {
-		errors.WithCode(code)(details)
-		errors.WithoutStackTrace()(details)
-	}
+func C(code string) errors.Option {
+	return errors.C(code)
 }
 
 var nosprints = map[reflect.Kind]bool{

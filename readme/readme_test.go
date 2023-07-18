@@ -16,12 +16,12 @@ import (
 func ExampleNew() {
 	// Construct your error as usual, with additional metadata.
 	err := errors.New("something went wrong",
-		jettison.WithKeyValueString("key", "value"),
+		j.KV("key", "value"),
 		jettison.WithSource("Example()"))
 
 	// Wrap errors with additional metadata as they get passed down the stack.
 	err = errors.Wrap(err, "something else went wrong",
-		jettison.WithKeyValueString("another_key", "another_value"))
+		j.KV("another_key", "another_value"))
 
 	// Pass it around - including over gRPC - like you would any other error.
 }
@@ -31,20 +31,20 @@ func ExampleInfo() {
 
 	// You can log general info as you normally would.
 	log.Info(ctx, "entering the example function",
-		jettison.WithKeyValueString("key", "value"))
+		j.KV("key", "value"))
 }
 
 func ExampleError() {
 	ctx := context.Background()
 
 	err := errors.New("a jettison error",
-		jettison.WithKeyValueString("key", "value"),
+		j.KV("key", "value"),
 		jettison.WithSource("Example()"))
 
 	// Errors can be logged separately, with metadata marshalled to JSON in
 	// a machine-friendly manner.
 	log.Error(ctx, err,
-		jettison.WithKeyValueString("another_key", "another_value"))
+		j.KV("another_key", "another_value"))
 }
 
 func ExampleKS() {

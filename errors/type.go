@@ -14,7 +14,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/luno/jettison"
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/internal/jettisonpb"
 	"github.com/luno/jettison/models"
@@ -28,15 +27,11 @@ var (
 )
 
 // WithStackTrace sets the stack trace of the current hop to the given value.
-func WithStackTrace(trace []string) jettison.OptionFunc {
-	return func(d jettison.Details) {
-		switch det := d.(type) {
-		case *models.Hop:
-			det.StackTrace = trace
-		case *models.Metadata:
-			det.Trace.StackTrace = trace
-		}
-	}
+func WithStackTrace(trace []string) Option {
+	return errorOption(func(je *JettisonError) {
+		je.Hops[0].StackTrace = trace
+		je.Metadata.Trace.StackTrace = trace
+	})
 }
 
 // JettisonError is the internal error representation. We use a separate type

@@ -2,37 +2,19 @@ package jettison
 
 import (
 	"strings"
+
+	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/models"
 )
 
-// Option allows one to attach metadata to an error or log.
-type Option interface {
-	Apply(Details)
+type WithSource string
+
+func (s WithSource) ApplyToError(je *errors.JettisonError) {
+	je.Hops[0].SetSource(string(s))
 }
 
-// OptionFunc is a function-to-Option adapter.
-type OptionFunc func(Details)
-
-func (o OptionFunc) Apply(d Details) {
-	o(d)
-}
-
-// Details provides methods to modify the metadata associated with an error or
-// a log, such as arbitrary key/value pairs or stacktrace information.
-type Details interface {
-	SetKey(key, value string)
-	SetSource(src string)
-}
-
-func WithKeyValueString(key, value string) OptionFunc {
-	return func(d Details) {
-		d.SetKey(normalise(key), value)
-	}
-}
-
-func WithSource(src string) OptionFunc {
-	return func(d Details) {
-		d.SetSource(src)
-	}
+func (s WithSource) ApplyToLog(l *models.Log) {
+	l.Source = string(s)
 }
 
 var (

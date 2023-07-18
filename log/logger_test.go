@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/luno/jettison"
 	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/log"
 )
 
@@ -24,7 +24,7 @@ func TestAddLoggers(t *testing.T) {
 	tl := new(testLogger)
 	log.SetLogger(tl)
 
-	log.Info(nil, "message", jettison.WithKeyValueString("some", "param"))
+	log.Info(nil, "message", j.KV("some", "param"))
 	log.Error(nil, errors.New("errMsg"))
 
 	assert.Equal(t, "message,info,some,param,", toStr(tl.logs[0]))

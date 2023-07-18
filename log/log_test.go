@@ -28,7 +28,7 @@ func TestLog(t *testing.T) {
 		name string
 		msg  string
 		ctx  context.Context
-		opts []jettison.Option
+		opts []jlog.Option
 	}{
 		{
 			name: "message_only",
@@ -37,31 +37,31 @@ func TestLog(t *testing.T) {
 		{
 			name: "message_with_kv",
 			msg:  "test_message",
-			opts: []jettison.Option{
-				jettison.WithKeyValueString("key", "value"),
+			opts: []jlog.Option{
+				j.KV("key", "value"),
 			},
 		},
 		{
 			name: "message_with_error_level",
 			msg:  "test_message",
-			opts: []jettison.Option{
+			opts: []jlog.Option{
 				jlog.WithLevel(jlog.LevelError),
 			},
 		},
 		{
 			name: "message_with_unordered_parameters",
 			msg:  "test_message",
-			opts: []jettison.Option{
-				jettison.WithKeyValueString("a", "c"),
-				jettison.WithKeyValueString("c", "d"),
-				jettison.WithKeyValueString("d", "c"),
-				jettison.WithKeyValueString("c", "a"),
+			opts: []jlog.Option{
+				j.KV("a", "c"),
+				j.KV("c", "d"),
+				j.KV("d", "c"),
+				j.KV("c", "a"),
 			},
 		},
 		{
 			name: "message_with_error",
 			msg:  "test_message",
-			opts: []jettison.Option{
+			opts: []jlog.Option{
 				jlog.WithError(jerrors.New("test",
 					jettison.WithSource("testsource"),
 					jerrors.WithBinary("testservice"),
@@ -139,7 +139,7 @@ func TestError(t *testing.T) {
 }
 
 func TestDeprecated(t *testing.T) {
-	opts := []jettison.Option{jettison.WithSource("testsource")}
+	opts := []jlog.Option{jettison.WithSource("testsource")}
 
 	testCases := []struct {
 		name   string

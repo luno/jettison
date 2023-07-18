@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-stack/stack"
 
-	"github.com/luno/jettison"
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/models"
@@ -21,30 +20,26 @@ const (
 	LevelDebug models.Level = "debug"
 )
 
+type logOption func(*models.Log)
+
+func (o logOption) ApplyToLog(l *models.Log) {
+	o(l)
+}
+
 // WithLevel returns a jettison option to override the default log level.
 // It only works when provided as option to log package functions.
-func WithLevel(level models.Level) jettison.OptionFunc {
-	return func(details jettison.Details) {
-		l, ok := details.(*models.Log)
-		if !ok {
-			log.Printf("jettison/log: WithLevel option not applicable to: %T", details)
-			return
-		}
+func WithLevel(level models.Level) Option {
+	return logOption(func(l *models.Log) {
 		l.Level = level
-	}
+	})
 }
 
 // WithError returns a jettison option to add a structured error as part of
 // Info logging. See Error for more details. It only works when provided
 // as option to log package functions. Using this option while Error logging
 // is not recommended.
-func WithError(err error) jettison.OptionFunc {
-	return func(details jettison.Details) {
-		l, ok := details.(*models.Log)
-		if !ok {
-			log.Printf("jettison/log: WithError option not applicable to: %T", details)
-			return
-		}
+func WithError(err error) Option {
+	return logOption(func(l *models.Log) {
 		addErrorHops(l, err)
 
 		// Add the most recent error code in the chain to the log's root.
@@ -52,32 +47,31 @@ func WithError(err error) jettison.OptionFunc {
 		if len(codes) > 0 {
 			l.ErrorCode = &codes[0]
 		}
-	}
+	})
 }
 
 // WithStackTrace returns a jettison option to add a stacktrace as a hop to the log.
 // It only works when provided as option to log package functions.
-func WithStackTrace() jettison.OptionFunc {
-	return func(details jettison.Details) {
-		l, ok := details.(*models.Log)
-		if !ok {
-			log.Printf("jettison/log: WithStackTrace option not applicable to: %T", details)
-			return
-		}
+func WithStackTrace() Option {
+	return logOption(func(l *models.Log) {
 		h := internal.NewHop()
 		h.StackTrace = internal.GetStackTrace(2)
 		l.Hops = append(l.Hops, h)
-	}
+	})
 }
 
-func Debug(ctx context.Context, msg string, opts ...jettison.Option) {
+type Option interface {
+	ApplyToLog(*models.Log)
+}
+
+func Debug(ctx context.Context, msg string, opts ...Option) {
 	l := makeLog(ctx, msg, LevelDebug, opts...)
 	logger.Log(Log(l))
 }
 
 // Info writes a structured jettison log to the logger. Any jettison
 // key/value pairs contained in the given context are included in the log.
-func Info(ctx context.Context, msg string, opts ...jettison.Option) {
+func Info(ctx context.Context, msg string, opts ...Option) {
 	l := makeLog(ctx, msg, LevelInfo, opts...)
 	logger.Log(Log(l))
 }
@@ -87,7 +81,7 @@ func Info(ctx context.Context, msg string, opts ...jettison.Option) {
 // then logged. Any jettison key/value pairs contained in the given context are
 // included in the log.
 // If err is nil, a new error is created.
-func Error(ctx context.Context, err error, opts ...jettison.Option) {
+func Error(ctx context.Context, err error, opts ...Option) {
 	if err != nil {
 		opts = append(opts, WithError(err))
 	} else {
@@ -98,12 +92,12 @@ func Error(ctx context.Context, err error, opts ...jettison.Option) {
 	logger.Log(Log(l))
 }
 
-func makeLog(ctx context.Context, msg string, lvl models.Level, opts ...jettison.Option) models.Log {
-	opts = append(opts, internal.ContextOptions(ctx)...)
+func makeLog(ctx context.Context, msg string, lvl models.Level, opts ...Option) models.Log {
 	l := newLog(msg, lvl, 3)
 	for _, o := range opts {
-		o.Apply(&l)
+		o.ApplyToLog(&l)
 	}
+	l.Parameters = append(l.Parameters, internal.ContextKeyValues(ctx)...)
 
 	// Sort the parameters for consistent logging.
 	sort.Slice(l.Parameters, func(i, j int) bool {
@@ -144,11 +138,13 @@ func addErrorHops(l *models.Log, err error) {
 	}
 }
 
+type ContextOption = internal.ContextOption
+
 // ContextWith returns a new context with the given jettison options appended
 // to its key/value store. When a context containing jettison options is
 // passed to InfoCtx or ErrorCtx, the options are automatically applied to
 // the resulting log.
-func ContextWith(ctx context.Context, opts ...jettison.Option) context.Context {
+func ContextWith(ctx context.Context, opts ...ContextOption) context.Context {
 	return internal.ContextWith(ctx, opts...)
 }
 
@@ -165,22 +161,22 @@ func newLog(msg string, level models.Level, stackSkip int) models.Log {
 }
 
 type Interface interface {
-	Debug(ctx context.Context, msg string, ol ...jettison.Option)
-	Info(ctx context.Context, msg string, ol ...jettison.Option)
-	Error(ctx context.Context, err error, ol ...jettison.Option)
+	Debug(ctx context.Context, msg string, ol ...Option)
+	Info(ctx context.Context, msg string, ol ...Option)
+	Error(ctx context.Context, err error, ol ...Option)
 }
 
 type Jettison struct{}
 
-func (j Jettison) Debug(ctx context.Context, msg string, ol ...jettison.Option) {
+func (j Jettison) Debug(ctx context.Context, msg string, ol ...Option) {
 	Debug(ctx, msg, ol...)
 }
 
-func (j Jettison) Info(ctx context.Context, msg string, ol ...jettison.Option) {
+func (j Jettison) Info(ctx context.Context, msg string, ol ...Option) {
 	Info(ctx, msg, ol...)
 }
 
-func (j Jettison) Error(ctx context.Context, err error, ol ...jettison.Option) {
+func (j Jettison) Error(ctx context.Context, err error, ol ...Option) {
 	Error(ctx, err, ol...)
 }
 
