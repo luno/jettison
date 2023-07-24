@@ -11,10 +11,10 @@ import (
 )
 
 type testLogger struct {
-	logs []log.Log
+	logs []log.Entry
 }
 
-func (tl *testLogger) Log(l log.Log) string {
+func (tl *testLogger) Log(l log.Entry) string {
 	tl.logs = append(tl.logs, l)
 
 	return ""
@@ -31,7 +31,7 @@ func TestAddLoggers(t *testing.T) {
 	assert.Equal(t, "errMsg,error,", toStr(tl.logs[1]))
 }
 
-func toStr(l log.Log) string {
+func toStr(l log.Entry) string {
 	str := l.Message + ","
 	str += string(l.Level) + ","
 	if len(l.Parameters) == 0 {

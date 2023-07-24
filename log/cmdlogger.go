@@ -26,7 +26,7 @@ type cmdLogger struct {
 	stripTime bool
 }
 
-func (c *cmdLogger) Log(l Log) string {
+func (c *cmdLogger) Log(l Entry) string {
 	timestamp := l.Timestamp.Format("15:04:05.000")
 	if c.stripTime {
 		timestamp = "00:00:00.000"
@@ -56,7 +56,7 @@ func (c *cmdLogger) Log(l Log) string {
 }
 
 // makeMsg returns the log message with parameters if present.
-func makeMsg(l Log) string {
+func makeMsg(l Entry) string {
 	var res strings.Builder
 	res.WriteString(l.Message)
 	if len(l.Parameters) == 0 {

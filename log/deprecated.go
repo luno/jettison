@@ -63,16 +63,16 @@ func Fatalln(v ...interface{}) {
 }
 
 func print(v ...interface{}) string {
-	l := newLog(fmt.Sprint(v...), LevelInfo, 3)
-	return logger.Log(Log(l))
+	l := newEntry(fmt.Sprint(v...), LevelInfo, 3)
+	return logger.Log(Entry(l))
 }
 
 func printf(format string, v ...interface{}) string {
-	l := newLog(fmt.Sprintf(format, v...), LevelInfo, 3)
-	return logger.Log(Log(l))
+	l := newEntry(fmt.Sprintf(format, v...), LevelInfo, 3)
+	return logger.Log(Entry(l))
 }
 
 func println(v ...interface{}) string {
-	l := newLog(fmt.Sprintln(v...), LevelInfo, 3)
-	return logger.Log(Log(l))
+	l := newEntry(fmt.Sprintln(v...), LevelInfo, 3)
+	return logger.Log(Entry(l))
 }

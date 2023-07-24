@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luno/jettison"
 	jerrors "github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
 	jlog "github.com/luno/jettison/log"
@@ -22,6 +21,16 @@ var writeGoldenFiles = flag.Bool("write-golden-files", false,
 	"Whether or not to overwrite golden files with test output.")
 
 //go:generate go test . -write-golden-files
+
+type source string
+
+func (s source) ApplyToLog(e *jlog.Entry) {
+	e.Source = string(s)
+}
+
+func (s source) ApplyToError(je *jerrors.JettisonError) {
+	je.Hops[0].SetSource(string(s))
+}
 
 func TestLog(t *testing.T) {
 	testCases := []struct {
@@ -63,7 +72,7 @@ func TestLog(t *testing.T) {
 			msg:  "test_message",
 			opts: []jlog.Option{
 				jlog.WithError(jerrors.New("test",
-					jettison.WithSource("testsource"),
+					source("testsource"),
 					jerrors.WithBinary("testservice"),
 					jerrors.WithStackTrace([]string{"teststacktrace"}))),
 			},
@@ -80,7 +89,7 @@ func TestLog(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			buf := new(bytes.Buffer)
-			jlog.SetDefaultLoggerForTesting(t, buf, jettison.WithSource("testsource"))
+			jlog.SetDefaultLoggerForTesting(t, buf, source("testsource"))
 			jlog.Info(tc.ctx, tc.msg, tc.opts...)
 
 			verifyOutput(t, "log_"+tc.name, buf.Bytes())
@@ -103,14 +112,14 @@ func TestError(t *testing.T) {
 		{
 			name: "message_only",
 			err: jerrors.New("test",
-				jettison.WithSource("testsource"),
+				source("testsource"),
 				jerrors.WithBinary("testservice"),
 				jerrors.WithStackTrace([]string{"teststacktrace"})),
 		},
 		{
 			name: "error_code",
 			err: jerrors.New("test",
-				jettison.WithSource("testsource"),
+				source("testsource"),
 				jerrors.WithBinary("testservice"),
 				jerrors.WithCode("testcode"),
 				jerrors.WithStackTrace([]string{"teststacktrace"})),
@@ -119,7 +128,7 @@ func TestError(t *testing.T) {
 			name: "context",
 			ctx:  jlog.ContextWith(context.Background(), j.KS("ctx_key", "ctx_val")),
 			err: jerrors.New("test",
-				jettison.WithSource("testsource"),
+				source("testsource"),
 				jerrors.WithBinary("testservice"),
 				jerrors.WithStackTrace([]string{"teststacktrace"})),
 		},
@@ -131,7 +140,7 @@ func TestError(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			buf := new(bytes.Buffer)
 			jlog.SetDefaultLoggerForTesting(t, buf)
-			jlog.Error(tc.ctx, tc.err, jettison.WithSource("testsource"))
+			jlog.Error(tc.ctx, tc.err, source("testsource"))
 
 			verifyOutput(t, "error_"+tc.name, buf.Bytes())
 		})
@@ -139,7 +148,7 @@ func TestError(t *testing.T) {
 }
 
 func TestDeprecated(t *testing.T) {
-	opts := []jlog.Option{jettison.WithSource("testsource")}
+	opts := []jlog.Option{source("testsource")}
 
 	testCases := []struct {
 		name   string

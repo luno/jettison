@@ -4,42 +4,7 @@ package models
 
 import (
 	"sort"
-	"time"
 )
-
-type Level string
-
-type Log struct {
-	Message   string    `json:"message"`
-	Source    string    `json:"source"`
-	Level     Level     `json:"level"`
-	Timestamp time.Time `json:"timestamp"`
-
-	Hops       []Hop      `json:"hops,omitempty"`
-	Parameters []KeyValue `json:"parameters,omitempty"`
-	ErrorCode  *string    `json:"error_code,omitempty"`
-}
-
-// SetKey updates the list of parameters in the log with the given key/value pair.
-func (l *Log) SetKey(key, value string) {
-	if l == nil {
-		return
-	}
-
-	l.Parameters = append(l.Parameters, KeyValue{
-		Key:   key,
-		Value: value,
-	})
-}
-
-// SetSource updates the source of the log.
-func (l *Log) SetSource(src string) {
-	if l == nil {
-		return
-	}
-
-	l.Source = src
-}
 
 // Metadata is the extra info available at each level of the error tree
 type Metadata struct {

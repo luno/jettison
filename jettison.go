@@ -2,20 +2,7 @@ package jettison
 
 import (
 	"strings"
-
-	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/models"
 )
-
-type WithSource string
-
-func (s WithSource) ApplyToError(je *errors.JettisonError) {
-	je.Hops[0].SetSource(string(s))
-}
-
-func (s WithSource) ApplyToLog(l *models.Log) {
-	l.Source = string(s)
-}
 
 var (
 	allowedChars    = "0123456789abcdefghijklmnopqrstuvwxyz-_."

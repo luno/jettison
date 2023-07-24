@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luno/jettison"
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/log"
@@ -15,13 +14,10 @@ import (
 
 func ExampleNew() {
 	// Construct your error as usual, with additional metadata.
-	err := errors.New("something went wrong",
-		j.KV("key", "value"),
-		jettison.WithSource("Example()"))
+	err := errors.New("something went wrong", j.KV("key", "value"))
 
 	// Wrap errors with additional metadata as they get passed down the stack.
-	err = errors.Wrap(err, "something else went wrong",
-		j.KV("another_key", "another_value"))
+	err = errors.Wrap(err, "something else went wrong", j.KV("another_key", "another_value"))
 
 	// Pass it around - including over gRPC - like you would any other error.
 }
@@ -30,21 +26,17 @@ func ExampleInfo() {
 	ctx := context.Background()
 
 	// You can log general info as you normally would.
-	log.Info(ctx, "entering the example function",
-		j.KV("key", "value"))
+	log.Info(ctx, "entering the example function", j.KV("key", "value"))
 }
 
 func ExampleError() {
 	ctx := context.Background()
 
-	err := errors.New("a jettison error",
-		j.KV("key", "value"),
-		jettison.WithSource("Example()"))
+	err := errors.New("a jettison error", j.KV("key", "value"))
 
 	// Errors can be logged separately, with metadata marshalled to JSON in
 	// a machine-friendly manner.
-	log.Error(ctx, err,
-		j.KV("another_key", "another_value"))
+	log.Error(ctx, err, j.KV("another_key", "another_value"))
 }
 
 func ExampleKS() {

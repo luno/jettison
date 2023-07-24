@@ -7,20 +7,15 @@ import (
 	"os"
 	"testing"
 	"time"
-
-	"github.com/luno/jettison/models"
 )
 
 // logger is the global logger. It defaults to a human friendly command line logger.
 var logger Logger = newCmdLogger(os.Stderr, false)
 
-// Log sub-types the internal log struct for the public interface.
-type Log models.Log
-
 // Logger does logging of log lines.
 type Logger interface {
 	// Log logs the given log and returns a string of what was written.
-	Log(Log) string
+	Log(Entry) string
 }
 
 // SetLogger sets the global logger.
@@ -67,15 +62,13 @@ type jsonLogger struct {
 	scrubTimestamp bool
 }
 
-func (jl *jsonLogger) Log(l Log) string {
-	il := models.Log(l)
+func (jl *jsonLogger) Log(l Entry) string {
 	for _, o := range jl.opts {
-		o.ApplyToLog(&il)
+		o.ApplyToLog(&l)
 	}
 	if jl.scrubTimestamp {
-		il.Timestamp = time.Time{}
+		l.Timestamp = time.Time{}
 	}
-	l = Log(il)
 
 	res, err := json.Marshal(l)
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/log"
 	"github.com/luno/jettison/models"
 )
 
@@ -40,8 +41,8 @@ func (m MKV) ContextKeys() []models.KeyValue {
 	return res
 }
 
-func (m MKV) ApplyToLog(log *models.Log) {
-	log.Parameters = append(log.Parameters, m.ContextKeys()...)
+func (m MKV) ApplyToLog(l *log.Entry) {
+	l.Parameters = append(l.Parameters, m.ContextKeys()...)
 }
 
 func (m MKV) ApplyToError(je *errors.JettisonError) {
@@ -70,8 +71,8 @@ func (m MKS) ContextKeys() []models.KeyValue {
 	return res
 }
 
-func (m MKS) ApplyToLog(log *models.Log) {
-	log.Parameters = append(log.Parameters, m.ContextKeys()...)
+func (m MKS) ApplyToLog(l *log.Entry) {
+	l.Parameters = append(l.Parameters, m.ContextKeys()...)
 }
 
 func (m MKS) ApplyToError(je *errors.JettisonError) {
