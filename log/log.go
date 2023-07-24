@@ -97,7 +97,7 @@ func makeLog(ctx context.Context, msg string, lvl models.Level, opts ...Option) 
 	for _, o := range opts {
 		o.ApplyToLog(&l)
 	}
-	l.Parameters = append(l.Parameters, internal.ContextKeyValues(ctx)...)
+	l.Parameters = append(l.Parameters, ContextKeyValues(ctx)...)
 
 	// Sort the parameters for consistent logging.
 	sort.Slice(l.Parameters, func(i, j int) bool {
@@ -136,16 +136,6 @@ func addErrorHops(l *models.Log, err error) {
 			}
 		}
 	}
-}
-
-type ContextOption = internal.ContextOption
-
-// ContextWith returns a new context with the given jettison options appended
-// to its key/value store. When a context containing jettison options is
-// passed to InfoCtx or ErrorCtx, the options are automatically applied to
-// the resulting log.
-func ContextWith(ctx context.Context, opts ...ContextOption) context.Context {
-	return internal.ContextWith(ctx, opts...)
 }
 
 // newLog returns a Log struct decorated with useful defaults - stackSkip

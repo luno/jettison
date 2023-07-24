@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
+	"github.com/luno/jettison/log"
 	"github.com/luno/jettison/models"
 )
 
@@ -21,7 +21,7 @@ func TestOutgoingContext(t *testing.T) {
 		{name: "empty context", ctx: context.Background()},
 		{
 			name: "kv",
-			ctx: internal.ContextWith(
+			ctx: log.ContextWith(
 				context.Background(),
 				j.KV("key1", "value1"),
 			),
@@ -42,7 +42,7 @@ func TestOutgoingContext(t *testing.T) {
 		{
 			name: "unrelated metadata is untouched",
 			ctx: metadata.NewOutgoingContext(
-				internal.ContextWith(context.Background(), j.KV("a", "c")),
+				log.ContextWith(context.Background(), j.KV("a", "c")),
 				metadata.Pairs("a", "b"),
 			),
 			expMD: metadata.MD{
@@ -104,7 +104,7 @@ func TestIncomingContext(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := incomingContext(tc.ctx)
-			kvs := internal.ContextKeyValues(ctx)
+			kvs := log.ContextKeyValues(ctx)
 			assert.Equal(t, tc.expKVs, kvs)
 		})
 	}

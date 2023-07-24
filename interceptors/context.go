@@ -7,7 +7,7 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
-	"github.com/luno/jettison/internal"
+	"github.com/luno/jettison/log"
 	"github.com/luno/jettison/models"
 )
 
@@ -42,11 +42,11 @@ func incomingContext(ctx context.Context) context.Context {
 		}
 		return kvs[i].Key < kvs[j].Key
 	})
-	return internal.ContextWithKeyValues(ctx, kvs)
+	return log.ContextWithKeyValues(ctx, kvs)
 }
 
 func outgoingContext(ctx context.Context) context.Context {
-	kvs := internal.ContextKeyValues(ctx)
+	kvs := log.ContextKeyValues(ctx)
 	if len(kvs) == 0 {
 		return ctx
 	}
