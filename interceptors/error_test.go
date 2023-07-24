@@ -1,11 +1,13 @@
-package errors_test
+package interceptors
 
 import (
+	"context"
 	"io"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -136,7 +138,7 @@ func TestFromStatus(t *testing.T) {
 			s, err := s.WithDetails(tc.details...)
 			jtest.RequireNil(t, err)
 
-			je, err := errors.FromStatus(s)
+			je, err := FromStatus(s)
 			jtest.RequireNil(t, err)
 
 			assert.Equal(t, tc.expError, *je)
@@ -178,9 +180,157 @@ func TestToProto(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			p, err := errors.ErrorToProto(tc.err)
+			p, err := ErrorToProto(tc.err)
 			jtest.RequireNil(t, err)
 			assert.Equal(t, tc.expProto, p)
+		})
+	}
+}
+
+func TestToFromStatus(t *testing.T) {
+	testCases := []struct {
+		name   string
+		errors []models.Error
+	}{
+		{
+			name: "single error, single param",
+			errors: []models.Error{
+				{
+					Message: "msg",
+					Source:  "source",
+					Parameters: []models.KeyValue{
+						{Key: "key", Value: "value"},
+					},
+				},
+			},
+		},
+		{
+			name: "single error, many param",
+			errors: []models.Error{
+				{
+					Message: "msg",
+					Source:  "source",
+					Parameters: []models.KeyValue{
+						{Key: "key1", Value: "value1"},
+						{Key: "key2", Value: "value2"},
+					},
+				},
+			},
+		},
+		{
+			name: "many error, many param",
+			errors: []models.Error{
+				{
+					Message: "msg1",
+					Source:  "source1",
+					Parameters: []models.KeyValue{
+						{Key: "key1", Value: "value1"},
+						{Key: "key2", Value: "value2"},
+					},
+				},
+				{
+					Message: "msg2",
+					Source:  "source2",
+					Parameters: []models.KeyValue{
+						{Key: "key1", Value: "value1"},
+						{Key: "key2", Value: "value2"},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			srvJe := &errors.JettisonError{Hops: []models.Hop{
+				{Binary: "service", Errors: tc.errors},
+			}}
+
+			// Simulate going over the wire.
+			st, ok := status.FromError(outgoingError(srvJe))
+			require.True(t, ok)
+			cliJe, err := FromStatus(st)
+			jtest.RequireNil(t, err)
+
+			assert.Equal(t, len(srvJe.Hops), len(cliJe.Hops))
+			assert.Equal(t, srvJe.Hops[0].Binary, cliJe.Hops[0].Binary)
+			assert.Equal(t, len(srvJe.Hops[0].Errors), len(cliJe.Hops[0].Errors))
+			for i := range srvJe.Hops[0].Errors {
+				e1 := srvJe.Hops[0].Errors[i]
+				e2 := cliJe.Hops[0].Errors[i]
+
+				assert.Equal(t, e1.Message, e2.Message)
+				assert.Equal(t, e1.Source, e2.Source)
+				assert.Equal(t, len(e1.Parameters), len(e2.Parameters))
+				for j := range e1.Parameters {
+					assert.Equal(t, e1.Parameters[j].Key, e2.Parameters[j].Key)
+					assert.Equal(t, e1.Parameters[j].Value, e2.Parameters[j].Value)
+				}
+			}
+		})
+	}
+}
+
+func TestNonUTF8CharsInHop(t *testing.T) {
+	err := errors.JettisonError{
+		Hops: []models.Hop{
+			{
+				Binary: "service",
+				Errors: []models.Error{
+					{
+						Message: "msg1",
+						Source:  "source1",
+						Parameters: []models.KeyValue{
+							{Key: "key1", Value: "a\xc5z"},
+						},
+					},
+				},
+			},
+		},
+	}
+	assert.NotNil(t, outgoingError(&err))
+}
+
+func TestGRPCStatus(t *testing.T) {
+	testCases := []struct {
+		name      string
+		err       error
+		expStatus *status.Status
+	}{
+		{
+			name:      "new error",
+			err:       errors.New("hello"),
+			expStatus: status.New(codes.Unknown, "hello"),
+		},
+		{
+			name:      "wrapped deadline exceeded error",
+			err:       errors.Wrap(context.DeadlineExceeded, ""),
+			expStatus: status.New(codes.DeadlineExceeded, ""),
+		},
+		{
+			name:      "wrapped canceled error",
+			err:       errors.Wrap(context.Canceled, ""),
+			expStatus: status.New(codes.Canceled, ""),
+		},
+		{
+			name:      "double wrapped",
+			err:       errors.Wrap(errors.Wrap(context.Canceled, ""), ""),
+			expStatus: status.New(codes.Canceled, ""),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			e := outgoingError(tc.err)
+			stater, ok := e.(interface{ GRPCStatus() *status.Status })
+			require.True(t, ok)
+
+			s := stater.GRPCStatus()
+
+			assert.Equal(t, tc.expStatus.Code(), s.Code())
+			assert.Equal(t, tc.expStatus.Message(), s.Message())
 		})
 	}
 }

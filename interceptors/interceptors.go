@@ -21,7 +21,7 @@ func UnaryClientInterceptor(ctx context.Context, method string,
 	opts ...grpc.CallOption,
 ) error {
 	err := invoker(outgoingContext(ctx), method, req, reply, cc, opts...)
-	return intercept(err)
+	return incomingError(err)
 }
 
 // StreamClientInterceptor returns an interceptor that inserts a new hop
@@ -34,9 +34,8 @@ func StreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc,
 ) (grpc.ClientStream, error) {
 	res, err := streamer(outgoingContext(ctx), desc, cc, method, opts...)
 	if err != nil {
-		return nil, intercept(err)
+		return nil, incomingError(err)
 	}
-
 	return &clientStream{ClientStream: res}, nil
 }
 
@@ -46,7 +45,8 @@ func UnaryServerInterceptor(ctx context.Context, req interface{},
 	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (
 	interface{}, error,
 ) {
-	return handler(incomingContext(ctx), req)
+	a, err := handler(incomingContext(ctx), req)
+	return a, outgoingError(err)
 }
 
 // StreamServerInterceptor returns an interceptor that unpacks any jettison
@@ -54,12 +54,14 @@ func UnaryServerInterceptor(ctx context.Context, req interface{},
 func StreamServerInterceptor(srv interface{}, ss grpc.ServerStream,
 	info *grpc.StreamServerInfo, handler grpc.StreamHandler,
 ) error {
-	return handler(srv, &serverStream{ServerStream: ss, ctx: incomingContext(ss.Context())})
+	err := handler(srv, &serverStream{ServerStream: ss, ctx: incomingContext(ss.Context())})
+	return outgoingError(err)
 }
 
-// intercept converts all non-nil errors into jettison errors. If a valid jettison error was sent over the wire
-// a new hop is added otherwise the error is wrapped.
-func intercept(err error) error {
+// incomingError converts all non-nil errors into jettison errors.
+// If a valid jettison error was sent over the wire a new hop is added
+// otherwise the error is wrapped.
+func incomingError(err error) error {
 	if err == nil {
 		return nil
 	}
@@ -75,8 +77,8 @@ func intercept(err error) error {
 		return errors.Wrap(context.DeadlineExceeded, "grpc error")
 	}
 
-	je, statusErr := errors.FromStatus(s)
-	if errors.Is(statusErr, errors.ErrInvalidError) {
+	je, statusErr := FromStatus(s)
+	if errors.Is(statusErr, ErrInvalidError) {
 		return errors.Wrap(err, "grpc status error", j.KS("code", s.Code().String()))
 	} else if statusErr != nil {
 		return errors.Wrap(err, "invalid jettison error", j.KS("err", statusErr.Error()))
@@ -87,6 +89,18 @@ func intercept(err error) error {
 	h.StackTrace = internal.GetStackTrace(4)
 	je.Hops = append([]models.Hop{h}, je.Hops...)
 	return je
+}
+
+// outgoingError converts any err into one that will include more details when sent over GRPC
+func outgoingError(err error) error {
+	if err == nil {
+		return nil
+	}
+	je, ok := err.(*errors.JettisonError)
+	if !ok {
+		return err
+	}
+	return gRPCWrap(je)
 }
 
 // serverStream is a wrapper of a grpc.ServerStream implementation that decodes
@@ -107,9 +121,9 @@ type clientStream struct {
 }
 
 func (cs *clientStream) SendMsg(m interface{}) error {
-	return intercept(cs.ClientStream.SendMsg(m))
+	return incomingError(cs.ClientStream.SendMsg(m))
 }
 
 func (cs *clientStream) RecvMsg(m interface{}) error {
-	return intercept(cs.ClientStream.RecvMsg(m))
+	return incomingError(cs.ClientStream.RecvMsg(m))
 }

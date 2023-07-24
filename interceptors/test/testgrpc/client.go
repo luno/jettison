@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/errors/testpb"
-	"github.com/luno/jettison/interceptors"
 	"google.golang.org/grpc"
+
+	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/interceptors"
+	"github.com/luno/jettison/interceptors/test/testpb"
 )
 
 type Client struct {

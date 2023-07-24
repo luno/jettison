@@ -1,7 +1,6 @@
 package errors_test
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"testing"
@@ -9,108 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	go_2_errors "golang.org/x/exp/errors"
-	"google.golang.org/grpc/codes"
-	gstatus "google.golang.org/grpc/status"
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
-	"github.com/luno/jettison/models"
 )
-
-func TestToFromStatus(t *testing.T) {
-	testCases := []struct {
-		name   string
-		errors []models.Error
-	}{
-		{
-			name: "single error, single param",
-			errors: []models.Error{
-				{
-					Message: "msg",
-					Source:  "source",
-					Parameters: []models.KeyValue{
-						{Key: "key", Value: "value"},
-					},
-				},
-			},
-		},
-		{
-			name: "single error, many param",
-			errors: []models.Error{
-				{
-					Message: "msg",
-					Source:  "source",
-					Parameters: []models.KeyValue{
-						{Key: "key1", Value: "value1"},
-						{Key: "key2", Value: "value2"},
-					},
-				},
-			},
-		},
-		{
-			name: "many error, many param",
-			errors: []models.Error{
-				{
-					Message: "msg1",
-					Source:  "source1",
-					Parameters: []models.KeyValue{
-						{Key: "key1", Value: "value1"},
-						{Key: "key2", Value: "value2"},
-					},
-				},
-				{
-					Message: "msg2",
-					Source:  "source2",
-					Parameters: []models.KeyValue{
-						{Key: "key1", Value: "value1"},
-						{Key: "key2", Value: "value2"},
-					},
-				},
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		tc := tc
-
-		t.Run(tc.name, func(t *testing.T) {
-			s := errors.JettisonError{
-				Hops: []models.Hop{
-					{
-						Binary: "service",
-						Errors: tc.errors,
-					},
-				},
-			}
-
-			// Simulate going over the wire.
-			status := s.GRPCStatus()
-			statusErr := status.Err()
-			statusFromErr, ok := gstatus.FromError(statusErr)
-			if !assert.True(t, ok) {
-				return
-			}
-
-			s2, err := errors.FromStatus(statusFromErr)
-			assert.NoError(t, err)
-			assert.Equal(t, len(s.Hops), len(s2.Hops))
-			assert.Equal(t, s.Hops[0].Binary, s2.Hops[0].Binary)
-			assert.Equal(t, len(s.Hops[0].Errors), len(s2.Hops[0].Errors))
-			for i := range s.Hops[0].Errors {
-				e1 := s.Hops[0].Errors[i]
-				e2 := s2.Hops[0].Errors[i]
-
-				assert.Equal(t, e1.Message, e2.Message)
-				assert.Equal(t, e1.Source, e2.Source)
-				assert.Equal(t, len(e1.Parameters), len(e2.Parameters))
-				for j := range e1.Parameters {
-					assert.Equal(t, e1.Parameters[j].Key, e2.Parameters[j].Key)
-					assert.Equal(t, e1.Parameters[j].Value, e2.Parameters[j].Value)
-				}
-			}
-		})
-	}
-}
 
 func TestError(t *testing.T) {
 	err1 := errors.New("base: error msg")
@@ -275,65 +176,4 @@ func TestFormat(t *testing.T) {
 	assert.Equal(t, "wrap sql error: sql: no rows in result set", err5.Error())
 	assert.Equal(t, "wrap sql error: sql: no rows in result set", fmt.Sprintf("%s", err5))
 	assert.Equal(t, "wrap sql error(w=w1): sql: no rows in result set", fmt.Sprintf("%#v", err5))
-}
-
-func TestNonUTF8CharsInHop(t *testing.T) {
-	err := errors.JettisonError{
-		Hops: []models.Hop{
-			{
-				Binary: "service",
-				Errors: []models.Error{
-					{
-						Message: "msg1",
-						Source:  "source1",
-						Parameters: []models.KeyValue{
-							{Key: "key1", Value: "a\xc5z"},
-						},
-					},
-				},
-			},
-		},
-	}
-	assert.NotNil(t, err.GRPCStatus())
-}
-
-func TestGRPCStatus(t *testing.T) {
-	testCases := []struct {
-		name      string
-		err       error
-		expStatus *gstatus.Status
-	}{
-		{
-			name:      "new error",
-			err:       errors.New("hello"),
-			expStatus: gstatus.New(codes.Unknown, "hello"),
-		},
-		{
-			name:      "wrapped deadline exceeded error",
-			err:       errors.Wrap(context.DeadlineExceeded, ""),
-			expStatus: gstatus.New(codes.DeadlineExceeded, ""),
-		},
-		{
-			name:      "wrapped canceled error",
-			err:       errors.Wrap(context.Canceled, ""),
-			expStatus: gstatus.New(codes.Canceled, ""),
-		},
-		{
-			name:      "double wrapped",
-			err:       errors.Wrap(errors.Wrap(context.Canceled, ""), ""),
-			expStatus: gstatus.New(codes.Canceled, ""),
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			stater, ok := tc.err.(interface{ GRPCStatus() *gstatus.Status })
-			require.True(t, ok)
-
-			s := stater.GRPCStatus()
-
-			assert.Equal(t, tc.expStatus.Code(), s.Code())
-			assert.Equal(t, tc.expStatus.Message(), s.Message())
-		})
-	}
 }

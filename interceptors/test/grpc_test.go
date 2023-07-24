@@ -1,4 +1,4 @@
-package errors_test
+package test_test
 
 import (
 	"context"
@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/errors/testgrpc"
-	"github.com/luno/jettison/errors/testpb"
+	"github.com/luno/jettison/interceptors/test/testgrpc"
+	"github.com/luno/jettison/interceptors/test/testpb"
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/jtest"
@@ -86,9 +86,9 @@ func TestClientStacktrace(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := `[
-  "github.com/luno/jettison/errors/testpb/test.pb.go:220 (*testClient).ErrorWithCode",
-  "github.com/luno/jettison/errors/testgrpc/client.go:41",
-  "github.com/luno/jettison/errors/grpc_test.go:78 TestClientStacktrace",
+  "github.com/luno/jettison/interceptors/test/testpb/test.pb.go:390 (*testClient).ErrorWithCode",
+  "github.com/luno/jettison/interceptors/test/testgrpc/client.go:42",
+  "github.com/luno/jettison/interceptors/test/grpc_test.go:78 TestClientStacktrace",
   "testing/testing.go:X tRunner",
   "runtime/asm_X.s:X goexit"
 ]`

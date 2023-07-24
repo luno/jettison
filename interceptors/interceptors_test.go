@@ -31,7 +31,7 @@ func TestErrIntercept(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := intercept(tc.testErr)
+			err := incomingError(tc.testErr)
 			jtest.Require(t, tc.expErr, err)
 		})
 	}

@@ -1,29 +1,14 @@
 package errors
 
 import (
-	"context"
-	"errors"
-	"flag"
 	"fmt"
 	"io"
-	"log"
 	"reflect"
 	"strings"
 
 	"golang.org/x/xerrors"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
-	"github.com/luno/jettison/internal"
-	"github.com/luno/jettison/internal/jettisonpb"
 	"github.com/luno/jettison/models"
-)
-
-var (
-	defaultCode = flag.Int("jettison_default_error_code",
-		int(codes.Unknown), "Default error code; see google.golang.org/grpc/codes")
-
-	ErrInvalidError = errors.New("jettison/errors: given grpc.Status does not contain a valid jettison error")
 )
 
 // WithCustomTrace sets the stack trace of the current hop to the given value.
@@ -52,43 +37,6 @@ type JettisonError struct {
 	// libraries such as github.com/pkg/errors. This is a best-effort attempt
 	// to keep this interop - err.Cause() will return originalErr.
 	OriginalErr error
-}
-
-// GRPCStatus marshals the given jettison error into a *grpc.Status object,
-// with a message given by the most recently wrapped error in the list of
-// hops.
-func (je *JettisonError) GRPCStatus() *status.Status {
-	msg := ""
-	if le, ok := je.LatestError(); ok {
-		msg = le.Message
-	}
-
-	c := getDefaultCode()
-	switch je.OriginalErr {
-	case context.Canceled:
-		c = codes.Canceled
-	case context.DeadlineExceeded:
-		c = codes.DeadlineExceeded
-	}
-
-	res := status.New(c, msg)
-
-	for _, h := range je.Hops {
-		hpb, err := internal.HopToProto(&h)
-		if err != nil {
-			log.Printf("jettison/errors: Failed to marshal hop to protobuf: %v", err)
-			continue
-		}
-
-		withDetails, err := res.WithDetails(hpb)
-		if err != nil {
-			log.Printf("jettison/errors: Failed to add details to gRPC status: %v", err)
-			continue
-		}
-		res = withDetails
-	}
-	// TODO(adam): Include WrappedError details when services using FromStatus can handle it
-	return res
 }
 
 // Format satisfies the fmt.Formatter interface providing customizable formatting:
@@ -346,41 +294,6 @@ func (je *JettisonError) GetKeyValues() map[string]string {
 	return keyValues
 }
 
-// FromStatus unmarshals a *grpc.Status into a jettison error object,
-// returning a nil error if and only if no unexpected details were found on the
-// status.
-func FromStatus(s *status.Status) (*JettisonError, error) {
-	if s == nil {
-		return nil, ErrInvalidError
-	} else if len(s.Details()) == 0 {
-		return nil, ErrInvalidError
-	}
-
-	var res JettisonError
-	for _, d := range s.Details() {
-		switch det := d.(type) {
-		case *jettisonpb.Hop:
-			hop, err := internal.HopFromProto(det)
-			if err != nil {
-				return nil, err
-			}
-			res.Hops = append(res.Hops, *hop)
-		case *jettisonpb.WrappedError:
-			je, err := ErrorFromProto(det)
-			if err == nil {
-				// TODO(adam): Just return je when we no longer rely on Hops
-				res.Message = je.Message
-				res.Metadata = je.Metadata
-				res.Err = je.Err
-			}
-		}
-	}
-	if len(res.Hops) == 0 && res.Message == "" && res.Metadata.IsZero() && res.Err == nil {
-		return nil, Wrap(ErrInvalidError, "")
-	}
-	return &res, nil
-}
-
 // unwrap is a thin wrapper around internal.JettisonError that returns another
 // internal.JettisonError instead of an error interface value.
 func unwrap(je *JettisonError) *JettisonError {
@@ -394,10 +307,6 @@ func unwrap(je *JettisonError) *JettisonError {
 		return nil
 	}
 	return res
-}
-
-func getDefaultCode() codes.Code {
-	return codes.Code(*defaultCode)
 }
 
 // printer implements xerrors.Printer interface.
