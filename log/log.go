@@ -10,7 +10,6 @@ import (
 	"github.com/go-stack/stack"
 
 	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/internal"
 )
 
 const (
@@ -49,16 +48,6 @@ func WithError(err error) Option {
 	})
 }
 
-// WithStackTrace returns a jettison option to add a stacktrace as a hop to the log.
-// It only works when provided as option to log package functions.
-func WithStackTrace() Option {
-	return logOption(func(e *Entry) {
-		h := internal.NewHop()
-		h.StackTrace = internal.GetStackTrace(2)
-		e.Hops = append(e.Hops, h)
-	})
-}
-
 type Option interface {
 	ApplyToLog(*Entry)
 }
@@ -79,12 +68,10 @@ func Info(ctx context.Context, msg string, opts ...Option) {
 // included in the log.
 // If err is nil, a new error is created.
 func Error(ctx context.Context, err error, opts ...Option) {
-	if err != nil {
-		opts = append(opts, WithError(err))
-	} else {
+	if err == nil {
 		err = errors.New("nil error logged - this is probably a bug")
-		opts = append(opts, WithStackTrace())
 	}
+	opts = append(opts, WithError(err))
 	e := makeEntry(ctx, err.Error(), LevelError, opts...)
 	logger.Log(e)
 }

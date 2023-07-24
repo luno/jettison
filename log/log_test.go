@@ -15,6 +15,7 @@ import (
 	jerrors "github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
 	jlog "github.com/luno/jettison/log"
+	"github.com/luno/jettison/models"
 )
 
 var writeGoldenFiles = flag.Bool("write-golden-files", false,
@@ -73,8 +74,11 @@ func TestLog(t *testing.T) {
 			opts: []jlog.Option{
 				jlog.WithError(jerrors.New("test",
 					source("testsource"),
-					jerrors.WithBinary("testservice"),
-					jerrors.WithStackTrace([]string{"teststacktrace"}))),
+					jerrors.WithCustomTrace(models.Hop{
+						Binary:     "testservice",
+						StackTrace: []string{"teststacktrace"},
+					}),
+				)),
 			},
 		},
 		{
@@ -113,16 +117,22 @@ func TestError(t *testing.T) {
 			name: "message_only",
 			err: jerrors.New("test",
 				source("testsource"),
-				jerrors.WithBinary("testservice"),
-				jerrors.WithStackTrace([]string{"teststacktrace"})),
+				jerrors.WithCustomTrace(models.Hop{
+					Binary:     "testservice",
+					StackTrace: []string{"teststacktrace"},
+				}),
+			),
 		},
 		{
 			name: "error_code",
 			err: jerrors.New("test",
 				source("testsource"),
-				jerrors.WithBinary("testservice"),
 				jerrors.WithCode("testcode"),
-				jerrors.WithStackTrace([]string{"teststacktrace"})),
+				jerrors.WithCustomTrace(models.Hop{
+					Binary:     "testservice",
+					StackTrace: []string{"teststacktrace"},
+				}),
+			),
 		},
 		{
 			name: "context",
@@ -130,7 +140,11 @@ func TestError(t *testing.T) {
 			err: jerrors.New("test",
 				source("testsource"),
 				jerrors.WithBinary("testservice"),
-				jerrors.WithStackTrace([]string{"teststacktrace"})),
+				jerrors.WithCustomTrace(models.Hop{
+					Binary:     "testservice",
+					StackTrace: []string{"teststacktrace"},
+				}),
+			),
 		},
 	}
 

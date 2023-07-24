@@ -26,11 +26,12 @@ var (
 	ErrInvalidError = errors.New("jettison/errors: given grpc.Status does not contain a valid jettison error")
 )
 
-// WithStackTrace sets the stack trace of the current hop to the given value.
-func WithStackTrace(trace []string) Option {
+// WithCustomTrace sets the stack trace of the current hop to the given value.
+func WithCustomTrace(trace models.Hop) Option {
 	return errorOption(func(je *JettisonError) {
-		je.Hops[0].StackTrace = trace
-		je.Metadata.Trace.StackTrace = trace
+		je.Hops[0].Binary = trace.Binary
+		je.Hops[0].StackTrace = trace.StackTrace
+		je.Metadata.Trace = trace
 	})
 }
 
@@ -220,6 +221,12 @@ func (je *JettisonError) Unwrap() error {
 		je.OriginalErr != nil {
 
 		return je.OriginalErr
+	}
+
+	if subJe, ok := je.Err.(*JettisonError); ok {
+		je.Message = subJe.Message
+		je.Metadata = subJe.Metadata
+		je.Err = subJe.Err
 	}
 
 	return je

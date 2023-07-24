@@ -2,8 +2,6 @@ package errors
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
 
 	"golang.org/x/xerrors"
 
@@ -78,7 +76,7 @@ func New(msg string, ol ...Option) error {
 	h.Errors = []models.Error{
 		internal.NewError(msg),
 	}
-	md := newMetadata()
+	md := models.Metadata{Trace: getTrace()}
 	je := &JettisonError{
 		Message:  msg,
 		Metadata: md,
@@ -128,7 +126,7 @@ func Wrap(err error, msg string, ol ...Option) error {
 	// We only need to add a trace when wrapping sentinel or non-jettison errors
 	// for the first time
 	if _, has := hasTrace(err); !has {
-		md.Trace = trace()
+		md.Trace = getTrace()
 	}
 
 	// For the nested wrapping we're only interested in wrapping this error message,
@@ -143,23 +141,6 @@ func Wrap(err error, msg string, ol ...Option) error {
 	return je
 }
 
-func newMetadata() models.Metadata {
-	return models.Metadata{
-		Trace: models.Hop{
-			Binary:     filepath.Base(os.Args[0]),
-			StackTrace: internal.GetStackTrace(3),
-		},
-	}
-}
-
-func trace() models.Hop {
-	return models.Hop{
-		Binary: filepath.Base(os.Args[0]),
-		// Skip GetStackTrace, trace, and New/Wrap
-		StackTrace: internal.GetStackTrace(3),
-	}
-}
-
 type unwrapper interface {
 	Unwrap() error
 }
@@ -169,15 +150,20 @@ type unwrapperList interface {
 }
 
 func hasTrace(err error) (models.Hop, bool) {
-	e := err
-	for e != nil {
+	errs := []error{err}
+	for len(errs) > 0 {
+		e := errs[0]
+		errs = errs[1:]
 		if je, ok := e.(*JettisonError); ok && je.Metadata.Trace.Binary != "" {
 			return je.Metadata.Trace, true
 		}
-		if un, ok := e.(unwrapper); ok {
-			e = un.Unwrap()
-		} else {
-			break
+		switch unw := e.(type) {
+		case interface{ Unwrap() error }:
+			if err := unw.Unwrap(); err != nil {
+				errs = append(errs, err)
+			}
+		case interface{ Unwrap() []error }:
+			errs = append(errs, unw.Unwrap()...)
 		}
 	}
 	return models.Hop{}, false
