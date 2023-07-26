@@ -395,39 +395,43 @@ func TestWithoutStackTrace(t *testing.T) {
 
 func TestErrorMetadata(t *testing.T) {
 	testCases := []struct {
-		name        string
-		err         error
-		expMetadata models.Metadata
-		expNoTrace  bool
+		name       string
+		err        error
+		expError   errors.JettisonError
+		expNoTrace bool
 	}{
 		{
 			name: "new kv",
 			err:  errors.New("one", j.KV("test", "val")),
-			expMetadata: models.Metadata{
-				KV: []models.KeyValue{{Key: "test", Value: "val"}},
+			expError: errors.JettisonError{
+				Message: "one",
+				KV:      []models.KeyValue{{Key: "test", Value: "val"}},
 			},
 		},
 		{
 			name: "new code",
 			err:  errors.New("one", errors.WithCode("code")),
-			expMetadata: models.Metadata{
-				Code: "code",
+			expError: errors.JettisonError{
+				Message: "one", Code: "code",
 			},
 		},
 		{
 			name:       "without stacktrace",
 			err:        errors.New("one", errors.WithoutStackTrace()),
 			expNoTrace: true,
+			expError:   errors.JettisonError{Message: "one"},
 		},
 		{
-			name: "wrap non-jettison, gets a trace",
-			err:  errors.Wrap(io.EOF, "hi"),
+			name:     "wrap non-jettison, gets a trace",
+			err:      errors.Wrap(io.EOF, "hi"),
+			expError: errors.JettisonError{Message: "hi"},
 		},
 		{
 			name: "wrap non-jettison, with kv",
 			err:  errors.Wrap(io.EOF, "hi", j.KV("key", "value")),
-			expMetadata: models.Metadata{
-				KV: []models.KeyValue{{Key: "key", Value: "value"}},
+			expError: errors.JettisonError{
+				Message: "hi",
+				KV:      []models.KeyValue{{Key: "key", Value: "value"}},
 			},
 		},
 		{
@@ -437,8 +441,9 @@ func TestErrorMetadata(t *testing.T) {
 				"outer",
 				j.KV("outer", "outer_value"),
 			),
-			expMetadata: models.Metadata{
-				KV: []models.KeyValue{{Key: "outer", Value: "outer_value"}},
+			expError: errors.JettisonError{
+				Message: "outer",
+				KV:      []models.KeyValue{{Key: "outer", Value: "outer_value"}},
 			},
 			expNoTrace: true,
 		},
@@ -448,15 +453,16 @@ func TestErrorMetadata(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			je := tc.err.(*errors.JettisonError)
 			if tc.expNoTrace {
-				assert.Empty(t, je.Metadata.Trace.Binary)
-				assert.Empty(t, je.Metadata.Trace.StackTrace)
+				assert.Empty(t, je.Binary)
+				assert.Empty(t, je.StackTrace)
 			} else {
-				assert.NotEmpty(t, je.Metadata.Trace.Binary)
-				assert.NotEmpty(t, je.Metadata.Trace.StackTrace)
+				assert.NotEmpty(t, je.Binary)
+				assert.NotEmpty(t, je.StackTrace)
 			}
-			// Clear trace
-			je.Metadata.Trace = models.Hop{}
-			assert.Equal(t, tc.expMetadata, je.Metadata)
+
+			assert.Equal(t, tc.expError.Message, je.Message)
+			assert.Equal(t, tc.expError.Code, je.Code)
+			assert.Equal(t, tc.expError.KV, je.KV)
 		})
 	}
 }

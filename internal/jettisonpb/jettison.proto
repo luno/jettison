@@ -29,8 +29,14 @@ message Metadata {
 }
 
 message WrappedError {
+  reserved 2;
+
   string message = 1;
-  Metadata metadata = 2;
+
+  string binary = 5;
+  repeated string stack_trace = 6;
+  string code = 7;
+  repeated KeyValue key_values = 8;
 
   repeated WrappedError joined_errors = 3;
   WrappedError wrapped_error = 4;

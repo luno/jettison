@@ -15,14 +15,6 @@ func (o errorOption) ApplyToError(je *JettisonError) {
 	o(je)
 }
 
-// WithBinary sets the binary of the current hop to the given value.
-func WithBinary(bin string) Option {
-	return errorOption(func(je *JettisonError) {
-		je.Hops[0].Binary = bin
-		je.Metadata.Trace.Binary = bin
-	})
-}
-
 // WithCode sets an error code on the latest error in the chain. A code should
 // uniquely identity an error, the intention being to provide a notion of
 // equality for jettison errors (see Is() for more details).
@@ -32,7 +24,7 @@ func WithCode(code string) Option {
 		if len(je.Hops[0].Errors) > 0 {
 			je.Hops[0].Errors[0].Code = code
 		}
-		je.Metadata.Code = code
+		je.Code = code
 	})
 }
 
@@ -53,7 +45,8 @@ func WithoutStackTrace() Option {
 		if len(je.Hops[0].Errors) <= 1 {
 			je.Hops[0].StackTrace = nil
 		}
-		je.Metadata.Trace = models.Hop{}
+		je.Binary = ""
+		je.StackTrace = nil
 	})
 }
 
@@ -76,12 +69,11 @@ func New(msg string, ol ...Option) error {
 	h.Errors = []models.Error{
 		internal.NewError(msg),
 	}
-	md := models.Metadata{Trace: getTrace()}
 	je := &JettisonError{
-		Message:  msg,
-		Metadata: md,
-		Hops:     []models.Hop{h},
+		Message: msg,
+		Hops:    []models.Hop{h},
 	}
+	je.Binary, je.StackTrace = getTrace(1)
 	for _, o := range ol {
 		o.ApplyToError(je)
 	}
@@ -122,18 +114,14 @@ func Wrap(err error, msg string, ol ...Option) error {
 		je.Hops[0].Errors...,
 	)
 
-	var md models.Metadata
-	// We only need to add a trace when wrapping sentinel or non-jettison errors
-	// for the first time
-	if _, has := hasTrace(err); !has {
-		md.Trace = getTrace()
-	}
-
-	// For the nested wrapping we're only interested in wrapping this error message,
-	// so we can overwrite the nested fields.
 	je.Message = msg
 	je.Err = err
-	je.Metadata = md
+
+	// We only need to add a trace when wrapping sentinel or non-jettison errors
+	// for the first time
+	if !hasTrace(err) {
+		je.Binary, je.StackTrace = getTrace(1)
+	}
 
 	for _, o := range ol {
 		o.ApplyToError(je)
@@ -141,21 +129,13 @@ func Wrap(err error, msg string, ol ...Option) error {
 	return je
 }
 
-type unwrapper interface {
-	Unwrap() error
-}
-
-type unwrapperList interface {
-	Unwrap() []error
-}
-
-func hasTrace(err error) (models.Hop, bool) {
+func hasTrace(err error) bool {
 	errs := []error{err}
 	for len(errs) > 0 {
 		e := errs[0]
 		errs = errs[1:]
-		if je, ok := e.(*JettisonError); ok && je.Metadata.Trace.Binary != "" {
-			return je.Metadata.Trace, true
+		if je, ok := e.(*JettisonError); ok && je.Binary != "" {
+			return true
 		}
 		switch unw := e.(type) {
 		case interface{ Unwrap() error }:
@@ -166,7 +146,7 @@ func hasTrace(err error) (models.Hop, bool) {
 			errs = append(errs, unw.Unwrap()...)
 		}
 	}
-	return models.Hop{}, false
+	return false
 }
 
 // Is is an alias of the standard library's errors.Is() function.

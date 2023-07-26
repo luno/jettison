@@ -3,7 +3,6 @@ package errors
 import (
 	"fmt"
 
-	"github.com/luno/jettison/models"
 	"github.com/luno/jettison/trace"
 )
 
@@ -16,10 +15,9 @@ func SetTraceConfig(config trace.StackConfig) {
 	traceConfig = config
 }
 
-func getTrace() models.Hop {
-	return models.Hop{
-		Binary: trace.CurrentBinary(),
-		// Skip GetStackTrace, getTrace, and New/Wrap
-		StackTrace: trace.GetStackTrace(3, traceConfig),
-	}
+// getTrace will get the current binary and a stacktrace
+// skip will omit a certain number of stack calls before getTrace
+func getTrace(skip int) (string, []string) {
+	// Skip GetStackTrace and getTrace
+	return trace.CurrentBinary(), trace.GetStackTrace(skip+2, traceConfig)
 }

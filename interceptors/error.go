@@ -12,6 +12,7 @@ import (
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/internal/jettisonpb"
 	"github.com/luno/jettison/j"
+	"github.com/luno/jettison/models"
 )
 
 var ErrInvalidError = errors.New("jettison/errors: given grpc.Status does not contain a valid jettison error", j.C("ERR_e60c52eceb509f04"))
@@ -97,31 +98,31 @@ func FromStatus(s *status.Status) (*errors.JettisonError, error) {
 			if err == nil {
 				// TODO(adam): Just return je when we no longer rely on Hops
 				res.Message = je.Message
-				res.Metadata = je.Metadata
+				res.Binary = je.Binary
+				res.Code = je.Code
+				res.StackTrace = je.StackTrace
+				res.KV = je.KV
 				res.Err = je.Err
 			}
 		}
 	}
-	if len(res.Hops) == 0 && res.Message == "" && res.Metadata.IsZero() && res.Err == nil {
+	if len(res.Hops) == 0 && res.IsZero() {
 		return nil, errors.Wrap(ErrInvalidError, "")
 	}
 	return &res, nil
 }
 
-func ErrorFromProto(wrappedError *jettisonpb.WrappedError) (*errors.JettisonError, error) {
-	meta, err := internal.MetadataFromProto(wrappedError.Metadata)
-	if err != nil {
-		return nil, err
-	}
+func ErrorFromProto(we *jettisonpb.WrappedError) (*errors.JettisonError, error) {
 	je := &errors.JettisonError{
-		Message: wrappedError.Message,
+		Message:    we.Message,
+		Binary:     we.Binary,
+		Code:       we.Code,
+		StackTrace: we.StackTrace,
+		KV:         kvFromProto(we.KeyValues),
 	}
-	if meta != nil {
-		je.Metadata = *meta
-	}
-	if len(wrappedError.JoinedErrors) > 0 {
+	if len(we.JoinedErrors) > 0 {
 		var errs []error
-		for _, joinErr := range wrappedError.JoinedErrors {
+		for _, joinErr := range we.JoinedErrors {
 			subErr, err := ErrorFromProto(joinErr)
 			if err != nil {
 				return nil, err
@@ -129,8 +130,8 @@ func ErrorFromProto(wrappedError *jettisonpb.WrappedError) (*errors.JettisonErro
 			errs = append(errs, subErr)
 		}
 		je.Err = stderrors.Join(errs...)
-	} else if wrappedError.WrappedError != nil {
-		subErr, err := ErrorFromProto(wrappedError.WrappedError)
+	} else if we.WrappedError != nil {
+		subErr, err := ErrorFromProto(we.WrappedError)
 		if err != nil {
 			return nil, err
 		}
@@ -147,13 +148,10 @@ func ErrorToProto(err error) (*jettisonpb.WrappedError, error) {
 	je, ok := err.(*errors.JettisonError)
 	if ok {
 		we.Message = je.Message
-		if !je.Metadata.IsZero() {
-			mdProto, err := internal.MetadataToProto(&je.Metadata)
-			if err != nil {
-				return nil, err
-			}
-			we.Metadata = mdProto
-		}
+		we.Binary = je.Binary
+		we.Code = je.Code
+		we.StackTrace = je.StackTrace
+		we.KeyValues = kvToProto(je.KV)
 	}
 	switch unw := err.(type) {
 	case interface{ Unwrap() error }:
@@ -174,4 +172,26 @@ func ErrorToProto(err error) (*jettisonpb.WrappedError, error) {
 		we.Message = err.Error()
 	}
 	return &we, nil
+}
+
+func kvToProto(kvs []models.KeyValue) []*jettisonpb.KeyValue {
+	if len(kvs) == 0 {
+		return nil
+	}
+	res := make([]*jettisonpb.KeyValue, 0, len(kvs))
+	for _, kv := range kvs {
+		res = append(res, &jettisonpb.KeyValue{Key: kv.Key, Value: kv.Value})
+	}
+	return res
+}
+
+func kvFromProto(kvs []*jettisonpb.KeyValue) []models.KeyValue {
+	if len(kvs) == 0 {
+		return nil
+	}
+	res := make([]models.KeyValue, 0, len(kvs))
+	for _, kv := range kvs {
+		res = append(res, models.KeyValue{Key: kv.Key, Value: kv.Value})
+	}
+	return res
 }

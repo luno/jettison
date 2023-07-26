@@ -139,7 +139,6 @@ func TestError(t *testing.T) {
 			ctx:  jlog.ContextWith(context.Background(), j.KS("ctx_key", "ctx_val")),
 			err: jerrors.New("test",
 				source("testsource"),
-				jerrors.WithBinary("testservice"),
 				jerrors.WithCustomTrace(models.Hop{
 					Binary:     "testservice",
 					StackTrace: []string{"teststacktrace"},

@@ -47,7 +47,7 @@ func (m MKV) ApplyToLog(l *log.Entry) {
 
 func (m MKV) ApplyToError(je *errors.JettisonError) {
 	kvs := m.ContextKeys()
-	je.Metadata.KV = append(je.Metadata.KV, kvs...)
+	je.KV = append(je.KV, kvs...)
 	if len(je.Hops) == 0 {
 		return
 	}
@@ -77,7 +77,7 @@ func (m MKS) ApplyToLog(l *log.Entry) {
 
 func (m MKS) ApplyToError(je *errors.JettisonError) {
 	kvs := m.ContextKeys()
-	je.Metadata.KV = append(je.Metadata.KV, kvs...)
+	je.KV = append(je.KV, kvs...)
 	if len(je.Hops) == 0 {
 		return
 	}

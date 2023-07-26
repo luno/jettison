@@ -16,7 +16,8 @@ func WithCustomTrace(trace models.Hop) Option {
 	return errorOption(func(je *JettisonError) {
 		je.Hops[0].Binary = trace.Binary
 		je.Hops[0].StackTrace = trace.StackTrace
-		je.Metadata.Trace = trace
+		je.Binary = trace.Binary
+		je.StackTrace = trace.StackTrace
 	})
 }
 
@@ -27,9 +28,13 @@ func WithCustomTrace(trace models.Hop) Option {
 //
 // See https://github.com/grpc/grpc-go/blob/master/status/status.go#L130.
 type JettisonError struct {
-	Message  string
-	Err      error
-	Metadata models.Metadata
+	Message string
+	Err     error
+
+	Binary     string
+	StackTrace []string
+	Code       string
+	KV         []models.KeyValue
 
 	Hops []models.Hop
 
@@ -116,8 +121,6 @@ func (je *JettisonError) LatestError() (models.Error, bool) {
 func (je *JettisonError) Clone() *JettisonError {
 	res := JettisonError{
 		Message:     je.Message,
-		Err:         je.Err,
-		Metadata:    je.Metadata,
 		OriginalErr: je.OriginalErr,
 	}
 
@@ -173,7 +176,10 @@ func (je *JettisonError) Unwrap() error {
 
 	if subJe, ok := je.Err.(*JettisonError); ok {
 		je.Message = subJe.Message
-		je.Metadata = subJe.Metadata
+		je.Binary = subJe.Binary
+		je.StackTrace = subJe.StackTrace
+		je.KV = subJe.KV
+		je.Code = subJe.Code
 		je.Err = subJe.Err
 	}
 
@@ -292,6 +298,15 @@ func (je *JettisonError) GetKeyValues() map[string]string {
 	}
 
 	return keyValues
+}
+
+func (je *JettisonError) IsZero() bool {
+	return je.Message == "" &&
+		je.Err == nil &&
+		je.Binary == "" &&
+		len(je.StackTrace) == 0 &&
+		je.Code == "" &&
+		len(je.KV) == 0
 }
 
 // unwrap is a thin wrapper around internal.JettisonError that returns another

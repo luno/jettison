@@ -43,9 +43,9 @@ func TestFromStatus(t *testing.T) {
 		{
 			name: "wrapped meta",
 			details: []proto.Message{
-				&jettisonpb.WrappedError{Metadata: &jettisonpb.Metadata{Code: "abc"}},
+				&jettisonpb.WrappedError{Code: "abc"},
 			},
-			expError: errors.JettisonError{Metadata: models.Metadata{Code: "abc"}},
+			expError: errors.JettisonError{Code: "abc"},
 		},
 		{
 			name: "still decode Hop when WrappedError is there",
@@ -170,10 +170,7 @@ func TestToProto(t *testing.T) {
 				WrappedError: &jettisonpb.WrappedError{
 					Message: "EOF",
 				},
-				Metadata: &jettisonpb.Metadata{
-					Trace:     &jettisonpb.Hop{},
-					KeyValues: []*jettisonpb.KeyValue{{Key: "key", Value: "value"}},
-				},
+				KeyValues: []*jettisonpb.KeyValue{{Key: "key", Value: "value"}},
 			},
 		},
 	}
