@@ -15,7 +15,6 @@ import (
 	jerrors "github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
 	jlog "github.com/luno/jettison/log"
-	"github.com/luno/jettison/models"
 )
 
 var writeGoldenFiles = flag.Bool("write-golden-files", false,
@@ -31,6 +30,16 @@ func (s source) ApplyToLog(e *jlog.Entry) {
 
 func (s source) ApplyToError(je *jerrors.JettisonError) {
 	je.Hops[0].SetSource(string(s))
+}
+
+// WithCustomTrace sets the stack trace of the current hop to the given value.
+func WithCustomTrace(bin string, stack []string) jerrors.ErrorOption {
+	return func(je *jerrors.JettisonError) {
+		je.Hops[0].Binary = bin
+		je.Hops[0].StackTrace = stack
+		je.Binary = bin
+		je.StackTrace = stack
+	}
 }
 
 func TestLog(t *testing.T) {
@@ -74,10 +83,7 @@ func TestLog(t *testing.T) {
 			opts: []jlog.Option{
 				jlog.WithError(jerrors.New("test",
 					source("testsource"),
-					jerrors.WithCustomTrace(models.Hop{
-						Binary:     "testservice",
-						StackTrace: []string{"teststacktrace"},
-					}),
+					WithCustomTrace("testservice", []string{"teststacktrace"}),
 				)),
 			},
 		},
@@ -117,10 +123,7 @@ func TestError(t *testing.T) {
 			name: "message_only",
 			err: jerrors.New("test",
 				source("testsource"),
-				jerrors.WithCustomTrace(models.Hop{
-					Binary:     "testservice",
-					StackTrace: []string{"teststacktrace"},
-				}),
+				WithCustomTrace("testservice", []string{"teststacktrace"}),
 			),
 		},
 		{
@@ -128,10 +131,7 @@ func TestError(t *testing.T) {
 			err: jerrors.New("test",
 				source("testsource"),
 				jerrors.WithCode("testcode"),
-				jerrors.WithCustomTrace(models.Hop{
-					Binary:     "testservice",
-					StackTrace: []string{"teststacktrace"},
-				}),
+				WithCustomTrace("testservice", []string{"teststacktrace"}),
 			),
 		},
 		{
@@ -139,10 +139,7 @@ func TestError(t *testing.T) {
 			ctx:  jlog.ContextWith(context.Background(), j.KS("ctx_key", "ctx_val")),
 			err: jerrors.New("test",
 				source("testsource"),
-				jerrors.WithCustomTrace(models.Hop{
-					Binary:     "testservice",
-					StackTrace: []string{"teststacktrace"},
-				}),
+				WithCustomTrace("testservice", []string{"teststacktrace"}),
 			),
 		},
 	}

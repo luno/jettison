@@ -88,7 +88,7 @@ func incomingError(err error) error {
 	h := internal.NewHop()
 	h.StackTrace = internal.GetStackTrace(4)
 	je.Hops = append([]models.Hop{h}, je.Hops...)
-	return errors.Wrap(je, "")
+	return errors.Wrap(je, "", errors.WithStackTrace())
 }
 
 // outgoingError converts any err into one that will include more details when sent over GRPC

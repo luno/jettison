@@ -466,3 +466,16 @@ func TestErrorMetadata(t *testing.T) {
 		})
 	}
 }
+
+func TestWithStacktrace(t *testing.T) {
+	base := errors.New("base")
+	assert.NotEmpty(t, base.(*errors.JettisonError).StackTrace)
+
+	// No stack trace if base error has one already
+	wrapped := errors.Wrap(base, "wrap")
+	assert.Empty(t, wrapped.(*errors.JettisonError).StackTrace)
+
+	// Get trace if explicitly requested
+	wst := errors.Wrap(base, "stacky", errors.WithStackTrace())
+	assert.NotEmpty(t, wst.(*errors.JettisonError).StackTrace)
+}

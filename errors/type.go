@@ -11,16 +11,6 @@ import (
 	"github.com/luno/jettison/models"
 )
 
-// WithCustomTrace sets the stack trace of the current hop to the given value.
-func WithCustomTrace(trace models.Hop) Option {
-	return errorOption(func(je *JettisonError) {
-		je.Hops[0].Binary = trace.Binary
-		je.Hops[0].StackTrace = trace.StackTrace
-		je.Binary = trace.Binary
-		je.StackTrace = trace.StackTrace
-	})
-}
-
 // JettisonError is the internal error representation. We use a separate type
 // so that we can implement the Go 2.0 error interfaces, and we also need to
 // implement the GRPCStatus() method so that jettison errors can be passed over

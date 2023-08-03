@@ -9,18 +9,26 @@ import (
 	"github.com/luno/jettison/models"
 )
 
-type errorOption func(je *JettisonError)
+type ErrorOption func(je *JettisonError)
 
-func (o errorOption) ApplyToError(je *JettisonError) {
+func (o ErrorOption) ApplyToError(je *JettisonError) {
 	o(je)
 }
 
-// WithCode sets an error code on the latest error in the chain. A code should
-// uniquely identity an error, the intention being to provide a notion of
-// equality for jettison errors (see Is() for more details).
-// Note the default code (error message) doesn't provide strong unique guarantees.
+// WithStackTrace will add a new stack trace to this error
+func WithStackTrace() Option {
+	bin, tr := getTrace(1)
+	return ErrorOption(func(je *JettisonError) {
+		je.Binary = bin
+		je.StackTrace = tr
+	})
+}
+
+// WithCode sets an error code on the error. A code should uniquely identity an error,
+// the intention being to provide an equality check for jettison errors (see Is() for more details).
+// The default code (the error message) doesn't provide strong unique guarantees.
 func WithCode(code string) Option {
-	return errorOption(func(je *JettisonError) {
+	return ErrorOption(func(je *JettisonError) {
 		if len(je.Hops[0].Errors) > 0 {
 			je.Hops[0].Errors[0].Code = code
 		}
@@ -28,10 +36,11 @@ func WithCode(code string) Option {
 	})
 }
 
-// WithoutStackTrace clears the stacktrace if this is the first
-// error in the chain. This is useful for sentinel errors
-// with useless init-time stacktrace allowing a proper
-// stacktrace to be added when wrapping them.
+// WithoutStackTrace clears any automatically populated stack trace.
+// New always populates a stack trace and Wrap will if no sub error has a trace.
+//
+// This Option is useful for sentinel errors which have a useless init-time stack trace.
+// Removing it allows a stacktrace to be added when it is Wrapped.
 //
 // Example
 //
@@ -41,7 +50,7 @@ func WithCode(code string) Option {
 //	  return errors.Wrap(ErrFoo, "bar") // Wrapping ErrFoo adds a proper stack trace.
 //	}
 func WithoutStackTrace() Option {
-	return errorOption(func(je *JettisonError) {
+	return ErrorOption(func(je *JettisonError) {
 		if len(je.Hops[0].Errors) <= 1 {
 			je.Hops[0].StackTrace = nil
 		}
@@ -53,7 +62,7 @@ func WithoutStackTrace() Option {
 func C(code string) Option {
 	c := WithCode(code)
 	st := WithoutStackTrace()
-	return errorOption(func(je *JettisonError) {
+	return ErrorOption(func(je *JettisonError) {
 		c.ApplyToError(je)
 		st.ApplyToError(je)
 	})
@@ -63,6 +72,7 @@ type Option interface {
 	ApplyToError(je *JettisonError)
 }
 
+// New creates a new JettisonError with a populated stack trace
 func New(msg string, ol ...Option) error {
 	h := internal.NewHop()
 	h.StackTrace = internal.GetStackTrace(2)
@@ -80,6 +90,8 @@ func New(msg string, ol ...Option) error {
 	return je
 }
 
+// Wrap will wrap an existing error in a new JettisonError.
+// If no error in the err error tree has a trace, a stack trace is populated.
 func Wrap(err error, msg string, ol ...Option) error {
 	if err == nil {
 		return nil
@@ -127,26 +139,6 @@ func Wrap(err error, msg string, ol ...Option) error {
 		o.ApplyToError(je)
 	}
 	return je
-}
-
-func hasTrace(err error) bool {
-	errs := []error{err}
-	for len(errs) > 0 {
-		e := errs[0]
-		errs = errs[1:]
-		if je, ok := e.(*JettisonError); ok && je.Binary != "" {
-			return true
-		}
-		switch unw := e.(type) {
-		case interface{ Unwrap() error }:
-			if err := unw.Unwrap(); err != nil {
-				errs = append(errs, err)
-			}
-		case interface{ Unwrap() []error }:
-			errs = append(errs, unw.Unwrap()...)
-		}
-	}
-	return false
 }
 
 // Is is an alias of the standard library's errors.Is() function.
