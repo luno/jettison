@@ -8,6 +8,14 @@ import (
 
 type Level string
 
+type EntryError struct {
+	Code       string            `json:"code"`
+	Message    string            `json:"message"`
+	Stack      []string          `json:"stack,omitempty"`
+	StackTrace []string          `json:"stack_trace,omitempty"`
+	Parameters []models.KeyValue `json:"parameters,omitempty"`
+}
+
 type Entry struct {
 	Message   string    `json:"message"`
 	Source    string    `json:"source"`
@@ -17,6 +25,9 @@ type Entry struct {
 	Hops       []models.Hop      `json:"hops,omitempty"`
 	Parameters []models.KeyValue `json:"parameters,omitempty"`
 	ErrorCode  *string           `json:"error_code,omitempty"`
+
+	Error  *EntryError  `json:"error,omitempty"`
+	Errors []EntryError `json:"errors,omitempty"`
 }
 
 // SetKey updates the list of parameters in the log with the given key/value pair.

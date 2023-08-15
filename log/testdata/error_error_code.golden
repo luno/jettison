@@ -1,1 +1,0 @@
-{"message":"test","source":"testsource","level":"error","timestamp":"0001-01-01T00:00:00Z","hops":[{"binary":"testservice","stack_trace":["teststacktrace"],"errors":[{"code":"testcode","message":"test","source":"testsource"}]}],"error_code":"testcode"}

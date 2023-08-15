@@ -4,6 +4,7 @@ import (
 	stdlib_errors "errors"
 	"fmt"
 	"io"
+	"net/http"
 	"runtime"
 	"strconv"
 	"strings"
@@ -478,4 +479,102 @@ func TestWithStacktrace(t *testing.T) {
 	// Get trace if explicitly requested
 	wst := errors.Wrap(base, "stacky", errors.WithStackTrace())
 	assert.NotEmpty(t, wst.(*errors.JettisonError).StackTrace)
+}
+
+func TestWalk(t *testing.T) {
+	testCases := []struct {
+		name      string
+		err       error
+		stopN     int
+		expErrors []string
+	}{
+		{name: "nil"},
+		{
+			name:      "simple error",
+			err:       io.ErrUnexpectedEOF,
+			expErrors: []string{io.ErrUnexpectedEOF.Error()},
+		},
+		{
+			name: "wrapped",
+			err:  errors.Wrap(errors.Wrap(errors.New("hello"), "inner"), "outer"),
+			expErrors: []string{
+				"outer: inner: hello",
+				"inner: hello",
+				"hello",
+			},
+		},
+		{
+			name:  "wrapped, stop early",
+			err:   errors.Wrap(errors.Wrap(errors.New("hello"), "inner"), "outer"),
+			stopN: 2,
+			expErrors: []string{
+				"outer: inner: hello",
+				"inner: hello",
+			},
+		},
+		{
+			name: "joined",
+			err: stdlib_errors.Join(
+				errors.New("error one"),
+				errors.New("error two"),
+			),
+			expErrors: []string{
+				"error one\nerror two",
+				"error one",
+				"error two",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var errCount int
+			var msgs []string
+			errors.Walk(tc.err, func(err error) bool {
+				msgs = append(msgs, err.Error())
+				errCount++
+				return tc.stopN == 0 || errCount < tc.stopN
+			})
+			assert.Equal(t, tc.expErrors, msgs)
+		})
+	}
+}
+
+func TestFlatten(t *testing.T) {
+	err := errors.Wrap(
+		stdlib_errors.Join(
+			errors.Wrap(io.EOF, "wrapped"),
+			errors.New("jet"),
+			http.ErrNoCookie,
+		),
+		"outer",
+	)
+	act := errors.Flatten(err)
+	exp := [][]string{
+		{
+			"outer: wrapped: EOF\njet\nhttp: named cookie not present",
+			"wrapped: EOF\njet\nhttp: named cookie not present",
+			"wrapped: EOF",
+			"EOF",
+		},
+		{
+			"outer: wrapped: EOF\njet\nhttp: named cookie not present",
+			"wrapped: EOF\njet\nhttp: named cookie not present",
+			"jet",
+		},
+		{
+			"outer: wrapped: EOF\njet\nhttp: named cookie not present",
+			"wrapped: EOF\njet\nhttp: named cookie not present",
+			"http: named cookie not present",
+		},
+	}
+	var msgs [][]string
+	for _, p := range act {
+		var pm []string
+		for _, e := range p {
+			pm = append(pm, e.Error())
+		}
+		msgs = append(msgs, pm)
+	}
+	assert.Equal(t, exp, msgs)
 }

@@ -45,6 +45,7 @@ func WithError(err error) Option {
 		if len(codes) > 0 {
 			e.ErrorCode = &codes[0]
 		}
+		addErrors(e, err)
 	})
 }
 
@@ -120,6 +121,54 @@ func addErrorHops(e *Entry, err error) {
 			}
 		}
 	}
+}
+
+func addErrors(e *Entry, err error) {
+	paths := errors.Flatten(err)
+	if len(paths) == 1 {
+		ent := errorEntry(paths[0])
+		e.Error = &ent
+	} else {
+		for _, p := range paths {
+			e.Errors = append(e.Errors, errorEntry(p))
+		}
+	}
+}
+
+func errorEntry(errPath []error) EntryError {
+	if len(errPath) == 0 {
+		return EntryError{}
+	}
+	e := EntryError{Message: errPath[0].Error()}
+	var prevBinary string
+
+	for _, err := range errPath {
+		je, ok := err.(*errors.JettisonError)
+		if !ok {
+			continue
+		}
+		if e.Code == "" {
+			e.Code = je.Code
+		}
+		if je.Binary != "" {
+			e.Stack = append(e.Stack, je.Binary)
+		}
+		e.Parameters = append(e.Parameters, je.KV...)
+		if len(je.StackTrace) > 0 {
+			lines := len(je.StackTrace) + len(e.StackTrace) + 1
+			st := make([]string, 0, lines)
+
+			st = append(st, je.StackTrace...)
+			if prevBinary != "" {
+				st = append(st, fmt.Sprintf("%s -> %s", prevBinary, je.Binary))
+			}
+			st = append(st, e.StackTrace...)
+
+			e.StackTrace = st
+			prevBinary = je.Binary
+		}
+	}
+	return e
 }
 
 // newEntry returns an Entry struct decorated with useful defaults - stackSkip

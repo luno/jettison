@@ -125,29 +125,29 @@ func (je *JettisonError) Clone() *JettisonError {
 // is none. This is compatible with the Wrapper interface from the Go 2 error
 // inspection proposal.
 func (je *JettisonError) Unwrap() error {
-	je = je.Clone() // don't want to modify the reference
+	err := je.Clone() // Don't want to modify the reference
 
-	for len(je.Hops) > 0 {
-		if len(je.Hops[0].Errors) == 0 {
-			je.Hops = je.Hops[1:]
+	for len(err.Hops) > 0 {
+		if len(err.Hops[0].Errors) == 0 {
+			err.Hops = err.Hops[1:]
 			continue
 		}
 
-		je.Hops[0].Errors = je.Hops[0].Errors[1:]
+		err.Hops[0].Errors = err.Hops[0].Errors[1:]
 		break
 	}
 
 	// Remove any empty hop layers.
-	for len(je.Hops) > 0 {
-		h := je.Hops[0]
+	for len(err.Hops) > 0 {
+		h := err.Hops[0]
 		if len(h.Errors) > 0 {
 			break
 		}
 
-		je.Hops = je.Hops[1:]
+		err.Hops = err.Hops[1:]
 	}
 
-	if len(je.Hops) == 0 {
+	if len(err.Hops) == 0 {
 		return nil
 	}
 
@@ -157,23 +157,23 @@ func (je *JettisonError) Unwrap() error {
 	// NOTE(guy): This can lead to a gotcha where an errors.Is() call works
 	// locally, but doesn't work over gRPC since original error values can't
 	// be preserved over the wire.
-	if len(je.Hops) == 1 &&
-		len(je.Hops[0].Errors) == 1 &&
-		je.OriginalErr != nil {
+	if len(err.Hops) == 1 &&
+		len(err.Hops[0].Errors) == 1 &&
+		err.OriginalErr != nil {
 
-		return je.OriginalErr
+		return err.OriginalErr
 	}
 
 	if subJe, ok := je.Err.(*JettisonError); ok {
-		je.Message = subJe.Message
-		je.Binary = subJe.Binary
-		je.StackTrace = subJe.StackTrace
-		je.KV = subJe.KV
-		je.Code = subJe.Code
-		je.Err = subJe.Err
+		err.Message = subJe.Message
+		err.Binary = subJe.Binary
+		err.StackTrace = subJe.StackTrace
+		err.KV = subJe.KV
+		err.Code = subJe.Code
+		err.Err = subJe.Err
 	}
 
-	return je
+	return err
 }
 
 // Is returns true if the errors are equal as values, or the target is also

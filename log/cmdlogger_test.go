@@ -6,6 +6,8 @@ import (
 	"io"
 	"testing"
 
+	"github.com/sebdah/goldie/v2"
+
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
@@ -21,5 +23,5 @@ func TestCmdLogger(t *testing.T) {
 	log.Error(ctx, io.EOF)
 	log.Error(ctx, errors.New("example error"))
 
-	verifyOutput(t, "cmd_logger", internal.StripTestStacks(t, buf.Bytes()))
+	goldie.New(t).Assert(t, "cmd_logger", internal.StripTestStacks(t, buf.Bytes()))
 }

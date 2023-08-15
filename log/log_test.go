@@ -3,24 +3,20 @@ package log_test
 import (
 	"bytes"
 	"context"
-	"flag"
+	"io"
 	stdlib_log "log"
-	"os"
-	"path"
 	"testing"
 
+	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	jerrors "github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
 	jlog "github.com/luno/jettison/log"
+	"github.com/luno/jettison/models"
 )
 
-var writeGoldenFiles = flag.Bool("write-golden-files", false,
-	"Whether or not to overwrite golden files with test output.")
-
-//go:generate go test . -write-golden-files
+//go:generate go test -update
 
 type source string
 
@@ -102,7 +98,7 @@ func TestLog(t *testing.T) {
 			jlog.SetDefaultLoggerForTesting(t, buf, source("testsource"))
 			jlog.Info(tc.ctx, tc.msg, tc.opts...)
 
-			verifyOutput(t, "log_"+tc.name, buf.Bytes())
+			goldie.New(t).Assert(t, "log_"+tc.name, buf.Bytes())
 		})
 	}
 }
@@ -152,7 +148,7 @@ func TestError(t *testing.T) {
 			jlog.SetDefaultLoggerForTesting(t, buf)
 			jlog.Error(tc.ctx, tc.err, source("testsource"))
 
-			verifyOutput(t, "error_"+tc.name, buf.Bytes())
+			goldie.New(t).Assert(t, "error_"+tc.name, buf.Bytes())
 		})
 	}
 }
@@ -189,30 +185,12 @@ func TestDeprecated(t *testing.T) {
 			jlog.SetDefaultLoggerForTesting(t, bufln, opts...)
 			jlog.Println(tc.vl...)
 
-			verifyOutput(t, "print_"+tc.name, buf.Bytes())
-			verifyOutput(t, "printf_"+tc.name, buff.Bytes())
-			verifyOutput(t, "println_"+tc.name, bufln.Bytes())
+			g := goldie.New(t)
+			g.Assert(t, "print_"+tc.name, buf.Bytes())
+			g.Assert(t, "printf_"+tc.name, buff.Bytes())
+			g.Assert(t, "println_"+tc.name, bufln.Bytes())
 		})
 	}
-}
-
-func verifyOutput(t *testing.T, goldenFileName string, output []byte) {
-	t.Helper()
-	flag.Parse()
-	goldenFilePath := path.Join("testdata", goldenFileName+".golden")
-
-	if *writeGoldenFiles {
-		err := os.WriteFile(goldenFilePath, output, 0o777)
-		require.NoError(t, err)
-
-		// Nothing to check if we're writing.
-		return
-	}
-
-	contents, err := os.ReadFile(goldenFilePath)
-	require.NoError(t, err, "Error reading golden file %s: %v", goldenFilePath, err)
-
-	assert.Equal(t, string(contents), string(output))
 }
 
 func BenchmarkInfoCtx(b *testing.B) {
@@ -252,5 +230,91 @@ func BenchmarkStdLibLog(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		l.Printf("hello k=%d", 123)
+	}
+}
+
+func TestAddError(t *testing.T) {
+	testCases := []struct {
+		name     string
+		err      error
+		expEntry jlog.Entry
+	}{
+		{
+			name: "single jerr",
+			err: jerrors.New("hello",
+				WithCustomTrace(
+					"api",
+					[]string{"updateDatabase", "doRequest"},
+				)),
+			expEntry: jlog.Entry{
+				Error: &jlog.EntryError{
+					Message: "hello",
+					Stack:   []string{"api"},
+					StackTrace: []string{
+						"updateDatabase",
+						"doRequest",
+					},
+				},
+			},
+		},
+		{
+			name: "two stacks",
+			err: jerrors.Wrap(
+				jerrors.New("inner",
+					WithCustomTrace(
+						"service",
+						[]string{"update", "handleRequest"},
+					),
+				), "outer",
+				WithCustomTrace(
+					"api",
+					[]string{"callService", "doHTTP"},
+				),
+			),
+			expEntry: jlog.Entry{Error: &jlog.EntryError{
+				Message: "outer: inner",
+				Stack:   []string{"api", "service"},
+				StackTrace: []string{
+					"update",
+					"handleRequest",
+					"api -> service",
+					"callService",
+					"doHTTP",
+				},
+			}},
+		},
+		{
+			name:     "standard error",
+			err:      io.EOF,
+			expEntry: jlog.Entry{Error: &jlog.EntryError{Message: io.EOF.Error()}},
+		},
+		{
+			name: "kvs",
+			err: jerrors.Wrap(
+				jerrors.New("a",
+					j.KV("inner_key", "inner_value"),
+					jerrors.WithoutStackTrace(),
+				),
+				"",
+				j.KV("outer_key", "outer_value"),
+				jerrors.WithoutStackTrace(),
+			),
+			expEntry: jlog.Entry{Error: &jlog.EntryError{
+				Message: "a",
+				Parameters: []models.KeyValue{
+					{Key: "outer_key", Value: "outer_value"},
+					{Key: "inner_key", Value: "inner_value"},
+				},
+			}},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var a jlog.Entry
+			jlog.WithError(tc.err).ApplyToLog(&a)
+			// get rid of the other fields, tested separately
+			a = jlog.Entry{Error: a.Error, Errors: a.Errors}
+			assert.Equal(t, tc.expEntry, a)
+		})
 	}
 }

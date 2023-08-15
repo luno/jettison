@@ -208,3 +208,92 @@ func GetCodes(err error) []string {
 
 	return res
 }
+
+// Walk will do a depth first traversal of the error tree.
+// do is called for each error on the traversal, if it returns false,
+// then the traversal will be terminated
+func Walk(err error, do func(error) bool) {
+	walkRecur(err, do)
+}
+
+func walkRecur(err error, do func(error) bool) bool {
+	for err != nil {
+		if !do(err) {
+			return false
+		}
+		switch unw := err.(type) {
+		case interface{ Unwrap() error }:
+			err = unw.Unwrap()
+			if err == nil {
+				return true
+			}
+		case interface{ Unwrap() []error }:
+			for _, e := range unw.Unwrap() {
+				if !walkRecur(e, do) {
+					return false
+				}
+			}
+			return true
+		default:
+			return true
+		}
+	}
+	return true
+}
+
+// Flatten walks the error tree, creating a path for each leaf of the tree
+// if the tree looks like this:
+//
+//	 ── a
+//		└── b
+//		    ├── c
+//		    │   └── e
+//		    │       └── f
+//		    └── d
+//		        ├── g
+//		        └── h
+//
+// Then the paths we will get are:
+// [a, b, c, e, f]
+// [a, b, d, g]
+// [a, b, d, h]
+func Flatten(err error) [][]error {
+	var ret [][]error
+	paths := [][]error{{err}}
+	for len(paths) > 0 {
+		p := paths[0]
+		paths = paths[1:]
+
+		nxt, ok := extendPath(p)
+		if ok {
+			paths = append(nxt, paths...)
+		} else {
+			ret = append(ret, p)
+		}
+	}
+	return ret
+}
+
+func extendPath(path []error) ([][]error, bool) {
+	if len(path) == 0 {
+		return nil, false
+	}
+	last := path[len(path)-1]
+	switch unw := last.(type) {
+	case interface{ Unwrap() error }:
+		nxt := unw.Unwrap()
+		if nxt != nil {
+			return [][]error{append(path, nxt)}, true
+		}
+	case interface{ Unwrap() []error }:
+		var ret [][]error
+		for _, nxt := range unw.Unwrap() {
+			p := make([]error, len(path), len(path)+1)
+			copy(p, path)
+			p = append(p, nxt)
+			ret = append(ret, p)
+		}
+		return ret, true
+	}
+	return nil, false
+}
