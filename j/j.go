@@ -5,11 +5,24 @@ package j
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/log"
 	"github.com/luno/jettison/models"
 )
+
+var (
+	allowedChars    = "0123456789abcdefghijklmnopqrstuvwxyz-_."
+	allowedCharsMap map[rune]bool
+)
+
+func init() {
+	allowedCharsMap = make(map[rune]bool)
+	for _, ch := range allowedChars {
+		allowedCharsMap[ch] = true
+	}
+}
 
 // KV returns a jettison key value option the with default format of
 // a simple value or fmt.Stringer implementation. Complex values
@@ -36,7 +49,7 @@ type MKV map[string]any
 func (m MKV) ContextKeys() []models.KeyValue {
 	res := make([]models.KeyValue, 0, len(m))
 	for k, v := range m {
-		res = append(res, models.KeyValue{Key: k, Value: sprint(v)})
+		res = append(res, models.KeyValue{Key: normalise(k), Value: sprint(v)})
 	}
 	return res
 }
@@ -66,7 +79,7 @@ type MKS map[string]string
 func (m MKS) ContextKeys() []models.KeyValue {
 	res := make([]models.KeyValue, 0, len(m))
 	for k, v := range m {
-		res = append(res, models.KeyValue{Key: k, Value: v})
+		res = append(res, models.KeyValue{Key: normalise(k), Value: v})
 	}
 	return res
 }
@@ -132,4 +145,28 @@ func sprint(i interface{}) string {
 		return "<" + k.String() + ">"
 	}
 	return fmt.Sprint(i)
+}
+
+// normalise modifies the given key to conform to gRPC metadata requirements,
+// as the keys have to be transmittable over the wire (in contexts, for
+// instance).
+// See https://godoc.org/google.golang.org/grpc/metadata#New.
+func normalise(key string) string {
+	// Uppercase characters are normalised to lower case.
+	key = strings.ToLower(key)
+
+	// Keys beginning with 'grpc-' are disallowed.
+	key = strings.TrimPrefix(key, "grpc-")
+
+	var res string
+	for _, ch := range key {
+		// Remove illegal characters from the key.
+		if !allowedCharsMap[ch] {
+			continue
+		}
+
+		res += string(ch)
+	}
+
+	return res
 }

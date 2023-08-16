@@ -38,7 +38,7 @@ func NewServer(t *testing.T, l net.Listener) (*Server, func()) {
 func (srv *Server) ErrorWithCode(ctx context.Context,
 	req *testpb.ErrorWithCodeRequest,
 ) (*testpb.Empty, error) {
-	return nil, errors.New("error with code", j.C(req.Code))
+	return nil, errors.New("error with code", j.C(req.Code), j.KV("HELLO", "WORLD"))
 }
 
 func (srv *Server) WrapErrorWithCode(ctx context.Context,

@@ -15,24 +15,26 @@ import (
 	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/jtest"
+	"github.com/luno/jettison/log"
 )
 
 func TestNewOverGrpc(t *testing.T) {
 	l, err := net.Listen("tcp", "")
-	require.NoError(t, err)
+	jtest.RequireNil(t, err)
 	defer l.Close()
 
 	_, stop := testgrpc.NewServer(t, l)
 	defer stop()
 
 	cl, err := testgrpc.NewClient(t, l.Addr().String())
-	require.NoError(t, err)
+	jtest.RequireNil(t, err)
 	defer cl.Close()
 
-	errTrue := cl.ErrorWithCode("1")
+	ctx := context.Background()
+	errTrue := cl.ErrorWithCode(ctx, "1")
 	require.Error(t, errTrue)
 
-	errFalse := cl.ErrorWithCode("2")
+	errFalse := cl.ErrorWithCode(ctx, "2")
 	require.Error(t, errFalse)
 
 	ref := errors.New("reference", j.C("1"))
@@ -42,14 +44,14 @@ func TestNewOverGrpc(t *testing.T) {
 
 func TestWrapOverGrpc(t *testing.T) {
 	l, err := net.Listen("tcp", "")
-	require.NoError(t, err)
+	jtest.RequireNil(t, err)
 	defer l.Close()
 
 	_, stop := testgrpc.NewServer(t, l)
 	defer stop()
 
 	cl, err := testgrpc.NewClient(t, l.Addr().String())
-	require.NoError(t, err)
+	jtest.RequireNil(t, err)
 	defer cl.Close()
 
 	errTrue := cl.WrapErrorWithCode("1", 10)
@@ -65,17 +67,17 @@ func TestWrapOverGrpc(t *testing.T) {
 
 func TestClientStacktrace(t *testing.T) {
 	l, err := net.Listen("tcp", "")
-	require.NoError(t, err)
+	jtest.RequireNil(t, err)
 	defer l.Close()
 
 	_, stop := testgrpc.NewServer(t, l)
 	defer stop()
 
 	cl, err := testgrpc.NewClient(t, l.Addr().String())
-	require.NoError(t, err)
+	jtest.RequireNil(t, err)
 	defer cl.Close()
 
-	err = cl.ErrorWithCode("1")
+	err = cl.ErrorWithCode(context.Background(), "1")
 	require.Error(t, err)
 
 	je, ok := err.(*errors.JettisonError)
@@ -83,12 +85,12 @@ func TestClientStacktrace(t *testing.T) {
 	require.Len(t, je.Hops, 2)
 
 	bb, err := json.MarshalIndent(je.Hops[0].StackTrace, "", "  ")
-	require.NoError(t, err)
+	jtest.RequireNil(t, err)
 
 	expected := `[
   "github.com/luno/jettison/interceptors/test/testpb/test.pb.go:390 (*testClient).ErrorWithCode",
   "github.com/luno/jettison/interceptors/test/testgrpc/client.go:42",
-  "github.com/luno/jettison/interceptors/test/grpc_test.go:78 TestClientStacktrace",
+  "github.com/luno/jettison/interceptors/test/grpc_test.go:80 TestClientStacktrace",
   "testing/testing.go:X tRunner",
   "runtime/asm_X.s:X goexit"
 ]`
@@ -118,14 +120,14 @@ func TestStreamThenError(t *testing.T) {
 func makeTestStreamWithError(name string, count int) func(t *testing.T) {
 	return func(t *testing.T) {
 		l, err := net.Listen("tcp", "")
-		require.NoError(t, err)
+		jtest.RequireNil(t, err)
 		defer l.Close()
 
 		_, stop := testgrpc.NewServer(t, l)
 		defer stop()
 
 		cl, err := testgrpc.NewClient(t, l.Addr().String())
-		require.NoError(t, err)
+		jtest.RequireNil(t, err)
 		defer cl.Close()
 
 		c, err := cl.StreamThenError(count, name)
@@ -139,15 +141,16 @@ func makeTestStreamWithError(name string, count int) func(t *testing.T) {
 func TestWrappingGrpcError(t *testing.T) {
 	// Get an open port
 	l, err := net.Listen("tcp", "")
-	require.NoError(t, err)
-	require.NoError(t, l.Close())
+	jtest.RequireNil(t, err)
+	jtest.RequireNil(t, l.Close())
 
 	// Nothing is listening
 	cl, err := testgrpc.NewClient(t, l.Addr().String())
-	require.NoError(t, err)
+	jtest.RequireNil(t, err)
 	defer cl.Close()
 
-	err = cl.ErrorWithCode("")
+	ctx := context.Background()
+	err = cl.ErrorWithCode(ctx, "")
 	require.NotNil(t, err)
 
 	jerr := new(errors.JettisonError)
@@ -160,14 +163,14 @@ func TestWrappingGrpcError(t *testing.T) {
 
 func TestContextCanceled(t *testing.T) {
 	l, err := net.Listen("tcp", "")
-	require.NoError(t, err)
+	jtest.RequireNil(t, err)
 	defer l.Close()
 
 	_, stop := testgrpc.NewServer(t, l)
 	defer stop()
 
 	cl, err := testgrpc.NewClient(t, l.Addr().String())
-	require.NoError(t, err)
+	jtest.RequireNil(t, err)
 	defer cl.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -190,4 +193,23 @@ func TestContextCanceled(t *testing.T) {
 		jtest.Require(t, context.Canceled, err)
 		break
 	}
+}
+
+func TestContextKeys(t *testing.T) {
+	l, err := net.Listen("tcp", "")
+	jtest.RequireNil(t, err)
+	defer l.Close()
+
+	_, stop := testgrpc.NewServer(t, l)
+	defer stop()
+
+	cl, err := testgrpc.NewClient(t, l.Addr().String())
+	jtest.RequireNil(t, err)
+	defer cl.Close()
+
+	ctx := log.ContextWith(context.Background(), j.KV("09%-_MANYproblems", "hello"))
+	err = cl.ErrorWithCode(ctx, "CODE1234")
+
+	codes := errors.GetCodes(err)
+	assert.Equal(t, []string{"CODE1234"}, codes)
 }
