@@ -3,7 +3,12 @@
 package models
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
+
+	"github.com/go-stack/stack"
 )
 
 type Hop struct {
@@ -53,6 +58,10 @@ func (h *Hop) Clone() Hop {
 	return res
 }
 
+func NewHop() Hop {
+	return Hop{Binary: filepath.Base(os.Args[0])}
+}
+
 type Error struct {
 	Code       string     `json:"code,omitempty" protocp:"4"`
 	Message    string     `json:"message" protocp:"1"`
@@ -68,6 +77,14 @@ func (e *Error) Clone() Error {
 	copy(res.Parameters, e.Parameters)
 
 	return res
+}
+
+func NewError(msg string) Error {
+	return Error{
+		Message: msg,
+		Source:  fmt.Sprintf("%+v", stack.Caller(2)),
+		Code:    msg,
+	}
 }
 
 type KeyValue struct {

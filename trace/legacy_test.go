@@ -1,4 +1,4 @@
-package internal
+package trace
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_sanitiseFnName(t *testing.T) {
+func TestSanitiseFnName(t *testing.T) {
 	testCases := []struct {
 		in  string
 		out string

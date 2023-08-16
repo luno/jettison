@@ -7,8 +7,8 @@ import (
 	"github.com/sebdah/goldie/v2"
 
 	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/log"
+	"github.com/luno/jettison/trace"
 )
 
 // TestSourceInfo tests the log source which includes line numbers.
@@ -26,5 +26,5 @@ func TestSourceError(t *testing.T) {
 	buf := new(bytes.Buffer)
 	log.SetDefaultLoggerForTesting(t, buf)
 	log.Error(nil, errors.New("test error"))
-	goldie.New(t).Assert(t, "source_error", internal.StripTestStacks(t, buf.Bytes()))
+	goldie.New(t).Assert(t, "source_error", trace.StripTestStacks(t, buf.Bytes()))
 }

@@ -8,8 +8,8 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/interceptors"
-	"github.com/luno/jettison/interceptors/test/testpb"
+	jetgrpc "github.com/luno/jettison/grpc"
+	"github.com/luno/jettison/grpc/test/testpb"
 	"github.com/luno/jettison/j"
 )
 
@@ -17,8 +17,8 @@ type Server struct{}
 
 func NewServer(t *testing.T, l net.Listener) (*Server, func()) {
 	grpcSrv := grpc.NewServer(
-		grpc.UnaryInterceptor(interceptors.UnaryServerInterceptor),
-		grpc.StreamInterceptor(interceptors.StreamServerInterceptor))
+		grpc.UnaryInterceptor(jetgrpc.UnaryServerInterceptor),
+		grpc.StreamInterceptor(jetgrpc.StreamServerInterceptor))
 
 	srv := new(Server)
 	testpb.RegisterTestServer(grpcSrv, srv)

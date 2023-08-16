@@ -1,4 +1,4 @@
-package interceptors
+package grpc
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/internal"
-	"github.com/luno/jettison/internal/jettisonpb"
+	"github.com/luno/jettison/grpc/internal"
+	"github.com/luno/jettison/grpc/internal/jettisonpb"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/models"
 )

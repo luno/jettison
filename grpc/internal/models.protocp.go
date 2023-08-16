@@ -2,7 +2,7 @@
 package internal
 
 import (
-	"github.com/luno/jettison/internal/jettisonpb"
+	"github.com/luno/jettison/grpc/internal/jettisonpb"
 	"github.com/luno/jettison/models"
 )
 

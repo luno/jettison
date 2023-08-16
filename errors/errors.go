@@ -5,8 +5,8 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/models"
+	"github.com/luno/jettison/trace"
 )
 
 type ErrorOption func(je *JettisonError)
@@ -74,11 +74,9 @@ type Option interface {
 
 // New creates a new JettisonError with a populated stack trace
 func New(msg string, ol ...Option) error {
-	h := internal.NewHop()
-	h.StackTrace = internal.GetStackTrace(2)
-	h.Errors = []models.Error{
-		internal.NewError(msg),
-	}
+	h := models.NewHop()
+	h.StackTrace = trace.GetStackTraceLegacy(2)
+	h.Errors = []models.Error{models.NewError(msg)}
 	je := &JettisonError{
 		Message: msg,
 		Hops:    []models.Hop{h},
@@ -102,7 +100,7 @@ func Wrap(err error, msg string, ol ...Option) error {
 	je, ok := err.(*JettisonError)
 	if !ok {
 		je = &JettisonError{
-			Hops:        []models.Hop{internal.NewHop()},
+			Hops:        []models.Hop{models.NewHop()},
 			OriginalErr: err,
 		}
 
@@ -117,12 +115,12 @@ func Wrap(err error, msg string, ol ...Option) error {
 
 	// If the current hop doesn't yet have a stack trace, add one.
 	if je.Hops[0].StackTrace == nil {
-		je.Hops[0].StackTrace = internal.GetStackTrace(2)
+		je.Hops[0].StackTrace = trace.GetStackTraceLegacy(2)
 	}
 
 	// Add the error to the stack and apply the options on the latest hop.
 	je.Hops[0].Errors = append(
-		[]models.Error{internal.NewError(msg)},
+		[]models.Error{models.NewError(msg)},
 		je.Hops[0].Errors...,
 	)
 

@@ -1,21 +1,30 @@
-package internal
+package trace
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
+	"testing"
 
 	"github.com/go-stack/stack"
 )
 
-const maxStackTraceDepth = 64
+// StripTestStacks strips "testing/testing.go:XXX" and "runtime/asm_XXXX.s:XXX"
+// from stacktraces to avoid flappers on go version changes.
+// Deprecated: use StackConfig.TrimRuntime
+func StripTestStacks(_ *testing.T, b []byte) []byte {
+	b = regexp.MustCompile("testing/testing\\.go:\\d+").ReplaceAll(b, []byte("testing/testing.go:X"))
+	return regexp.MustCompile("runtime/asm_\\w+\\.s:\\d+").ReplaceAll(b, []byte("runtime/asm_X.s:X"))
+}
 
-// GetStackTrace returns a rendered stacktrace of the calling code, skipping
+// GetStackTraceLegacy returns a rendered stacktrace of the calling code, skipping
 // `skip` frames in the stack (1 is the GetStackTrace frame itself).
-func GetStackTrace(skip int) []string {
+// Deprecated: use GetStackTrace
+func GetStackTraceLegacy(skip int) []string {
 	var res []string
 
 	for i, c := range stack.Trace()[skip:] {
-		if i >= maxStackTraceDepth {
+		if i >= maxDepth {
 			break
 		}
 

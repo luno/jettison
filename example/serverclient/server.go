@@ -8,7 +8,7 @@ import (
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/example/examplepb"
-	"github.com/luno/jettison/interceptors"
+	jetgrpc "github.com/luno/jettison/grpc"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/log"
 )
@@ -62,8 +62,8 @@ func NewServer() *Server {
 	}
 
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(interceptors.UnaryServerInterceptor),
-		grpc.StreamInterceptor(interceptors.StreamServerInterceptor))
+		grpc.UnaryInterceptor(jetgrpc.UnaryServerInterceptor),
+		grpc.StreamInterceptor(jetgrpc.StreamServerInterceptor))
 	srv := &Server{
 		url: l.Addr().String(),
 		srv: grpcServer,

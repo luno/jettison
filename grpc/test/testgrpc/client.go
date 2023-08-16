@@ -7,8 +7,8 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/interceptors"
-	"github.com/luno/jettison/interceptors/test/testpb"
+	jetgrpc "github.com/luno/jettison/grpc"
+	"github.com/luno/jettison/grpc/test/testpb"
 )
 
 type Client struct {
@@ -18,8 +18,8 @@ type Client struct {
 
 func NewClient(t *testing.T, addr string) (*Client, error) {
 	conn, err := grpc.Dial(addr, grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(interceptors.UnaryClientInterceptor),
-		grpc.WithStreamInterceptor(interceptors.StreamClientInterceptor))
+		grpc.WithUnaryInterceptor(jetgrpc.UnaryClientInterceptor),
+		grpc.WithStreamInterceptor(jetgrpc.StreamClientInterceptor))
 	if err != nil {
 		return nil, err
 	}

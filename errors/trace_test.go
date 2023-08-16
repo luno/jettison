@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/trace"
 )
 
@@ -42,7 +41,7 @@ func TestStack(t *testing.T) {
 	require.True(t, ok)
 
 	tr := []byte(strings.Join(je.Hops[0].StackTrace, "\n") + "\n")
-	tr = internal.StripTestStacks(t, tr)
+	tr = trace.StripTestStacks(t, tr)
 	goldie.New(t).Assert(t, t.Name(), tr)
 }
 

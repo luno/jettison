@@ -1,4 +1,4 @@
-package interceptors
+package grpc
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/models"
+	"github.com/luno/jettison/trace"
 )
 
 // UnaryClientInterceptor returns an interceptor that inserts a new hop
@@ -85,8 +85,8 @@ func incomingError(err error) error {
 	}
 
 	// Push a new hop to the front of the queue.
-	h := internal.NewHop()
-	h.StackTrace = internal.GetStackTrace(4)
+	h := models.NewHop()
+	h.StackTrace = trace.GetStackTraceLegacy(4)
 	je.Hops = append([]models.Hop{h}, je.Hops...)
 	return errors.Wrap(je, "", errors.WithStackTrace())
 }

@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc"
+
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/example/examplepb"
-	"github.com/luno/jettison/interceptors"
+	jetgrpc "github.com/luno/jettison/grpc"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/log"
-	"google.golang.org/grpc"
 )
 
 type Client struct {
@@ -19,8 +20,8 @@ type Client struct {
 
 func NewClient(url string) *Client {
 	conn, err := grpc.Dial(url, grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(interceptors.UnaryClientInterceptor),
-		grpc.WithStreamInterceptor(interceptors.StreamClientInterceptor))
+		grpc.WithUnaryInterceptor(jetgrpc.UnaryClientInterceptor),
+		grpc.WithStreamInterceptor(jetgrpc.StreamClientInterceptor))
 	if err != nil {
 		panic(fmt.Errorf("grpc.Dial error: %s", err.Error()))
 	}
