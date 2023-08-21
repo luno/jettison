@@ -70,14 +70,20 @@ func toStatus(je *errors.JettisonError) *status.Status {
 		}
 		res = withDetails
 	}
-	// TODO(adam): Include WrappedError details when services using FromStatus can handle it
+
+	withWrap, err := res.WithDetails(errorToProto(je))
+	if err != nil {
+		log.Printf("jettison/errors: Failed to add WrappedError to status: %v", err)
+	} else {
+		res = withWrap
+	}
 	return res
 }
 
-// FromStatus unmarshals a *grpc.Status into a jettison error object,
+// fromStatus will unmarshal a *grpc.Status into a jettison error object,
 // returning a nil error if and only if no unexpected details were found on the
 // status.
-func FromStatus(s *status.Status) (*errors.JettisonError, error) {
+func fromStatus(s *status.Status) (*errors.JettisonError, error) {
 	if s == nil {
 		return nil, errors.Wrap(ErrInvalidError, "")
 	} else if len(s.Details()) == 0 {
@@ -94,7 +100,7 @@ func FromStatus(s *status.Status) (*errors.JettisonError, error) {
 			}
 			res.Hops = append(res.Hops, *hop)
 		case *jettisonpb.WrappedError:
-			je, err := ErrorFromProto(det)
+			je, err := errorFromProto(det)
 			if err == nil {
 				// TODO(adam): Just return je when we no longer rely on Hops
 				res.Message = je.Message
@@ -112,7 +118,7 @@ func FromStatus(s *status.Status) (*errors.JettisonError, error) {
 	return &res, nil
 }
 
-func ErrorFromProto(we *jettisonpb.WrappedError) (*errors.JettisonError, error) {
+func errorFromProto(we *jettisonpb.WrappedError) (*errors.JettisonError, error) {
 	je := &errors.JettisonError{
 		Message:    we.Message,
 		Binary:     we.Binary,
@@ -123,7 +129,7 @@ func ErrorFromProto(we *jettisonpb.WrappedError) (*errors.JettisonError, error) 
 	if len(we.JoinedErrors) > 0 {
 		var errs []error
 		for _, joinErr := range we.JoinedErrors {
-			subErr, err := ErrorFromProto(joinErr)
+			subErr, err := errorFromProto(joinErr)
 			if err != nil {
 				return nil, err
 			}
@@ -131,7 +137,7 @@ func ErrorFromProto(we *jettisonpb.WrappedError) (*errors.JettisonError, error) 
 		}
 		je.Err = stderrors.Join(errs...)
 	} else if we.WrappedError != nil {
-		subErr, err := ErrorFromProto(we.WrappedError)
+		subErr, err := errorFromProto(we.WrappedError)
 		if err != nil {
 			return nil, err
 		}
@@ -140,9 +146,9 @@ func ErrorFromProto(we *jettisonpb.WrappedError) (*errors.JettisonError, error) 
 	return je, nil
 }
 
-func ErrorToProto(err error) (*jettisonpb.WrappedError, error) {
+func errorToProto(err error) *jettisonpb.WrappedError {
 	if err == nil {
-		return nil, nil
+		return nil
 	}
 	var we jettisonpb.WrappedError
 	je, ok := err.(*errors.JettisonError)
@@ -155,23 +161,15 @@ func ErrorToProto(err error) (*jettisonpb.WrappedError, error) {
 	}
 	switch unw := err.(type) {
 	case interface{ Unwrap() error }:
-		subWe, err := ErrorToProto(unw.Unwrap())
-		if err != nil {
-			return nil, err
-		}
-		we.WrappedError = subWe
+		we.WrappedError = errorToProto(unw.Unwrap())
 	case interface{ Unwrap() []error }:
 		for _, e := range unw.Unwrap() {
-			subWe, err := ErrorToProto(e)
-			if err != nil {
-				return nil, err
-			}
-			we.JoinedErrors = append(we.JoinedErrors, subWe)
+			we.JoinedErrors = append(we.JoinedErrors, errorToProto(e))
 		}
 	default:
 		we.Message = err.Error()
 	}
-	return &we, nil
+	return &we
 }
 
 func kvToProto(kvs []models.KeyValue) []*jettisonpb.KeyValue {

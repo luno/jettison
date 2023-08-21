@@ -77,7 +77,7 @@ func incomingError(err error) error {
 		return errors.Wrap(context.DeadlineExceeded, "grpc error")
 	}
 
-	je, statusErr := FromStatus(s)
+	je, statusErr := fromStatus(s)
 	if errors.Is(statusErr, ErrInvalidError) {
 		return errors.Wrap(err, "grpc status error", j.KS("code", s.Code().String()))
 	} else if statusErr != nil {

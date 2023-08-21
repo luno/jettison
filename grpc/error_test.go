@@ -138,7 +138,7 @@ func TestFromStatus(t *testing.T) {
 			s, err := s.WithDetails(tc.details...)
 			jtest.RequireNil(t, err)
 
-			je, err := FromStatus(s)
+			je, err := fromStatus(s)
 			jtest.RequireNil(t, err)
 
 			assert.Equal(t, tc.expError, *je)
@@ -177,8 +177,7 @@ func TestToProto(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			p, err := ErrorToProto(tc.err)
-			jtest.RequireNil(t, err)
+			p := errorToProto(tc.err)
 			assert.Equal(t, tc.expProto, p)
 		})
 	}
@@ -248,7 +247,7 @@ func TestToFromStatus(t *testing.T) {
 			// Simulate going over the wire.
 			st, ok := status.FromError(outgoingError(srvJe))
 			require.True(t, ok)
-			cliJe, err := FromStatus(st)
+			cliJe, err := fromStatus(st)
 			jtest.RequireNil(t, err)
 
 			assert.Equal(t, len(srvJe.Hops), len(cliJe.Hops))
