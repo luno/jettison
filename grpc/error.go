@@ -17,25 +17,25 @@ import (
 
 var ErrInvalidError = errors.New("jettison/errors: given grpc.Status does not contain a valid jettison error", j.C("ERR_e60c52eceb509f04"))
 
-type gRPCError struct {
+type Error struct {
 	err error
 	s   *status.Status
 }
 
-func (g gRPCError) Error() string {
+func (g Error) Error() string {
 	return g.err.Error()
 }
 
-func (g gRPCError) GRPCStatus() *status.Status {
+func (g Error) GRPCStatus() *status.Status {
 	return g.s
 }
 
-func (g gRPCError) Unwrap() error {
+func (g Error) Unwrap() error {
 	return g.err
 }
 
-func gRPCWrap(je *errors.JettisonError) gRPCError {
-	return gRPCError{s: toStatus(je), err: je}
+func Wrap(je *errors.JettisonError) Error {
+	return Error{s: toStatus(je), err: je}
 }
 
 // toStatus marshals the given jettison error into a *grpc.Status object,

@@ -100,7 +100,7 @@ func outgoingError(err error) error {
 	if !ok {
 		return err
 	}
-	return gRPCWrap(je)
+	return Wrap(je)
 }
 
 // serverStream is a wrapper of a grpc.ServerStream implementation that decodes
