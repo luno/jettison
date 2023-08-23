@@ -68,7 +68,8 @@ func incomingError(err error) error {
 
 	s, ok := status.FromError(err)
 	if !ok {
-		return errors.Wrap(err, "non-grpc error")
+		// Another interceptor may have already converted this error
+		return errors.Wrap(err, "", errors.WithStackTrace())
 	}
 
 	if s.Code() == codes.Canceled {

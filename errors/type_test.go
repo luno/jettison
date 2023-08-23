@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	go_2_errors "golang.org/x/exp/errors"
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
@@ -133,20 +132,17 @@ func TestAs(t *testing.T) {
 	err2 := errors.New("jettison error").(*errors.JettisonError)
 
 	je = errors.Wrap(err0, "wrap").(*errors.JettisonError)
-	assert.True(t, je.As(&err0))
-	assert.True(t, go_2_errors.As(je, &err0))
-	assert.False(t, je.As(&err1))
+	assert.True(t, errors.As(je, &err0))
+	assert.False(t, errors.As(je, &err1))
 
 	je = errors.Wrap(err1, "wrap").(*errors.JettisonError)
-	assert.True(t, je.As(&err1))
-	assert.True(t, go_2_errors.As(je, &err1))
-	assert.False(t, je.As(&err0))
+	assert.True(t, errors.As(je, &err1))
+	assert.False(t, errors.As(je, &err0))
 
 	je = errors.Wrap(err2, "wrap").(*errors.JettisonError)
-	assert.True(t, je.As(&err2))
-	assert.True(t, go_2_errors.As(je, &err2))
-	assert.False(t, je.As(&err0))
-	assert.False(t, je.As(&err1))
+	assert.True(t, errors.As(je, &err2))
+	assert.False(t, errors.As(je, &err0))
+	assert.False(t, errors.As(je, &err1))
 }
 
 func TestGetKey(t *testing.T) {

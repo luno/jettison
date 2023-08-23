@@ -34,8 +34,22 @@ func (g Error) Unwrap() error {
 	return g.err
 }
 
-func Wrap(je *errors.JettisonError) Error {
-	return Error{s: toStatus(je), err: je}
+// Wrap will construct an Error that will serialise err when
+// needed by gRPC by exposing the GRPCStatus method
+// TODO(adam): Make generic with error instead of JettisonError
+func Wrap(err *errors.JettisonError) Error {
+	return Error{s: toStatus(err), err: err}
+}
+
+// FromStatus will deserialise the details from the status
+// into an Error
+func FromStatus(s *status.Status) Error {
+	je, err := fromStatus(s)
+	if err != nil {
+		// NoReturnErr: If there's no error in the status, just return an empty error
+		return Error{s: s}
+	}
+	return Error{s: s, err: je}
 }
 
 // toStatus marshals the given jettison error into a *grpc.Status object,

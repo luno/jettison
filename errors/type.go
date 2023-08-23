@@ -3,7 +3,6 @@ package errors
 import (
 	"fmt"
 	"io"
-	"reflect"
 	"strings"
 
 	"golang.org/x/xerrors"
@@ -211,45 +210,6 @@ func (je *JettisonError) Is(target error) bool {
 		}
 
 		if targetErr.Code == jerr.Code {
-			return true
-		}
-
-		je = unwrap(je)
-	}
-
-	return false
-}
-
-// As finds the first error in the jettison error chain that matches target's
-// type. This works with non-jettison errors that have been wrapped by
-// jettison so long as the error hasn't been passed over gRPC.
-// Note: target MUST be a pointer to a non-nil error value, or As will panic.
-func (je *JettisonError) As(target interface{}) bool {
-	if target == nil {
-		panic("jettison/errors: target cannot be nil")
-	}
-
-	typ := reflect.TypeOf(target)
-	if typ.Kind() != reflect.Ptr {
-		panic("jettison/errors: target must be a pointer")
-	}
-
-	var iface error
-	if !typ.Elem().Implements(reflect.TypeOf(&iface).Elem()) {
-		panic("jettison/errors: target must be a pointer to an error type")
-	}
-
-	// If target is a pointer to a jettison error, we can just set its value.
-	_, ok := target.(**JettisonError)
-	if ok {
-		reflect.ValueOf(target).Elem().Set(reflect.ValueOf(je))
-		return true
-	}
-
-	// Otherwise, we need to check the jettison error's OriginalErr.
-	for je != nil {
-		if je.OriginalErr != nil && reflect.TypeOf(je.OriginalErr) == typ.Elem() {
-			reflect.ValueOf(target).Elem().Set(reflect.ValueOf(je.OriginalErr))
 			return true
 		}
 
