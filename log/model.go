@@ -8,7 +8,7 @@ import (
 
 type Level string
 
-type EntryError struct {
+type ErrorObject struct {
 	Code       string            `json:"code"`
 	Message    string            `json:"message"`
 	Stack      []string          `json:"stack,omitempty"`
@@ -26,8 +26,8 @@ type Entry struct {
 	Parameters []models.KeyValue `json:"parameters,omitempty"`
 	ErrorCode  *string           `json:"error_code,omitempty"`
 
-	Error  *EntryError  `json:"error,omitempty"`
-	Errors []EntryError `json:"errors,omitempty"`
+	ErrorObject  *ErrorObject  `json:"error_object,omitempty"`
+	ErrorObjects []ErrorObject `json:"error_objects,omitempty"`
 }
 
 // SetKey updates the list of parameters in the log with the given key/value pair.

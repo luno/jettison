@@ -127,19 +127,19 @@ func addErrors(e *Entry, err error) {
 	paths := errors.Flatten(err)
 	if len(paths) == 1 {
 		ent := errorEntry(paths[0])
-		e.Error = &ent
+		e.ErrorObject = &ent
 	} else {
 		for _, p := range paths {
-			e.Errors = append(e.Errors, errorEntry(p))
+			e.ErrorObjects = append(e.ErrorObjects, errorEntry(p))
 		}
 	}
 }
 
-func errorEntry(errPath []error) EntryError {
+func errorEntry(errPath []error) ErrorObject {
 	if len(errPath) == 0 {
-		return EntryError{}
+		return ErrorObject{}
 	}
-	e := EntryError{Message: errPath[0].Error()}
+	e := ErrorObject{Message: errPath[0].Error()}
 	var prevBinary string
 
 	for _, err := range errPath {

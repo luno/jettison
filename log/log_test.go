@@ -247,7 +247,7 @@ func TestAddError(t *testing.T) {
 					[]string{"updateDatabase", "doRequest"},
 				)),
 			expEntry: jlog.Entry{
-				Error: &jlog.EntryError{
+				ErrorObject: &jlog.ErrorObject{
 					Message: "hello",
 					Stack:   []string{"api"},
 					StackTrace: []string{
@@ -271,7 +271,7 @@ func TestAddError(t *testing.T) {
 					[]string{"callService", "doHTTP"},
 				),
 			),
-			expEntry: jlog.Entry{Error: &jlog.EntryError{
+			expEntry: jlog.Entry{ErrorObject: &jlog.ErrorObject{
 				Message: "outer: inner",
 				Stack:   []string{"api", "service"},
 				StackTrace: []string{
@@ -284,9 +284,11 @@ func TestAddError(t *testing.T) {
 			}},
 		},
 		{
-			name:     "standard error",
-			err:      io.EOF,
-			expEntry: jlog.Entry{Error: &jlog.EntryError{Message: io.EOF.Error()}},
+			name: "standard error",
+			err:  io.EOF,
+			expEntry: jlog.Entry{ErrorObject: &jlog.ErrorObject{
+				Message: io.EOF.Error(),
+			}},
 		},
 		{
 			name: "kvs",
@@ -299,7 +301,7 @@ func TestAddError(t *testing.T) {
 				j.KV("outer_key", "outer_value"),
 				jerrors.WithoutStackTrace(),
 			),
-			expEntry: jlog.Entry{Error: &jlog.EntryError{
+			expEntry: jlog.Entry{ErrorObject: &jlog.ErrorObject{
 				Message: "a",
 				Parameters: []models.KeyValue{
 					{Key: "outer_key", Value: "outer_value"},
@@ -313,7 +315,7 @@ func TestAddError(t *testing.T) {
 			var a jlog.Entry
 			jlog.WithError(tc.err).ApplyToLog(&a)
 			// get rid of the other fields, tested separately
-			a = jlog.Entry{Error: a.Error, Errors: a.Errors}
+			a = jlog.Entry{ErrorObject: a.ErrorObject, ErrorObjects: a.ErrorObjects}
 			assert.Equal(t, tc.expEntry, a)
 		})
 	}
