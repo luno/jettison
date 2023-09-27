@@ -81,3 +81,7 @@ func GetStackTrace(skip int, config StackConfig) []string {
 	}
 	return res
 }
+
+func GetSourceCodeRef(skip int) string {
+	return fmt.Sprintf("%+v", stack.Caller(skip+1))
+}

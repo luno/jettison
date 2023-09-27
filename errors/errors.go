@@ -56,6 +56,7 @@ func WithoutStackTrace() Option {
 		}
 		je.Binary = ""
 		je.StackTrace = nil
+		je.Source = ""
 	})
 }
 
@@ -79,6 +80,7 @@ func New(msg string, ol ...Option) error {
 	h.Errors = []models.Error{models.NewError(msg)}
 	je := &JettisonError{
 		Message: msg,
+		Source:  trace.GetSourceCodeRef(1),
 		Hops:    []models.Hop{h},
 	}
 	je.Binary, je.StackTrace = getTrace(1)
@@ -125,6 +127,7 @@ func Wrap(err error, msg string, ol ...Option) error {
 	)
 
 	je.Message = msg
+	je.Source = trace.GetSourceCodeRef(1)
 	je.Err = err
 
 	// We only need to add a trace when wrapping sentinel or non-jettison errors

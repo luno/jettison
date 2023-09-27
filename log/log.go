@@ -147,8 +147,13 @@ func errorEntry(errPath []error) ErrorObject {
 		if !ok {
 			continue
 		}
+		// Use the highest non-empty code
 		if e.Code == "" {
 			e.Code = je.Code
+		}
+		// Use the lowest non-empty source string
+		if je.Source != "" {
+			e.Source = je.Source
 		}
 		if je.Binary != "" {
 			e.Stack = append(e.Stack, je.Binary)

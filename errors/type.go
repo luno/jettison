@@ -23,6 +23,7 @@ type JettisonError struct {
 	Binary     string
 	StackTrace []string
 	Code       string
+	Source     string
 	KV         []models.KeyValue
 
 	Hops []models.Hop
@@ -169,6 +170,7 @@ func (je *JettisonError) Unwrap() error {
 		err.StackTrace = subJe.StackTrace
 		err.KV = subJe.KV
 		err.Code = subJe.Code
+		err.Source = subJe.Source
 		err.Err = subJe.Err
 	}
 
@@ -256,6 +258,7 @@ func (je *JettisonError) IsZero() bool {
 		je.Binary == "" &&
 		len(je.StackTrace) == 0 &&
 		je.Code == "" &&
+		je.Source == "" &&
 		len(je.KV) == 0
 }
 

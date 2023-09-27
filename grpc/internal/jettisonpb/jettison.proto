@@ -36,6 +36,7 @@ message WrappedError {
   string binary = 5;
   repeated string stack_trace = 6;
   string code = 7;
+  string source = 9;
   repeated KeyValue key_values = 8;
 
   repeated WrappedError joined_errors = 3;

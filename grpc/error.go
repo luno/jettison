@@ -120,6 +120,7 @@ func fromStatus(s *status.Status) (*errors.JettisonError, error) {
 				res.Message = je.Message
 				res.Binary = je.Binary
 				res.Code = je.Code
+				res.Source = je.Source
 				res.StackTrace = je.StackTrace
 				res.KV = je.KV
 				res.Err = je.Err
@@ -137,6 +138,7 @@ func errorFromProto(we *jettisonpb.WrappedError) (*errors.JettisonError, error) 
 		Message:    we.Message,
 		Binary:     we.Binary,
 		Code:       we.Code,
+		Source:     we.Source,
 		StackTrace: we.StackTrace,
 		KV:         kvFromProto(we.KeyValues),
 	}
@@ -170,6 +172,7 @@ func errorToProto(err error) *jettisonpb.WrappedError {
 		we.Message = je.Message
 		we.Binary = je.Binary
 		we.Code = je.Code
+		we.Source = je.Source
 		we.StackTrace = je.StackTrace
 		we.KeyValues = kvToProto(je.KV)
 	}

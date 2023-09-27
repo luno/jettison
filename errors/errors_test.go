@@ -50,6 +50,11 @@ func TestNew(t *testing.T) {
 			assert.Equal(t,
 				"github.com/luno/jettison/errors/errors_test.go:"+line,
 				je.Hops[0].Errors[0].Source)
+
+			assert.Equal(t,
+				"github.com/luno/jettison/errors/errors_test.go:"+line,
+				je.Source,
+			)
 		})
 	}
 }
@@ -158,7 +163,12 @@ func TestWrap(t *testing.T) {
 
 			assert.Equal(t,
 				"github.com/luno/jettison/errors/errors_test.go:"+line,
-				je.Hops[0].Errors[0].Source)
+				je.Hops[0].Errors[0].Source,
+			)
+			assert.Equal(t,
+				"github.com/luno/jettison/errors/errors_test.go:"+line,
+				je.Source,
+			)
 
 			assert.Equal(t, tc.expectedMessage, err.Error())
 		})

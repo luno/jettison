@@ -249,6 +249,7 @@ func TestAddError(t *testing.T) {
 			expEntry: jlog.Entry{
 				ErrorObject: &jlog.ErrorObject{
 					Message: "hello",
+					Source:  "github.com/luno/jettison/log/log_test.go:244",
 					Stack:   []string{"api"},
 					StackTrace: []string{
 						"updateDatabase",
@@ -273,6 +274,7 @@ func TestAddError(t *testing.T) {
 			),
 			expEntry: jlog.Entry{ErrorObject: &jlog.ErrorObject{
 				Message: "outer: inner",
+				Source:  "github.com/luno/jettison/log/log_test.go:264",
 				Stack:   []string{"api", "service"},
 				StackTrace: []string{
 					"update",
