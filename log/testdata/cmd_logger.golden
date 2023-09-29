@@ -1,6 +1,13 @@
-I 00:00:00.000 g/l/j/log/cmdlogger_test.go:22: this is an info message[ctx_key=ctx_val,info_key=info_val]
-E 00:00:00.000 g/l/j/log/cmdlogger_test.go:23: EOF[ctx_key=ctx_val] (error without stack trace)
-E 00:00:00.000 g/l/j/log/cmdlogger_test.go:24: example error[ctx_key=ctx_val]
-  - github.com/luno/jettison/log/cmdlogger_test.go:24 TestCmdLogger
-  - testing/testing.go:X tRunner
-  - runtime/asm_X.s:X goexit
+I 00:00:00.000 g/l/j/log/cmdlogger_test.go:26: this is an info message[ctx_key=ctx_val,info_key=info_val]
+E 00:00:00.000 g/l/j/log/cmdlogger_test.go:27: error(s) [ctx_key=ctx_val]
+  EOF(error without stack trace)
+E 00:00:00.000 g/l/j/log/cmdlogger_test.go:28: error(s) [ctx_key=ctx_val,error_key=error_val]
+  example error[error_key=error_val]
+  - github.com/luno/jettison/log/cmdlogger_test.go:28 TestCmdLogger
+E 00:00:00.000 g/l/j/log/cmdlogger_test.go:34: error(s) [ctx_key=ctx_val]
+  error one
+error two
+  - github.com/luno/jettison/log/cmdlogger_test.go:31 TestCmdLogger
+  error one
+error two
+  - github.com/luno/jettison/log/cmdlogger_test.go:32 TestCmdLogger

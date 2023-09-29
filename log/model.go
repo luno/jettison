@@ -23,7 +23,6 @@ type Entry struct {
 	Level     Level     `json:"level"`
 	Timestamp time.Time `json:"timestamp"`
 
-	Hops       []models.Hop      `json:"hops,omitempty"`
 	Parameters []models.KeyValue `json:"parameters,omitempty"`
 	ErrorCode  *string           `json:"error_code,omitempty"`
 

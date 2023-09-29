@@ -6,9 +6,6 @@ import (
 	"log"
 	"strings"
 
-	"gopkg.in/yaml.v2"
-
-	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/models"
 )
 
@@ -32,44 +29,48 @@ func (c *cmdLogger) Log(l Entry) string {
 		timestamp = "00:00:00.000"
 	}
 
-	text := fmt.Sprintf("%s %s %s: %s",
-		strings.ToUpper(string(l.Level))[:1],
-		timestamp,
-		conciseSource(l.Source),
-		makeMsg(l),
-	)
-
-	if len(l.Hops) > 0 {
-		hops, err := yamlStacks(l.Hops)
-		if err != nil {
-			c.logger.Printf("error printing hops: %v", err)
-		} else if hops == "" {
-			text += " (error without stack trace)"
-		} else {
-			text += "\n" + hops
-		}
+	errs := l.ErrorObjects
+	if l.ErrorObject != nil {
+		errs = append(errs, *l.ErrorObject)
 	}
 
-	c.logger.Print(text)
-
-	return text
+	var sb strings.Builder
+	if len(errs) == 0 {
+		_, _ = fmt.Fprintf(&sb, "%s %s %s: %s",
+			strings.ToUpper(string(l.Level))[:1],
+			timestamp,
+			conciseSource(l.Source),
+			makeMsg(l),
+		)
+	} else {
+		_, _ = fmt.Fprintf(&sb, "%s %s %s: error(s) %s\n",
+			strings.ToUpper(string(l.Level))[:1],
+			timestamp,
+			conciseSource(l.Source),
+			parameterString(l.Parameters),
+		)
+		for _, err := range errs {
+			writeError(&sb, err)
+		}
+	}
+	c.logger.Print(sb.String())
+	return sb.String()
 }
 
 // makeMsg returns the log message with parameters if present.
 func makeMsg(l Entry) string {
-	var res strings.Builder
-	res.WriteString(l.Message)
-	if len(l.Parameters) == 0 {
-		return res.String()
+	return fmt.Sprint(l.Message, parameterString(l.Parameters))
+}
+
+func parameterString(params []models.KeyValue) string {
+	if len(params) == 0 {
+		return ""
 	}
-	var pl []string
-	for _, p := range l.Parameters {
+	pl := make([]string, 0, len(params))
+	for _, p := range params {
 		pl = append(pl, fmt.Sprintf("%s=%s", p.Key, p.Value))
 	}
-	res.WriteString("[")
-	res.WriteString(strings.Join(pl, ","))
-	res.WriteString("]")
-	return res.String()
+	return fmt.Sprintf("[%s]", strings.Join(pl, ","))
 }
 
 // conciseSource returns the source with the leading package
@@ -90,39 +91,14 @@ func conciseSource(source string) string {
 	return strings.Join(res, "/")
 }
 
-// yamlStacks returns the stack traces of the hops as indented yaml.
-func yamlStacks(hops []models.Hop) (string, error) {
-	var v interface{}
-	if len(hops) == 0 {
-		return "", errors.New("missing hops")
-	} else if len(hops) == 1 {
-		// If single binary (no network hops), just print the stack.
-
-		if len(hops[0].StackTrace) == 0 {
-			// No stack trace (probably non-jettison error)
-			return "", nil
-		}
-
-		v = hops[0].StackTrace
-	} else {
-		// Else if network hops, print binaries with stacks.
-		var stacks yaml.MapSlice
-		for _, hop := range hops {
-			stacks = append(stacks, yaml.MapItem{
-				Key:   hop.Binary,
-				Value: hop.StackTrace,
-			})
-		}
-		v = stacks
+func writeError(w io.Writer, err ErrorObject) {
+	ps := parameterString(err.Parameters)
+	_, _ = fmt.Fprintf(w, "  %s%s", err.Message, ps)
+	if len(err.StackTrace) == 0 {
+		_, _ = fmt.Fprint(w, "(error without stack trace)")
 	}
-
-	b, err := yaml.Marshal(v)
-	if err != nil {
-		return "", err
+	_, _ = fmt.Fprintln(w)
+	for _, line := range err.StackTrace {
+		_, _ = fmt.Fprintf(w, "  - %s\n", line)
 	}
-
-	// Indent yaml stacks
-	res := "  " + strings.TrimSpace(string(b))
-	res = strings.Replace(res, "\n", "\n  ", -1)
-	return res, nil
 }

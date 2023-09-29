@@ -3,7 +3,6 @@ package log
 import (
 	"context"
 	"fmt"
-	"log"
 	"sort"
 	"time"
 
@@ -38,8 +37,6 @@ func WithLevel(level Level) Option {
 // is not recommended.
 func WithError(err error) Option {
 	return logOption(func(e *Entry) {
-		addErrorHops(e, err)
-
 		// Add the most recent error code in the chain to the log's root.
 		codes := errors.GetCodes(err)
 		if len(codes) > 0 {
@@ -92,45 +89,17 @@ func makeEntry(ctx context.Context, msg string, lvl Level, opts ...Option) Entry
 	return l
 }
 
-// addErrorHops tries to convert the error to a jettison error
-// and then adds the error as hops to the log. It also adds
-// the error parameters log's root.
-func addErrorHops(e *Entry, err error) {
-	je, ok := err.(*errors.JettisonError)
-	if !ok {
-		je, ok = errors.New(err.Error(), errors.WithoutStackTrace()).(*errors.JettisonError)
-	}
-	if !ok {
-		log.Printf("jettison/log: failed to convert error to jettison error: %v", err)
-		// best-effort, will just log err.Err() wrapped as a Jettison log
-	}
-
-	for _, h := range je.Hops {
-		e.Hops = append(e.Hops, h)
-	}
-	// Bubble up all nested parameters in the list of hops to the log's root
-	// parameters list for ease of use. Newer parameters come first.
-	for _, h := range je.Hops {
-		for _, he := range h.Errors {
-			if he.Parameters == nil {
-				continue
-			}
-
-			for _, k := range he.Parameters {
-				e.Parameters = append(e.Parameters, k)
-			}
-		}
-	}
-}
-
 func addErrors(e *Entry, err error) {
 	paths := errors.Flatten(err)
 	if len(paths) == 1 {
 		ent := errorEntry(paths[0])
+		e.Parameters = append(e.Parameters, ent.Parameters...)
 		e.ErrorObject = &ent
 	} else {
 		for _, p := range paths {
-			e.ErrorObjects = append(e.ErrorObjects, errorEntry(p))
+			ent := errorEntry(p)
+			e.Parameters = append(e.Parameters, ent.Parameters...)
+			e.ErrorObjects = append(e.ErrorObjects, ent)
 		}
 	}
 }

@@ -2,6 +2,7 @@ package errors
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/luno/jettison/trace"
 )
@@ -12,6 +13,14 @@ func SetTraceConfig(config trace.StackConfig) {
 	if !traceConfig.IsZero() {
 		panic(fmt.Sprintln("config has already been set", traceConfig, config))
 	}
+	traceConfig = config
+}
+
+func SetTraceConfigTesting(t testing.TB, config trace.StackConfig) {
+	old := traceConfig
+	t.Cleanup(func() {
+		traceConfig = old
+	})
 	traceConfig = config
 }
 

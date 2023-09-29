@@ -1,7 +1,7 @@
 package errors
 
 import (
-	"errors"
+	stderrors "errors"
 
 	"golang.org/x/xerrors"
 
@@ -144,7 +144,7 @@ func Wrap(err error, msg string, ol ...Option) error {
 
 // Is is an alias of the standard library's errors.Is() function.
 func Is(err, target error) bool {
-	return errors.Is(err, target)
+	return stderrors.Is(err, target)
 }
 
 // IsAny returns true if Is(err, target) is true for any of the targets.
@@ -160,7 +160,7 @@ func IsAny(err error, targets ...error) bool {
 
 // As is an alias of the standard library's errors.As() function.
 func As(err error, target interface{}) bool {
-	return errors.As(err, target)
+	return stderrors.As(err, target)
 }
 
 // Opaque is an alias of golang.org/x/exp/errors.Opaque().
@@ -171,7 +171,12 @@ func Opaque(err error) error {
 
 // Unwrap is an alias of the standard library's errors.Unwrap() function.
 func Unwrap(err error) error {
-	return errors.Unwrap(err)
+	return stderrors.Unwrap(err)
+}
+
+// Join is an alias of the standard library's errors.Join() function.
+func Join(err ...error) error {
+	return stderrors.Join(err...)
 }
 
 // OriginalError returns the non-jettison error wrapped by the given one,
