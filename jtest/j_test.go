@@ -10,11 +10,6 @@ import (
 	"github.com/luno/jettison/j"
 )
 
-var (
-	errTest    = errors.New("test error", j.C("ERR_48026e342952be11"))
-	errWrapped = errors.Wrap(io.ErrClosedPipe, "wrapping text")
-)
-
 func TestAssert(t *testing.T) {
 	errTest := errors.New("test error")
 
@@ -88,16 +83,16 @@ func TestRequireNil(t *testing.T) {
 func TestFailLog(t *testing.T) {
 	t.Run("log without message", func(t *testing.T) {
 		expected := `No error in chain matches expected:
-expected: EOF
-actual:   io: read/write on closed pipe
+expected: - message: EOF
+actual:   - message: 'io: read/write on closed pipe'
 `
 		require.Equal(t, expected, failLog(io.EOF, io.ErrClosedPipe))
 	})
 
 	t.Run("log with message", func(t *testing.T) {
 		expected := `No error in chain matches expected:
-expected: EOF
-actual:   io: read/write on closed pipe
+expected: - message: EOF
+actual:   - message: 'io: read/write on closed pipe'
 message:  errors in chain check
 `
 		require.Equal(t, expected, failLog(io.EOF, io.ErrClosedPipe, "errors in chain check"))
@@ -107,14 +102,14 @@ message:  errors in chain check
 func TestFailNilLog(t *testing.T) {
 	t.Run("log without message", func(t *testing.T) {
 		expected := `Unexpected non-nil error:
-actual:   io: read/write on closed pipe
+actual:   - message: 'io: read/write on closed pipe'
 `
 		require.Equal(t, expected, failNilLog(io.ErrClosedPipe))
 	})
 
 	t.Run("log with message", func(t *testing.T) {
 		expected := `Unexpected non-nil error:
-actual:   EOF
+actual:   - message: EOF
 message:  errors in chain check
 `
 		require.Equal(t, expected, failNilLog(io.EOF, "errors in chain check"))
@@ -134,30 +129,34 @@ func TestPretty(t *testing.T) {
 		{
 			name:     "non-jettison",
 			err:      io.EOF,
-			expected: "EOF",
+			expected: "- message: EOF\n",
 		},
 		{
-			name: "jettison",
-			err:  errTest,
-			expected: `test error
-- code: ERR_48026e342952be11
-  message: test error
-  source: github.com/luno/jettison/jtest/j_test.go:14
-  parameters: []
-`,
+			name:     "jettison",
+			err:      errors.New("test error", j.C("ERR_48026e342952be11")),
+			expected: "- message: test error\n  code: ERR_48026e342952be11\n",
 		},
 		{
-			name: "wrapped",
-			err:  errWrapped,
-			expected: `wrapping text: io: read/write on closed pipe
-- code: wrapping text
-  message: wrapping text
-  source: github.com/luno/jettison/jtest/j_test.go:15
-  parameters: []
-- code: ""
-  message: 'io: read/write on closed pipe'
-  source: ""
-  parameters: []
+			name:     "wrapped",
+			err:      errors.Wrap(io.ErrClosedPipe, "wrapping text"),
+			expected: "- message: 'wrapping text: io: read/write on closed pipe'\n",
+		},
+		{
+			name: "joined",
+			err: errors.Wrap(errors.Join(
+				errors.New("a", j.C("error_a")),
+				errors.New("b", j.C("error_b")),
+			), "wrap", j.KV("wrap", "true")),
+			expected: `- message: a
+  code: error_a
+  kv:
+  - key: wrap
+    value: "true"
+- message: b
+  code: error_b
+  kv:
+  - key: wrap
+    value: "true"
 `,
 		},
 	}

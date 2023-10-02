@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/models"
 )
 
 // Assert asserts that the specified error matches the expected one. The test
@@ -112,23 +113,21 @@ func RequireNil(t testing.TB, actual error, msg ...interface{}) {
 }
 
 func failLog(expected, actual error, msgs ...interface{}) string {
-	l := fmt.Sprintf("No error in chain matches expected:\n"+
-		"expected: %+v\n"+
-		"actual:   %+v\n", pretty(expected), pretty(actual))
+	l := fmt.Sprintf("No error in chain matches expected:\nexpected: %+vactual:   %+v", pretty(expected), pretty(actual))
 
 	return l + messageFromMsgs(msgs...)
 }
 
 func failNilLog(actual error, msgs ...interface{}) string {
 	l := fmt.Sprintf("Unexpected non-nil error:\n"+
-		"actual:   %+v\n", pretty(actual))
+		"actual:   %+v", pretty(actual))
 
 	return l + messageFromMsgs(msgs...)
 }
 
 func failJKeyNotPresent(key string, actual error, msgs ...interface{}) string {
 	l := fmt.Sprintf("Expected jettison key '%v' was not present in actual error:\n"+
-		"%+v\n", key, pretty(actual))
+		"%+v", key, pretty(actual))
 
 	return l + messageFromMsgs(msgs...)
 }
@@ -141,29 +140,47 @@ func failJKeyValuesMismatch(key, expected, actual string, msgs ...interface{}) s
 	return l + messageFromMsgs(msgs...)
 }
 
+type prettyError struct {
+	Message string            `yaml:"message,omitempty"`
+	Code    string            `yaml:"code,omitempty"`
+	KV      []models.KeyValue `yaml:"kv,omitempty"`
+	// TODO(adam): Add source
+}
+
 func pretty(err error) string {
 	if err == nil {
 		return fmt.Sprint(err)
 	}
 
-	msg := fmt.Sprintf("%+v", err)
-
-	jerr := new(errors.JettisonError)
-	if !errors.As(err, &jerr) {
-		return msg
+	paths := errors.Flatten(err)
+	pretties := make([]prettyError, 0, len(paths))
+	for _, p := range paths {
+		var pret prettyError
+		if len(paths) > 1 {
+			pret.Message = p[len(p)-1].Error()
+		} else {
+			// Can use the fully wrapped message if the error isn't joined
+			pret.Message = p[0].Error()
+		}
+		for _, e := range p {
+			je, ok := e.(*errors.JettisonError)
+			if !ok {
+				continue
+			}
+			// Take the lowest
+			if je.Code != "" {
+				pret.Code = je.Code
+			}
+			pret.KV = append(pret.KV, je.KV...)
+		}
+		pretties = append(pretties, pret)
 	}
 
-	var val interface{}
-	val = jerr
-	if len(jerr.Hops) == 1 {
-		val = jerr.Hops[0].Errors
-	}
-
-	b, err := yaml.Marshal(val)
+	b, err := yaml.Marshal(pretties)
 	if err != nil {
 		panic(err)
 	}
-	return msg + "\n" + string(b)
+	return string(b)
 }
 
 func messageFromMsgs(msgs ...interface{}) string {
