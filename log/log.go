@@ -9,6 +9,7 @@ import (
 	"github.com/go-stack/stack"
 
 	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/trace"
 )
 
 const (
@@ -109,8 +110,8 @@ func errorEntry(errPath []error) ErrorObject {
 		return ErrorObject{}
 	}
 	e := ErrorObject{Message: errPath[0].Error()}
-	var prevBinary string
 
+	var m trace.Merge
 	for _, err := range errPath {
 		je, ok := err.(*errors.JettisonError)
 		if !ok {
@@ -129,19 +130,10 @@ func errorEntry(errPath []error) ErrorObject {
 		}
 		e.Parameters = append(e.Parameters, je.KV...)
 		if len(je.StackTrace) > 0 {
-			lines := len(je.StackTrace) + len(e.StackTrace) + 1
-			st := make([]string, 0, lines)
-
-			st = append(st, je.StackTrace...)
-			if prevBinary != "" {
-				st = append(st, fmt.Sprintf("%s -> %s", prevBinary, je.Binary))
-			}
-			st = append(st, e.StackTrace...)
-
-			e.StackTrace = st
-			prevBinary = je.Binary
+			m.Add(je.StackTrace, je.Binary)
 		}
 	}
+	e.StackTrace = m.FullTrace()
 	return e
 }
 
