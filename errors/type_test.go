@@ -67,11 +67,6 @@ func TestError(t *testing.T) {
 }
 
 func TestUnwrap(t *testing.T) {
-	id0 := errors.New("id0")
-	id1 := errors.New("id1", errors.WithCode("code1"))
-	id2 := errors.Wrap(id1, "id2")
-	id3 := errors.Wrap(id2, "id3", errors.WithCode("code3"))
-
 	testCases := []struct {
 		name     string
 		err      error
@@ -79,22 +74,32 @@ func TestUnwrap(t *testing.T) {
 	}{
 		{
 			name:     "default code, no wrap",
-			err:      id0,
+			err:      errors.New("id0"),
 			expCodes: []string{"id0"},
 		},
 		{
 			name:     "custom code, no wrap",
-			err:      id1,
+			err:      errors.New("id1", errors.WithCode("code1")),
 			expCodes: []string{"code1"},
 		},
 		{
-			name:     "wrapped once",
-			err:      id2,
+			name: "wrapped once",
+			err: errors.Wrap(
+				errors.New("id1", errors.WithCode("code1")),
+				"id2",
+			),
 			expCodes: []string{"id2", "code1"},
 		},
 		{
-			name:     "wrapped twice",
-			err:      id3,
+			name: "wrapped twice",
+			err: errors.Wrap(
+				errors.Wrap(
+					errors.New("id1", errors.WithCode("code1")),
+					"id2",
+				),
+				"id3",
+				errors.WithCode("code3"),
+			),
 			expCodes: []string{"code3", "id2", "code1"},
 		},
 	}

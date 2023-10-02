@@ -196,23 +196,21 @@ func OriginalError(err error) error {
 // The error codes are returned in reverse-order of calls to Wrap(), i.e. the
 // code of the latest wrapped error comes first in the list.
 func GetCodes(err error) []string {
-	je, ok := err.(*JettisonError)
-	if !ok {
-		return nil
-	}
-
-	var res []string
-	for _, h := range je.Hops {
-		for _, e := range h.Errors {
-			if e.Code == "" {
-				continue
-			}
-
-			res = append(res, e.Code)
+	var ret []string
+	Walk(err, func(err error) bool {
+		je, ok := err.(*JettisonError)
+		if !ok {
+			return true
 		}
-	}
-
-	return res
+		if je.Code != "" {
+			ret = append(ret, je.Code)
+		} else if je.Message != "" {
+			// TODO(adam): Remove this behaviour, we shouldn't use message strings as codes
+			ret = append(ret, je.Message)
+		}
+		return true
+	})
+	return ret
 }
 
 // Walk will do a depth first traversal of the error tree.
