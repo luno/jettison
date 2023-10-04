@@ -2,7 +2,6 @@ package errors_test
 
 import (
 	stdlib_errors "errors"
-	"fmt"
 	"io"
 	"net/http"
 	"runtime"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
@@ -179,6 +177,7 @@ func TestIs(t *testing.T) {
 	id1 := errors.New("id1", errors.WithCode("id1"))
 	id2 := errors.New("id2", errors.WithCode("id2"))
 	id3 := stdlib_errors.New("id3")
+	errNoCode := errors.New("err_no_code")
 
 	testCases := []struct {
 		name      string
@@ -195,6 +194,30 @@ func TestIs(t *testing.T) {
 			name:      "err nil returns false",
 			target:    id1,
 			expResult: false,
+		},
+		{
+			name:      "err is self",
+			err:       id1,
+			target:    id1,
+			expResult: true,
+		},
+		{
+			name:      "std err is self",
+			err:       id3,
+			target:    id3,
+			expResult: true,
+		},
+		{
+			name:      "no code is self",
+			err:       errNoCode,
+			target:    errNoCode,
+			expResult: true,
+		},
+		{
+			name:      "new same message is equal",
+			err:       errors.New("hello, world"),
+			target:    errors.New("hello, world"),
+			expResult: true,
 		},
 		{
 			name:      "standard lib err return false",
@@ -240,9 +263,6 @@ func TestIs(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Test Jettison's implementation of Is().
 			assert.Equal(t, tc.expResult, errors.Is(tc.err, tc.target))
-
-			// Test Go 2 spec's implementation of Is().
-			assert.Equal(t, tc.expResult, xerrors.Is(tc.err, tc.target))
 		})
 	}
 }
@@ -310,81 +330,6 @@ func TestIsUnwrap(t *testing.T) {
 	require.True(t, ok)
 
 	require.Equal(t, orig, err.Error())
-}
-
-// TestIsCompatibility tests that jettison and golang.org/exp/errors have Is()
-// implementations with the same behaviour.
-func TestIsCompatibility(t *testing.T) {
-	matrix := make(map[int]map[int][3]bool)
-	for i1 := 0; i1 < 3; i1++ {
-		matrix[i1] = make(map[int][3]bool)
-		for i2 := 0; i2 < 3; i2++ {
-			matrix[i1][i2] = [3]bool{false, false, false}
-		}
-	}
-
-	// index 0 - Jettison with an error code
-	err1 := errors.New("err1", errors.WithCode("ERR_1"))
-	err2 := errors.Wrap(err1, "err2")
-	el := []error{nil, err1, err2}
-	for i1, e1 := range el {
-		for i2, e2 := range el {
-			row := matrix[i1][i2]
-			row[0] = errors.Is(e1, e2)
-			matrix[i1][i2] = row
-		}
-	}
-
-	// index 1 - Jettison without an error code
-	err1 = errors.New("err1")
-	err2 = errors.Wrap(err1, "err2")
-	el = []error{nil, err1, err2}
-	for i1, e1 := range el {
-		for i2, e2 := range el {
-			row := matrix[i1][i2]
-			row[1] = errors.Is(e1, e2)
-			matrix[i1][i2] = row
-		}
-	}
-
-	// index 3 - golang.org/x/exp/errors
-	err1 = xerrors.New("err1")
-	err2 = xerrors.Errorf("err2: %w", err1)
-	el = []error{nil, err1, err2}
-	for i1, e1 := range el {
-		for i2, e2 := range el {
-			row := matrix[i1][i2]
-			row[2] = xerrors.Is(e1, e2)
-			matrix[i1][i2] = row
-		}
-	}
-
-	// Each row in the compability matrix should have identical entries.
-	for i1, submatrix := range matrix {
-		for i2, row := range submatrix {
-			assert.Equal(t, row[0], row[1], fmt.Sprintf("matrix[%d][%d] - jettison_code == jettison_no_code", i1, i2))
-			assert.Equal(t, row[1], row[2], fmt.Sprintf("matrix[%d][%d] - jettison_no_code == xerrors", i1, i2))
-		}
-	}
-}
-
-// TestUnwrapCompatibility tests that jettison and golang.org/exp/errors have
-// compatible wrapping/unwrapping of errors.
-func TestUnwrapCompatibility(t *testing.T) {
-	err1 := errors.New("err1")
-	err2 := xerrors.Errorf("err2: %w", err1)
-	err3 := errors.Wrap(err2, "err3", errors.WithCode("ERR_3"))
-	err4 := xerrors.Errorf("err4: %w", err3)
-	err5 := errors.Wrap(err4, "err5")
-
-	// For testing code equality as well as value equality.
-	err3Clone := errors.New("err3_clone", errors.WithCode("ERR_3"))
-
-	assert.True(t, errors.Is(err5, err1))
-	assert.True(t, errors.Is(err5, err2))
-	assert.True(t, errors.Is(err5, err3))
-	assert.True(t, errors.Is(err5, err3Clone))
-	assert.True(t, errors.Is(err5, err4))
 }
 
 func TestWithoutStackTrace(t *testing.T) {

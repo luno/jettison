@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync/atomic"
 
 	"golang.org/x/xerrors"
 
@@ -182,43 +183,37 @@ func (je *JettisonError) Unwrap() error {
 // error in target. This is compatible with the Is interface from the Go 2
 // error handling proposal.
 func (je *JettisonError) Is(target error) bool {
-	if je == nil || target == nil {
-		return false
+	if je == nil {
+		return target == nil
 	}
-
+	if je == target {
+		return true
+	}
 	targetJErr, ok := target.(*JettisonError)
 	if !ok {
 		return false
 	}
-
-	if je == targetJErr {
-		return true
+	if je.Code != "" {
+		return targetJErr.Code == je.Code
 	}
-
-	targetErr, ok := targetJErr.LatestError()
-	if !ok {
-		return false
-	}
-
-	// If target doesn't have an error code, then there's nothing to check.
-	if targetErr.Code == "" {
-		return false
-	}
-
-	for je != nil {
-		jerr, ok := je.LatestError()
-		if !ok {
-			return false
+	// TODO(adam): Remove this behaviour
+	if je.Message != "" {
+		match := targetJErr.Message == je.Message
+		if match {
+			f := legacyCallback.Load()
+			if f != nil {
+				(*f)(je, target)
+			}
 		}
-
-		if targetErr.Code == jerr.Code {
-			return true
-		}
-
-		je = unwrap(je)
+		return match
 	}
-
 	return false
+}
+
+var legacyCallback atomic.Pointer[func(src, target error)]
+
+func SetLegacyCallback(f func(src, target error)) {
+	legacyCallback.Store(&f)
 }
 
 // GetKey returns the value of the first jettison key/value pair with the
