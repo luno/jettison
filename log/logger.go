@@ -10,7 +10,7 @@ import (
 )
 
 // logger is the global logger. It defaults to a human friendly command line logger.
-var logger Logger = newCmdLogger(os.Stderr, false)
+var logger Logger = NewCmdLogger(os.Stderr, false)
 
 // Logger does logging of log lines.
 type Logger interface {
@@ -25,7 +25,7 @@ func SetLogger(l Logger) {
 
 func SetCmdLoggerForTesting(t testing.TB, w io.Writer) {
 	cached := logger
-	logger = newCmdLogger(w, true)
+	logger = NewCmdLogger(w, true)
 
 	t.Cleanup(func() {
 		logger = cached

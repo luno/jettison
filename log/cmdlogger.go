@@ -9,21 +9,20 @@ import (
 	"github.com/luno/jettison/models"
 )
 
-// newCmdLogger returns a stdout human friendly command line logger
-// with colored errors if a terminal is detected.
-func newCmdLogger(w io.Writer, stripTime bool) *cmdLogger {
-	return &cmdLogger{
+// NewCmdLogger returns a stdout human friendly command line logger.
+func NewCmdLogger(w io.Writer, stripTime bool) *CmdLogger {
+	return &CmdLogger{
 		logger:    log.New(w, "", 0),
 		stripTime: stripTime,
 	}
 }
 
-type cmdLogger struct {
+type CmdLogger struct {
 	logger    *log.Logger
 	stripTime bool
 }
 
-func (c *cmdLogger) Log(l Entry) string {
+func (c *CmdLogger) Log(l Entry) string {
 	timestamp := l.Timestamp.Format("15:04:05.000")
 	if c.stripTime {
 		timestamp = "00:00:00.000"
