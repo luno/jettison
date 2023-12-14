@@ -9,12 +9,12 @@ import (
 type Level string
 
 type ErrorObject struct {
-	Code       string            `json:"code"`
-	Source     string            `json:"source"`
-	Message    string            `json:"message"`
-	Stack      []string          `json:"stack,omitempty"`
-	StackTrace []string          `json:"stack_trace,omitempty"`
-	Parameters []models.KeyValue `json:"parameters,omitempty"`
+	Code       string             `json:"code"`
+	Source     string             `json:"source"`
+	Message    string             `json:"message"`
+	Stack      []string           `json:"stack,omitempty"`
+	StackTrace ElasticStringArray `json:"stack_trace,omitempty"`
+	Parameters []models.KeyValue  `json:"parameters,omitempty"`
 }
 
 type Entry struct {

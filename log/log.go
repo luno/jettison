@@ -133,7 +133,7 @@ func errorEntry(errPath []error) ErrorObject {
 			m.Add(je.StackTrace, je.Binary)
 		}
 	}
-	e.StackTrace = m.FullTrace()
+	e.StackTrace = MakeElastic(m.FullTrace())
 	return e
 }
 

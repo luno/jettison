@@ -1,2 +1,2 @@
 github.com/luno/jettison/trace/stack.go:69 GetStackTrace
-github.com/luno/jettison/trace/stack_test.go:43 TestStackTrace.func1
+github.com/luno/jettison/trace/stack_test.go:36 TestStackTrace.func1

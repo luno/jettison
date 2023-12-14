@@ -251,10 +251,10 @@ func TestAddError(t *testing.T) {
 					Message: "hello",
 					Source:  "github.com/luno/jettison/log/log_test.go:244",
 					Stack:   []string{"api"},
-					StackTrace: []string{
+					StackTrace: jlog.MakeElastic([]string{
 						"updateDatabase",
 						"doRequest",
-					},
+					}),
 				},
 			},
 		},
@@ -276,13 +276,13 @@ func TestAddError(t *testing.T) {
 				Message: "outer: inner",
 				Source:  "github.com/luno/jettison/log/log_test.go:264",
 				Stack:   []string{"api", "service"},
-				StackTrace: []string{
+				StackTrace: jlog.MakeElastic([]string{
 					"update",
 					"handleRequest",
 					"api -> service",
 					"callService",
 					"doHTTP",
-				},
+				}),
 			}},
 		},
 		{

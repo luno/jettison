@@ -93,11 +93,11 @@ func conciseSource(source string) string {
 func writeError(w io.Writer, err ErrorObject) {
 	ps := parameterString(err.Parameters)
 	_, _ = fmt.Fprintf(w, "  %s%s", err.Message, ps)
-	if len(err.StackTrace) == 0 {
+	if len(err.StackTrace.Content()) == 0 {
 		_, _ = fmt.Fprint(w, "(error without stack trace)")
 	}
 	_, _ = fmt.Fprintln(w)
-	for _, line := range err.StackTrace {
+	for _, line := range err.StackTrace.Content() {
 		_, _ = fmt.Fprintf(w, "  - %s\n", line)
 	}
 }

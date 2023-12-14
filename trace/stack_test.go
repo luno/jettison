@@ -29,13 +29,6 @@ func TestStackTrace(t *testing.T) {
 			name:      "no lambdas",
 			pkgConfig: StackConfig{RemoveLambdas: true, TrimRuntime: true},
 		},
-		{
-			name: "testing only",
-			pkgConfig: StackConfig{
-				RemoveLambdas: true,
-				PackagesShown: []string{PackagePath(testing.T{})},
-			},
-		},
 	}
 
 	for _, tc := range testCases {

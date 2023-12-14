@@ -1,1 +1,1 @@
-{"message":"test_message","source":"testsource","level":"info","timestamp":"0001-01-01T00:00:00Z","error_code":"test","error_object":{"code":"","source":"github.com/luno/jettison/log/log_test.go:80","message":"test","stack":["testservice"],"stack_trace":["teststacktrace"]}}
+{"message":"test_message","source":"testsource","level":"info","timestamp":"0001-01-01T00:00:00Z","error_code":"test","error_object":{"code":"","source":"github.com/luno/jettison/log/log_test.go:80","message":"test","stack":["testservice"],"stack_trace":[{"\u003e":["teststacktrace"]}]}}
