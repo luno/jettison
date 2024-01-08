@@ -8,7 +8,6 @@ import (
 	"github.com/go-stack/stack"
 	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/luno/jettison/trace"
 )
@@ -36,18 +35,20 @@ func TestSetTraceConfig(t *testing.T) {
 // TestStack tests the stack trace including line numbers.
 // Adding anything to this file might break the test.
 func TestStack(t *testing.T) {
+	SetTraceConfigTesting(t, trace.StackConfig{
+		TrimRuntime: true,
+		Format: func(call stack.Call) string {
+			return fmt.Sprintf("%s %n", call, call)
+		},
+	})
 	err := stackCalls(5)
-	je, ok := err.(*JettisonError)
-	require.True(t, ok)
-
-	tr := []byte(strings.Join(je.Hops[0].StackTrace, "\n") + "\n")
-	tr = trace.StripTestStacks(t, tr)
+	tr := []byte(strings.Join(err.StackTrace, "\n") + "\n")
 	goldie.New(t).Assert(t, t.Name(), tr)
 }
 
-func stackCalls(i int) error {
+func stackCalls(i int) *JettisonError {
 	if i == 0 {
-		return New("stack")
+		return New("stack").(*JettisonError)
 	}
 	return stackCalls(i - 1)
 }

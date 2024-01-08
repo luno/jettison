@@ -1,9 +1,7 @@
-github.com/luno/jettison/errors/trace_test.go:50 stackCalls
-github.com/luno/jettison/errors/trace_test.go:52 stackCalls
-github.com/luno/jettison/errors/trace_test.go:52 stackCalls
-github.com/luno/jettison/errors/trace_test.go:52 stackCalls
-github.com/luno/jettison/errors/trace_test.go:52 stackCalls
-github.com/luno/jettison/errors/trace_test.go:52 stackCalls
-github.com/luno/jettison/errors/trace_test.go:39 TestStack
-testing/testing.go:X tRunner
-runtime/asm_X.s:X goexit
+trace_test.go stackCalls
+trace_test.go stackCalls
+trace_test.go stackCalls
+trace_test.go stackCalls
+trace_test.go stackCalls
+trace_test.go stackCalls
+trace_test.go TestStack

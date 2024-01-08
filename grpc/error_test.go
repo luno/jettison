@@ -250,21 +250,12 @@ func TestToFromStatus(t *testing.T) {
 			cliJe, err := fromStatus(st)
 			jtest.RequireNil(t, err)
 
-			assert.Equal(t, len(srvJe.Hops), len(cliJe.Hops))
-			assert.Equal(t, srvJe.Hops[0].Binary, cliJe.Hops[0].Binary)
-			assert.Equal(t, len(srvJe.Hops[0].Errors), len(cliJe.Hops[0].Errors))
-			for i := range srvJe.Hops[0].Errors {
-				e1 := srvJe.Hops[0].Errors[i]
-				e2 := cliJe.Hops[0].Errors[i]
-
-				assert.Equal(t, e1.Message, e2.Message)
-				assert.Equal(t, e1.Source, e2.Source)
-				assert.Equal(t, len(e1.Parameters), len(e2.Parameters))
-				for j := range e1.Parameters {
-					assert.Equal(t, e1.Parameters[j].Key, e2.Parameters[j].Key)
-					assert.Equal(t, e1.Parameters[j].Value, e2.Parameters[j].Value)
-				}
-			}
+			assert.Equal(t, srvJe.Message, cliJe.Message)
+			assert.Equal(t, srvJe.Binary, cliJe.Binary)
+			assert.Equal(t, srvJe.StackTrace, cliJe.StackTrace)
+			assert.Equal(t, srvJe.Code, cliJe.Code)
+			assert.Equal(t, srvJe.Source, cliJe.Source)
+			assert.Equal(t, srvJe.KV, cliJe.KV)
 		})
 	}
 }

@@ -66,16 +66,11 @@ func (je *JettisonError) Format(state fmt.State, c rune) {
 // error message rendering - see the Go 2 error printing draft proposal for
 // details.
 func (je *JettisonError) FormatError(p xerrors.Printer) error {
-	le, ok := je.LatestError()
-	if !ok {
-		return nil
-	}
-
 	msg := "%s"
-	args := []interface{}{le.Message}
-	if p.Detail() && len(le.Parameters) > 0 {
+	args := []interface{}{je.Message}
+	if p.Detail() && len(je.KV) > 0 {
 		var fmts []string
-		for _, kv := range le.Parameters {
+		for _, kv := range je.KV {
 			fmts = append(fmts, "%s")
 			args = append(args, kv.Key+"="+kv.Value)
 		}
@@ -96,18 +91,6 @@ func (je *JettisonError) String() string {
 	return je.Error()
 }
 
-// LatestError returns the error that was added last to the given jettison
-// error, or false if there isn't one.
-func (je *JettisonError) LatestError() (models.Error, bool) {
-	for _, h := range je.Hops {
-		for _, e := range h.Errors {
-			return e, true
-		}
-	}
-
-	return models.Error{}, false
-}
-
 // Clone returns a copy of the jettison error that can be safely mutated.
 func (je *JettisonError) Clone() *JettisonError {
 	res := JettisonError{
@@ -126,56 +109,7 @@ func (je *JettisonError) Clone() *JettisonError {
 // is none. This is compatible with the Wrapper interface from the Go 2 error
 // inspection proposal.
 func (je *JettisonError) Unwrap() error {
-	err := je.Clone() // Don't want to modify the reference
-
-	for len(err.Hops) > 0 {
-		if len(err.Hops[0].Errors) == 0 {
-			err.Hops = err.Hops[1:]
-			continue
-		}
-
-		err.Hops[0].Errors = err.Hops[0].Errors[1:]
-		break
-	}
-
-	// Remove any empty hop layers.
-	for len(err.Hops) > 0 {
-		h := err.Hops[0]
-		if len(h.Errors) > 0 {
-			break
-		}
-
-		err.Hops = err.Hops[1:]
-	}
-
-	if len(err.Hops) == 0 {
-		return nil
-	}
-
-	// If this was the last unwrap, just return the original error for
-	// compatibility with golang.org/x/xerrors.Unwrap() if it isn't nil.
-	//
-	// NOTE(guy): This can lead to a gotcha where an errors.Is() call works
-	// locally, but doesn't work over gRPC since original error values can't
-	// be preserved over the wire.
-	if len(err.Hops) == 1 &&
-		len(err.Hops[0].Errors) == 1 &&
-		err.OriginalErr != nil {
-
-		return err.OriginalErr
-	}
-
-	if subJe, ok := je.Err.(*JettisonError); ok {
-		err.Message = subJe.Message
-		err.Binary = subJe.Binary
-		err.StackTrace = subJe.StackTrace
-		err.KV = subJe.KV
-		err.Code = subJe.Code
-		err.Source = subJe.Source
-		err.Err = subJe.Err
-	}
-
-	return err
+	return je.Err
 }
 
 // Is returns true if the errors are equal as values, or the target is also
@@ -214,37 +148,6 @@ var legacyCallback atomic.Pointer[func(src, target error)]
 
 func SetLegacyCallback(f func(src, target error)) {
 	legacyCallback.Store(&f)
-}
-
-// GetKey returns the value of the first jettison key/value pair with the
-// given key in the error chain.
-func (je *JettisonError) GetKey(key string) (string, bool) {
-	for _, h := range je.Hops {
-		for _, e := range h.Errors {
-			for _, p := range e.Parameters {
-				if p.Key == key {
-					return p.Value, true
-				}
-			}
-		}
-	}
-
-	return "", false
-}
-
-// GetKeyValues returns all the jettison keys in the error chain.
-// Note that if two errors have the same key, only the earliest will be stored.
-func (je *JettisonError) GetKeyValues() map[string]string {
-	keyValues := make(map[string]string)
-	for _, h := range je.Hops {
-		for _, e := range h.Errors {
-			for _, p := range e.Parameters {
-				keyValues[p.Key] = p.Value
-			}
-		}
-	}
-
-	return keyValues
 }
 
 func (je *JettisonError) IsZero() bool {

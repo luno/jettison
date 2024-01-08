@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
@@ -69,17 +68,17 @@ func TestError(t *testing.T) {
 func TestUnwrap(t *testing.T) {
 	testCases := []struct {
 		name     string
-		err      error
+		err      *errors.JettisonError
 		expCodes []string
 	}{
 		{
 			name:     "default code, no wrap",
-			err:      errors.New("id0"),
+			err:      errors.New("id0").(*errors.JettisonError),
 			expCodes: []string{"id0"},
 		},
 		{
 			name:     "custom code, no wrap",
-			err:      errors.New("id1", errors.WithCode("code1")),
+			err:      errors.New("id1", errors.WithCode("code1")).(*errors.JettisonError),
 			expCodes: []string{"code1"},
 		},
 		{
@@ -87,7 +86,7 @@ func TestUnwrap(t *testing.T) {
 			err: errors.Wrap(
 				errors.New("id1", errors.WithCode("code1")),
 				"id2",
-			),
+			).(*errors.JettisonError),
 			expCodes: []string{"id2", "code1"},
 		},
 		{
@@ -99,7 +98,7 @@ func TestUnwrap(t *testing.T) {
 				),
 				"id3",
 				errors.WithCode("code3"),
-			),
+			).(*errors.JettisonError),
 			expCodes: []string{"code3", "id2", "code1"},
 		},
 	}
@@ -108,10 +107,8 @@ func TestUnwrap(t *testing.T) {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
-			je, ok := tc.err.(*errors.JettisonError)
-			require.True(t, ok)
-
-			assert.Equal(t, tc.expCodes, errors.GetCodes(je))
+			codes := errors.GetCodes(tc.err)
+			assert.Equal(t, tc.expCodes, codes)
 		})
 	}
 }
@@ -134,7 +131,7 @@ func TestAs(t *testing.T) {
 	var je *errors.JettisonError
 	err0 := testErr("custom error type")
 	err1 := &tep
-	err2 := errors.New("jettison error").(*errors.JettisonError)
+	err2 := errors.New("jettison error")
 
 	je = errors.Wrap(err0, "wrap").(*errors.JettisonError)
 	assert.True(t, errors.As(je, &err0))
@@ -148,18 +145,6 @@ func TestAs(t *testing.T) {
 	assert.True(t, errors.As(je, &err2))
 	assert.False(t, errors.As(je, &err0))
 	assert.False(t, errors.As(je, &err1))
-}
-
-func TestGetKey(t *testing.T) {
-	err := errors.New("test", j.KV("key", "value")).(*errors.JettisonError)
-
-	v, ok := err.GetKey("key")
-	assert.True(t, ok)
-	assert.Equal(t, "value", v)
-
-	v, ok = err.GetKey("nonexistent")
-	assert.False(t, ok)
-	assert.Zero(t, v)
 }
 
 func TestFormat(t *testing.T) {

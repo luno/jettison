@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -37,21 +36,12 @@ func TestNew(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			line := nextLine()
-			err := errors.New(tc.msg, tc.opts...)
+			err := errors.New(tc.msg, tc.opts...).(*errors.JettisonError)
 
-			je, ok := err.(*errors.JettisonError)
-			require.True(t, ok)
-
-			assert.Len(t, je.Hops, 1)
-			assert.Len(t, je.Hops[0].Errors, 1)
-			assert.Equal(t, tc.msg, je.Hops[0].Errors[0].Message)
+			assert.Equal(t, tc.msg, err.Message)
 			assert.Equal(t,
 				"github.com/luno/jettison/errors/errors_test.go:"+line,
-				je.Hops[0].Errors[0].Source)
-
-			assert.Equal(t,
-				"github.com/luno/jettison/errors/errors_test.go:"+line,
-				je.Source,
+				err.Source,
 			)
 		})
 	}
@@ -64,10 +54,8 @@ func TestWrap(t *testing.T) {
 		msg  string
 		opts []errors.Option
 
-		expectNil          bool
-		expectedHopsCount  int
-		expectedErrorCount int // in the latest hop
-		expectedMessage    string
+		expectNil       bool
+		expectedMessage string
 	}{
 		{
 			name:      "nil err",
@@ -75,68 +63,52 @@ func TestWrap(t *testing.T) {
 			expectNil: true,
 		},
 		{
-			name:               "non-Jettison err",
-			err:                stdlib_errors.New("errors: first"),
-			msg:                "errors: second",
-			expectedHopsCount:  1,
-			expectedErrorCount: 2,
-			expectedMessage:    "errors: second: errors: first",
+			name:            "non-Jettison err",
+			err:             stdlib_errors.New("errors: first"),
+			msg:             "errors: second",
+			expectedMessage: "errors: second: errors: first",
 		},
 		{
-			name:               "Jettison err",
-			err:                errors.New("errors: first"),
-			msg:                "errors: second",
-			expectedHopsCount:  1,
-			expectedErrorCount: 2,
-			expectedMessage:    "errors: second: errors: first",
+			name:            "Jettison err",
+			err:             errors.New("errors: first"),
+			msg:             "errors: second",
+			expectedMessage: "errors: second: errors: first",
 		},
 		{
-			name:               "wrap empty message",
-			err:                errors.New("test value"),
-			msg:                "",
-			expectedHopsCount:  1,
-			expectedErrorCount: 2,
-			expectedMessage:    "test value",
+			name:            "wrap empty message",
+			err:             errors.New("test value"),
+			msg:             "",
+			expectedMessage: "test value",
 		},
 		{
-			name:               "wrap empty message, with stdlib error",
-			err:                stdlib_errors.New("test value"),
-			msg:                "",
-			expectedHopsCount:  1,
-			expectedErrorCount: 2,
-			expectedMessage:    "test value",
+			name:            "wrap empty message, with stdlib error",
+			err:             stdlib_errors.New("test value"),
+			msg:             "",
+			expectedMessage: "test value",
 		},
 		{
-			name:               "wrap known error",
-			err:                io.EOF,
-			msg:                "end of file",
-			expectedHopsCount:  1,
-			expectedErrorCount: 2,
-			expectedMessage:    "end of file: EOF",
+			name:            "wrap known error",
+			err:             io.EOF,
+			msg:             "end of file",
+			expectedMessage: "end of file: EOF",
 		},
 		{
-			name:               "wrap options message, ignores options",
-			err:                errors.New("test value", j.KV("key", "value")),
-			msg:                "hello",
-			expectedHopsCount:  1,
-			expectedErrorCount: 2,
-			expectedMessage:    "hello: test value",
+			name:            "wrap options message, ignores options",
+			err:             errors.New("test value", j.KV("key", "value")),
+			msg:             "hello",
+			expectedMessage: "hello: test value",
 		},
 		{
-			name:               "wrap wrapped message",
-			err:                errors.Wrap(errors.New("test value"), "world"),
-			msg:                "hello",
-			expectedHopsCount:  1,
-			expectedErrorCount: 3,
-			expectedMessage:    "hello: world: test value",
+			name:            "wrap wrapped message",
+			err:             errors.Wrap(errors.New("test value"), "world"),
+			msg:             "hello",
+			expectedMessage: "hello: world: test value",
 		},
 		{
-			name:               "double empty wrapped message",
-			err:                errors.Wrap(errors.New("test value"), ""),
-			msg:                "",
-			expectedHopsCount:  1,
-			expectedErrorCount: 3,
-			expectedMessage:    "test value",
+			name:            "double empty wrapped message",
+			err:             errors.Wrap(errors.New("test value"), ""),
+			msg:             "",
+			expectedMessage: "test value",
 		},
 	}
 
@@ -150,24 +122,12 @@ func TestWrap(t *testing.T) {
 				assert.NoError(t, err)
 				return
 			}
-
-			// We expect the returned error to be a Jettison error value.
-			je, ok := err.(*errors.JettisonError)
-			require.True(t, ok)
-
-			assert.Len(t, je.Hops, tc.expectedHopsCount)
-			assert.Len(t, je.Hops[0].Errors, tc.expectedErrorCount)
-			assert.Equal(t, tc.msg, je.Hops[0].Errors[0].Message)
-
-			assert.Equal(t,
-				"github.com/luno/jettison/errors/errors_test.go:"+line,
-				je.Hops[0].Errors[0].Source,
-			)
+			je := err.(*errors.JettisonError)
+			assert.Equal(t, tc.msg, je.Message)
 			assert.Equal(t,
 				"github.com/luno/jettison/errors/errors_test.go:"+line,
 				je.Source,
 			)
-
 			assert.Equal(t, tc.expectedMessage, err.Error())
 		})
 	}
@@ -322,7 +282,7 @@ var errTest = errors.New("test error", errors.WithCode("ERR_59bed5816cb39f35"))
 func TestIsUnwrap(t *testing.T) {
 	err := errTest
 	for i := 0; i < 5; i++ {
-		err = errors.Wrap(err, "wrap")
+		err = errors.Wrap(err, "wrap").(*errors.JettisonError)
 	}
 
 	orig := err.Error()
@@ -333,32 +293,25 @@ func TestIsUnwrap(t *testing.T) {
 }
 
 func TestWithoutStackTrace(t *testing.T) {
-	errFoo := errors.New("foo", errors.WithoutStackTrace())
+	errFoo := errors.New("foo", errors.WithoutStackTrace()).(*errors.JettisonError)
+	assert.Empty(t, errFoo.StackTrace)
+	assert.Empty(t, errFoo.Source)
 
-	je := errFoo.(*errors.JettisonError)
-	require.Empty(t, je.Hops[0].StackTrace)
-
-	// ErrFoo doesn't have stacktrace, but is has a source.
-	source := je.Hops[0].Errors[0].Source
-	require.True(t, strings.HasPrefix(source, "github.com/luno/jettison/errors/errors_test.go"))
-
-	err := errors.Wrap(errFoo, "wrap adds stack trace")
-	je = err.(*errors.JettisonError)
-	require.Len(t, je.Hops, 1)
-	require.Len(t, je.Hops[0].Errors, 2)
-	require.NotEmpty(t, je.Hops[0].StackTrace)
+	err := errors.Wrap(errFoo, "wrap adds stack trace").(*errors.JettisonError)
+	assert.NotEmpty(t, err.StackTrace)
+	assert.NotEmpty(t, err.Source)
 }
 
 func TestErrorMetadata(t *testing.T) {
 	testCases := []struct {
 		name       string
-		err        error
+		err        *errors.JettisonError
 		expError   errors.JettisonError
 		expNoTrace bool
 	}{
 		{
 			name: "new kv",
-			err:  errors.New("one", j.KV("test", "val")),
+			err:  errors.New("one", j.KV("test", "val")).(*errors.JettisonError),
 			expError: errors.JettisonError{
 				Message: "one",
 				KV:      []models.KeyValue{{Key: "test", Value: "val"}},
@@ -366,25 +319,25 @@ func TestErrorMetadata(t *testing.T) {
 		},
 		{
 			name: "new code",
-			err:  errors.New("one", errors.WithCode("code")),
+			err:  errors.New("one", errors.WithCode("code")).(*errors.JettisonError),
 			expError: errors.JettisonError{
 				Message: "one", Code: "code",
 			},
 		},
 		{
 			name:       "without stacktrace",
-			err:        errors.New("one", errors.WithoutStackTrace()),
+			err:        errors.New("one", errors.WithoutStackTrace()).(*errors.JettisonError),
 			expNoTrace: true,
 			expError:   errors.JettisonError{Message: "one"},
 		},
 		{
 			name:     "wrap non-jettison, gets a trace",
-			err:      errors.Wrap(io.EOF, "hi"),
+			err:      errors.Wrap(io.EOF, "hi").(*errors.JettisonError),
 			expError: errors.JettisonError{Message: "hi"},
 		},
 		{
 			name: "wrap non-jettison, with kv",
-			err:  errors.Wrap(io.EOF, "hi", j.KV("key", "value")),
+			err:  errors.Wrap(io.EOF, "hi", j.KV("key", "value")).(*errors.JettisonError),
 			expError: errors.JettisonError{
 				Message: "hi",
 				KV:      []models.KeyValue{{Key: "key", Value: "value"}},
@@ -396,7 +349,7 @@ func TestErrorMetadata(t *testing.T) {
 				errors.New("inner", j.KV("inner", "inner_value")),
 				"outer",
 				j.KV("outer", "outer_value"),
-			),
+			).(*errors.JettisonError),
 			expError: errors.JettisonError{
 				Message: "outer",
 				KV:      []models.KeyValue{{Key: "outer", Value: "outer_value"}},
@@ -407,33 +360,32 @@ func TestErrorMetadata(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			je := tc.err.(*errors.JettisonError)
 			if tc.expNoTrace {
-				assert.Empty(t, je.Binary)
-				assert.Empty(t, je.StackTrace)
+				assert.Empty(t, tc.err.Binary)
+				assert.Empty(t, tc.err.StackTrace)
 			} else {
-				assert.NotEmpty(t, je.Binary)
-				assert.NotEmpty(t, je.StackTrace)
+				assert.NotEmpty(t, tc.err.Binary)
+				assert.NotEmpty(t, tc.err.StackTrace)
 			}
 
-			assert.Equal(t, tc.expError.Message, je.Message)
-			assert.Equal(t, tc.expError.Code, je.Code)
-			assert.Equal(t, tc.expError.KV, je.KV)
+			assert.Equal(t, tc.expError.Message, tc.err.Message)
+			assert.Equal(t, tc.expError.Code, tc.err.Code)
+			assert.Equal(t, tc.expError.KV, tc.err.KV)
 		})
 	}
 }
 
 func TestWithStacktrace(t *testing.T) {
-	base := errors.New("base")
-	assert.NotEmpty(t, base.(*errors.JettisonError).StackTrace)
+	base := errors.New("base").(*errors.JettisonError)
+	assert.NotEmpty(t, base.StackTrace)
 
 	// No stack trace if base error has one already
-	wrapped := errors.Wrap(base, "wrap")
-	assert.Empty(t, wrapped.(*errors.JettisonError).StackTrace)
+	wrapped := errors.Wrap(base, "wrap").(*errors.JettisonError)
+	assert.Empty(t, wrapped.StackTrace)
 
 	// Get trace if explicitly requested
-	wst := errors.Wrap(base, "stacky", errors.WithStackTrace())
-	assert.NotEmpty(t, wst.(*errors.JettisonError).StackTrace)
+	wst := errors.Wrap(base, "stacky", errors.WithStackTrace()).(*errors.JettisonError)
+	assert.NotEmpty(t, wst.StackTrace)
 }
 
 func TestWalk(t *testing.T) {

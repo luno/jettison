@@ -29,7 +29,7 @@ func WithStackTrace() Option {
 // The default code (the error message) doesn't provide strong unique guarantees.
 func WithCode(code string) Option {
 	return ErrorOption(func(je *JettisonError) {
-		if len(je.Hops[0].Errors) > 0 {
+		if len(je.Hops) > 0 && len(je.Hops[0].Errors) > 0 {
 			je.Hops[0].Errors[0].Code = code
 		}
 		je.Code = code
@@ -51,7 +51,7 @@ func WithCode(code string) Option {
 //	}
 func WithoutStackTrace() Option {
 	return ErrorOption(func(je *JettisonError) {
-		if len(je.Hops[0].Errors) <= 1 {
+		if len(je.Hops) > 0 && len(je.Hops[0].Errors) <= 1 {
 			je.Hops[0].StackTrace = nil
 		}
 		je.Binary = ""
@@ -207,6 +207,24 @@ func GetCodes(err error) []string {
 		} else if je.Message != "" {
 			// TODO(adam): Remove this behaviour, we shouldn't use message strings as codes
 			ret = append(ret, je.Message)
+		}
+		return true
+	})
+	return ret
+}
+
+// GetKeyValues returns all embedded key value info in the error
+func GetKeyValues(err error) map[string]string {
+	ret := make(map[string]string)
+	Walk(err, func(err error) bool {
+		je, ok := err.(*JettisonError)
+		if ok {
+			for _, kv := range je.KV {
+				if _, ok := ret[kv.Key]; ok {
+					continue
+				}
+				ret[kv.Key] = kv.Value
+			}
 		}
 		return true
 	})

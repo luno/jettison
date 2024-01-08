@@ -2,10 +2,11 @@ package test_test
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"net"
 	"testing"
 
+	"github.com/go-stack/stack"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -66,6 +67,12 @@ func TestWrapOverGrpc(t *testing.T) {
 }
 
 func TestClientStacktrace(t *testing.T) {
+	errors.SetTraceConfigTesting(t, trace.StackConfig{
+		TrimRuntime: true,
+		Format: func(call stack.Call) string {
+			return fmt.Sprintf("%s %n", call, call)
+		},
+	})
 	l, err := net.Listen("tcp", "")
 	jtest.RequireNil(t, err)
 	defer l.Close()
@@ -79,23 +86,17 @@ func TestClientStacktrace(t *testing.T) {
 
 	err = cl.ErrorWithCode(context.Background(), "1")
 	require.Error(t, err)
+	je := err.(*errors.JettisonError)
 
-	je, ok := err.(*errors.JettisonError)
-	require.True(t, ok)
-	require.Len(t, je.Hops, 2)
-
-	bb, err := json.MarshalIndent(je.Hops[0].StackTrace, "", "  ")
-	jtest.RequireNil(t, err)
-
-	expected := `[
-  "github.com/luno/jettison/grpc/test/testpb/test.pb.go:390 (*testClient).ErrorWithCode",
-  "github.com/luno/jettison/grpc/test/testgrpc/client.go:42",
-  "github.com/luno/jettison/grpc/test/grpc_test.go:80 TestClientStacktrace",
-  "testing/testing.go:X tRunner",
-  "runtime/asm_X.s:X goexit"
-]`
-
-	require.Equal(t, expected, string(trace.StripTestStacks(t, bb)))
+	exp := []string{
+		"interceptors.go incomingError",
+		"interceptors.go UnaryClientInterceptor",
+		"call.go (*ClientConn).Invoke",
+		"test.pb.go (*testClient).ErrorWithCode",
+		"client.go (*Client).ErrorWithCode",
+		"grpc_test.go TestClientStacktrace",
+	}
+	assert.Equal(t, exp, je.StackTrace)
 }
 
 func TestStreamThenError(t *testing.T) {
@@ -153,12 +154,12 @@ func TestWrappingGrpcError(t *testing.T) {
 	err = cl.ErrorWithCode(ctx, "")
 	require.NotNil(t, err)
 
-	jerr := new(errors.JettisonError)
+	var jerr *errors.JettisonError
 	require.True(t, errors.As(err, &jerr))
 
-	require.Equal(t, "grpc status error", jerr.Hops[0].Errors[0].Code)
-	require.Equal(t, "code", jerr.Hops[0].Errors[0].Parameters[0].Key)
-	require.Equal(t, "Unavailable", jerr.Hops[0].Errors[0].Parameters[0].Value)
+	assert.Equal(t, "grpc status error", jerr.Message)
+	assert.Equal(t, "", jerr.Code)
+	assert.Equal(t, map[string]string{"code": "Unavailable"}, errors.GetKeyValues(jerr))
 }
 
 func TestContextCanceled(t *testing.T) {

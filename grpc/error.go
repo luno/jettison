@@ -56,19 +56,13 @@ func FromStatus(s *status.Status) Error {
 // with a message given by the most recently wrapped error in the list of
 // hops.
 func toStatus(je *errors.JettisonError) *status.Status {
-	msg := ""
-	if le, ok := je.LatestError(); ok {
-		msg = le.Message
-	}
-
 	c := codes.Unknown
 	if errors.Is(je.OriginalErr, context.Canceled) {
 		c = codes.Canceled
 	} else if errors.Is(je.OriginalErr, context.DeadlineExceeded) {
 		c = codes.DeadlineExceeded
 	}
-
-	res := status.New(c, msg)
+	res := status.New(c, je.Message)
 
 	for _, h := range je.Hops {
 		hpb, err := internal.HopToProto(&h)

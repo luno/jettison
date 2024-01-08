@@ -166,12 +166,12 @@ func TestC(t *testing.T) {
 	errFoo := errors.New("foo", C("123"))
 
 	je := errFoo.(*errors.JettisonError)
-	require.Empty(t, je.Hops[0].StackTrace)
-	require.Equal(t, "123", je.Hops[0].Errors[0].Code)
+	require.Empty(t, je.StackTrace)
+	require.Equal(t, "123", je.Code)
 
 	err := errors.Wrap(errFoo, "wrap adds stacktrace")
 	je = err.(*errors.JettisonError)
-	require.NotEmpty(t, je.Hops[0].StackTrace)
+	require.NotEmpty(t, je.StackTrace)
 	require.True(t, errors.Is(err, errFoo))
 }
 

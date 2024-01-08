@@ -49,38 +49,28 @@ func Require(t testing.TB, expected, actual error, msg ...interface{}) {
 }
 
 func assertJettisonErrors(t testing.TB, expected, actual error, msgs ...interface{}) {
-	jExpErr, expIsJError := expected.(*errors.JettisonError)
-	if !expIsJError {
-		// If expected error is not a jettison error, no need to compare further.
-		return
-	}
-
-	expectedKeys := jExpErr.GetKeyValues()
+	expectedKeys := errors.GetKeyValues(expected)
 	if len(expectedKeys) == 0 {
 		// If we have no keys in the expected error, then we don't want to compare further.
 		return
 	}
-
-	jActErr, actIsJError := actual.(*errors.JettisonError)
-	if !actIsJError {
-		// If actual error is not a jettison error, no need to compare further.
+	// If actual error is not a jettison error, no need to compare further.
+	if !errors.As(actual, new(*errors.JettisonError)) {
 		return
 	}
+	actualKeys := errors.GetKeyValues(actual)
 
 	// If both errs are jettison errors, we want to assert all the expected jettison keys are present in the actual error.
 	for expKey, expValue := range expectedKeys {
-		actualValue, present := jActErr.GetKey(expKey)
+		actualValue, present := actualKeys[expKey]
 		if !present {
 			t.Error(failJKeyNotPresent(expKey, actual, msgs))
 			continue
 		}
-
 		if expValue != actualValue {
 			t.Error(failJKeyValuesMismatch(expKey, expValue, actualValue, msgs))
 		}
 	}
-
-	return
 }
 
 // AssertNil asserts that the specified error is nil. The test will be marked
