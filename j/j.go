@@ -5,6 +5,7 @@ package j
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/luno/jettison/errors"
@@ -51,6 +52,9 @@ func (m MKV) ContextKeys() []models.KeyValue {
 	for k, v := range m {
 		res = append(res, models.KeyValue{Key: normalise(k), Value: sprint(v)})
 	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Key < res[j].Key
+	})
 	return res
 }
 
@@ -81,6 +85,9 @@ func (m MKS) ContextKeys() []models.KeyValue {
 	for k, v := range m {
 		res = append(res, models.KeyValue{Key: normalise(k), Value: v})
 	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Key < res[j].Key
+	})
 	return res
 }
 
