@@ -160,21 +160,6 @@ func (je *JettisonError) IsZero() bool {
 		len(je.KV) == 0
 }
 
-// unwrap is a thin wrapper around internal.JettisonError that returns another
-// internal.JettisonError instead of an error interface value.
-func unwrap(je *JettisonError) *JettisonError {
-	if je == nil {
-		return nil
-	}
-
-	err := je.Unwrap()
-	res, ok := err.(*JettisonError)
-	if !ok {
-		return nil
-	}
-	return res
-}
-
 // printer implements xerrors.Printer interface.
 type printer struct {
 	io.Writer

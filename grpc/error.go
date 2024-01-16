@@ -11,11 +11,8 @@ import (
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/grpc/internal"
 	"github.com/luno/jettison/grpc/internal/jettisonpb"
-	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/models"
 )
-
-var ErrInvalidError = errors.New("jettison/errors: given grpc.Status does not contain a valid jettison error", j.C("ERR_e60c52eceb509f04"))
 
 type Error struct {
 	err error
@@ -44,8 +41,8 @@ func Wrap(err *errors.JettisonError) Error {
 // FromStatus will deserialise the details from the status
 // into an Error
 func FromStatus(s *status.Status) Error {
-	je, err := fromStatus(s)
-	if err != nil {
+	je, ok := fromStatus(s)
+	if !ok {
 		// NoReturnErr: If there's no error in the status, just return an empty error
 		return Error{s: s}
 	}
@@ -91,43 +88,21 @@ func toStatus(je *errors.JettisonError) *status.Status {
 // fromStatus will unmarshal a *grpc.Status into a jettison error object,
 // returning a nil error if and only if no unexpected details were found on the
 // status.
-func fromStatus(s *status.Status) (*errors.JettisonError, error) {
+func fromStatus(s *status.Status) (*errors.JettisonError, bool) {
 	if s == nil {
-		return nil, errors.Wrap(ErrInvalidError, "")
-	} else if len(s.Details()) == 0 {
-		return nil, errors.Wrap(ErrInvalidError, "")
+		return nil, false
 	}
-
-	var res errors.JettisonError
 	for _, d := range s.Details() {
-		switch det := d.(type) {
-		case *jettisonpb.Hop:
-			hop, err := internal.HopFromProto(det)
-			if err != nil {
-				return nil, err
-			}
-			res.Hops = append(res.Hops, *hop)
-		case *jettisonpb.WrappedError:
-			je, err := errorFromProto(det)
-			if err == nil {
-				// TODO(adam): Just return je when we no longer rely on Hops
-				res.Message = je.Message
-				res.Binary = je.Binary
-				res.Code = je.Code
-				res.Source = je.Source
-				res.StackTrace = je.StackTrace
-				res.KV = je.KV
-				res.Err = je.Err
-			}
+		det, ok := d.(*jettisonpb.WrappedError)
+		if !ok {
+			continue
 		}
+		return errorFromProto(det), true
 	}
-	if len(res.Hops) == 0 && res.IsZero() {
-		return nil, errors.Wrap(ErrInvalidError, "")
-	}
-	return &res, nil
+	return nil, false
 }
 
-func errorFromProto(we *jettisonpb.WrappedError) (*errors.JettisonError, error) {
+func errorFromProto(we *jettisonpb.WrappedError) *errors.JettisonError {
 	je := &errors.JettisonError{
 		Message:    we.Message,
 		Binary:     we.Binary,
@@ -139,21 +114,13 @@ func errorFromProto(we *jettisonpb.WrappedError) (*errors.JettisonError, error) 
 	if len(we.JoinedErrors) > 0 {
 		var errs []error
 		for _, joinErr := range we.JoinedErrors {
-			subErr, err := errorFromProto(joinErr)
-			if err != nil {
-				return nil, err
-			}
-			errs = append(errs, subErr)
+			errs = append(errs, errorFromProto(joinErr))
 		}
 		je.Err = stderrors.Join(errs...)
 	} else if we.WrappedError != nil {
-		subErr, err := errorFromProto(we.WrappedError)
-		if err != nil {
-			return nil, err
-		}
-		je.Err = subErr
+		je.Err = errorFromProto(we.WrappedError)
 	}
-	return je, nil
+	return je
 }
 
 func errorToProto(err error) *jettisonpb.WrappedError {

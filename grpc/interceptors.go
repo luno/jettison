@@ -78,11 +78,9 @@ func incomingError(err error) error {
 		return errors.Wrap(context.DeadlineExceeded, "grpc error")
 	}
 
-	je, statusErr := fromStatus(s)
-	if errors.Is(statusErr, ErrInvalidError) {
+	je, ok := fromStatus(s)
+	if !ok {
 		return errors.Wrap(err, "grpc status error", j.KS("code", s.Code().String()))
-	} else if statusErr != nil {
-		return errors.Wrap(err, "invalid jettison error", j.KS("err", statusErr.Error()))
 	}
 
 	// Push a new hop to the front of the queue.
