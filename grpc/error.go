@@ -147,6 +147,8 @@ func errorToProto(err error) *jettisonpb.WrappedError {
 			}
 		}
 		we.KeyValues = kvToProto(je.KV)
+	} else {
+		we.Message = removeNonUTF8(err.Error())
 	}
 	switch unw := err.(type) {
 	case interface{ Unwrap() error }:
@@ -155,8 +157,6 @@ func errorToProto(err error) *jettisonpb.WrappedError {
 		for _, e := range unw.Unwrap() {
 			we.JoinedErrors = append(we.JoinedErrors, errorToProto(e))
 		}
-	default:
-		we.Message = removeNonUTF8(err.Error())
 	}
 	return &we
 }

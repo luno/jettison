@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strconv"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -169,6 +170,12 @@ func TestToProto(t *testing.T) {
 
 func TestToFromStatus(t *testing.T) {
 	errors.SetTraceConfigTesting(t, errors.TestingConfig)
+
+	getStrconvErr := func() error {
+		_, err := strconv.Atoi("nan")
+		return err
+	}
+
 	testCases := []struct {
 		name     string
 		err      error
@@ -306,6 +313,20 @@ func TestToFromStatus(t *testing.T) {
 					{
 						Key:   "key with [snip]",
 						Value: "value with [snip]",
+					},
+				},
+			},
+		},
+		{
+			name: "non-jettison but can unwrap, results in some redundant messages",
+			err:  errors.Wrap(getStrconvErr(), "wrapper", errors.WithoutStackTrace()),
+			expJetty: errors.JettisonError{
+				Message: "wrapper",
+				Source:  "error_test.go TestToFromStatus",
+				Err: &errors.JettisonError{
+					Message: "strconv.Atoi: parsing \"nan\": invalid syntax",
+					Err: &errors.JettisonError{
+						Message: "invalid syntax",
 					},
 				},
 			},
