@@ -28,11 +28,6 @@ type JettisonError struct {
 	KV         []models.KeyValue
 
 	Hops []models.Hop
-
-	// If we've wrapped a non-Jettison error, we lose interop with other error
-	// libraries such as github.com/pkg/errors. This is a best-effort attempt
-	// to keep this interop - err.Cause() will return originalErr.
-	OriginalErr error
 }
 
 // Format satisfies the fmt.Formatter interface providing customizable formatting:
@@ -93,15 +88,10 @@ func (je *JettisonError) String() string {
 
 // Clone returns a copy of the jettison error that can be safely mutated.
 func (je *JettisonError) Clone() *JettisonError {
-	res := JettisonError{
-		Message:     je.Message,
-		OriginalErr: je.OriginalErr,
-	}
-
+	res := JettisonError{Message: je.Message}
 	for _, h := range je.Hops {
 		res.Hops = append(res.Hops, h.Clone())
 	}
-
 	return &res
 }
 

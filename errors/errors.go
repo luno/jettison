@@ -102,8 +102,7 @@ func Wrap(err error, msg string, ol ...Option) error {
 	je, ok := err.(*JettisonError)
 	if !ok {
 		je = &JettisonError{
-			Hops:        []models.Hop{models.NewHop()},
-			OriginalErr: err,
+			Hops: []models.Hop{models.NewHop()},
 		}
 
 		je.Hops[0].Errors = []models.Error{
@@ -177,19 +176,6 @@ func Unwrap(err error) error {
 // Join is an alias of the standard library's errors.Join() function.
 func Join(err ...error) error {
 	return stderrors.Join(err...)
-}
-
-// OriginalError returns the non-jettison error wrapped by the given one,
-// if it exists. This is intended to provide limited interop with other error
-// handling packages. This is best-effort - a jettison error that has been
-// passed over the wire will no longer have an OriginalError().
-func OriginalError(err error) error {
-	jerr, ok := err.(*JettisonError)
-	if !ok {
-		return nil
-	}
-
-	return jerr.OriginalErr
 }
 
 // GetCodes returns the stack of error codes in the given jettison error chain.
