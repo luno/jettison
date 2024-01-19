@@ -33,10 +33,15 @@ func TestStackTrace(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tr := GetStackTrace(tc.skip, tc.pkgConfig)
+			tr := callingFunction(tc.skip, tc.pkgConfig)
 			goldie.New(t).Assert(t, t.Name(), []byte(strings.Join(tr, "\n")))
 		})
 	}
+}
+
+// callingFunction gives us a real function in the stack trace
+func callingFunction(skip int, config StackConfig) []string {
+	return GetStackTrace(skip, config)
 }
 
 func TestPkgPath(t *testing.T) {

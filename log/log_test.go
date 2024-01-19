@@ -28,6 +28,7 @@ func (s source) ApplyToError(je *jerrors.JettisonError) {
 	if len(je.Hops) > 0 {
 		je.Hops[0].SetSource(string(s))
 	}
+	je.Source = string(s)
 }
 
 // WithCustomTrace sets the stack trace of the current hop to the given value.
@@ -95,8 +96,6 @@ func TestLog(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			buf := new(bytes.Buffer)
 			jlog.SetDefaultLoggerForTesting(t, buf, source("testsource"))
@@ -249,11 +248,13 @@ func TestAddError(t *testing.T) {
 				WithCustomTrace(
 					"api",
 					[]string{"updateDatabase", "doRequest"},
-				)),
+				),
+				source("source.go"),
+			),
 			expEntry: jlog.Entry{
 				ErrorObject: &jlog.ErrorObject{
 					Message: "hello",
-					Source:  "github.com/luno/jettison/log/log_test.go:248",
+					Source:  "source.go",
 					Stack:   []string{"api"},
 					StackTrace: jlog.MakeElastic([]string{
 						"updateDatabase",
@@ -270,6 +271,7 @@ func TestAddError(t *testing.T) {
 						"service",
 						[]string{"update", "handleRequest"},
 					),
+					source("source_file.go"),
 				), "outer",
 				WithCustomTrace(
 					"api",
@@ -278,7 +280,7 @@ func TestAddError(t *testing.T) {
 			),
 			expEntry: jlog.Entry{ErrorObject: &jlog.ErrorObject{
 				Message: "outer: inner",
-				Source:  "github.com/luno/jettison/log/log_test.go:268",
+				Source:  "source_file.go",
 				Stack:   []string{"api", "service"},
 				StackTrace: jlog.MakeElastic([]string{
 					"update",
@@ -302,13 +304,16 @@ func TestAddError(t *testing.T) {
 				jerrors.New("a",
 					j.KV("inner_key", "inner_value"),
 					jerrors.WithoutStackTrace(),
+					source("inner"),
 				),
 				"",
 				j.KV("outer_key", "outer_value"),
 				jerrors.WithoutStackTrace(),
+				source("outer - overwritten"),
 			),
 			expEntry: jlog.Entry{ErrorObject: &jlog.ErrorObject{
 				Message: "a",
+				Source:  "inner",
 				Parameters: []models.KeyValue{
 					{Key: "outer_key", Value: "outer_value"},
 					{Key: "inner_key", Value: "inner_value"},

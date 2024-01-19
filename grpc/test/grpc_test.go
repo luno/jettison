@@ -2,12 +2,10 @@ package test_test
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"testing"
 	"time"
 
-	"github.com/go-stack/stack"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -17,7 +15,6 @@ import (
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/jtest"
 	"github.com/luno/jettison/log"
-	"github.com/luno/jettison/trace"
 )
 
 func TestNewOverGrpc(t *testing.T) {
@@ -68,12 +65,7 @@ func TestWrapOverGrpc(t *testing.T) {
 }
 
 func TestClientStacktrace(t *testing.T) {
-	errors.SetTraceConfigTesting(t, trace.StackConfig{
-		TrimRuntime: true,
-		Format: func(call stack.Call) string {
-			return fmt.Sprintf("%s %n", call, call)
-		},
-	})
+	errors.SetTraceConfigTesting(t, errors.TestingConfig)
 	l, err := net.Listen("tcp", "")
 	jtest.RequireNil(t, err)
 	defer l.Close()

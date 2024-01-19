@@ -35,12 +35,7 @@ func TestSetTraceConfig(t *testing.T) {
 // TestStack tests the stack trace including line numbers.
 // Adding anything to this file might break the test.
 func TestStack(t *testing.T) {
-	SetTraceConfigTesting(t, trace.StackConfig{
-		TrimRuntime: true,
-		Format: func(call stack.Call) string {
-			return fmt.Sprintf("%s %n", call, call)
-		},
-	})
+	SetTraceConfigTesting(t, TestingConfig)
 	err := stackCalls(5)
 	tr := []byte(strings.Join(err.StackTrace, "\n") + "\n")
 	goldie.New(t).Assert(t, t.Name(), tr)
@@ -51,4 +46,9 @@ func stackCalls(i int) *JettisonError {
 		return New("stack").(*JettisonError)
 	}
 	return stackCalls(i - 1)
+}
+
+func TestGetSourceCode(t *testing.T) {
+	SetTraceConfigTesting(t, TestingConfig)
+	assert.Equal(t, "trace_test.go TestGetSourceCode", getSourceCode(0))
 }

@@ -2,21 +2,18 @@ package errors_test
 
 import (
 	stdlib_errors "errors"
-	"fmt"
 	"io"
 	"net/http"
 	"runtime"
 	"strconv"
 	"testing"
 
-	"github.com/go-stack/stack"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/models"
-	"github.com/luno/jettison/trace"
 )
 
 func TestNew(t *testing.T) {
@@ -38,12 +35,12 @@ func TestNew(t *testing.T) {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
-			line := nextLine()
+			errors.SetTraceConfigTesting(t, errors.TestingConfig)
 			err := errors.New(tc.msg, tc.opts...).(*errors.JettisonError)
 
 			assert.Equal(t, tc.msg, err.Message)
 			assert.Equal(t,
-				"github.com/luno/jettison/errors/errors_test.go:"+line,
+				"errors_test.go TestNew.func1",
 				err.Source,
 			)
 		})
@@ -119,7 +116,7 @@ func TestWrap(t *testing.T) {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
-			line := nextLine()
+			errors.SetTraceConfigTesting(t, errors.TestingConfig)
 			err := errors.Wrap(tc.err, tc.msg, tc.opts...)
 			if tc.expectNil {
 				assert.NoError(t, err)
@@ -128,7 +125,7 @@ func TestWrap(t *testing.T) {
 			je := err.(*errors.JettisonError)
 			assert.Equal(t, tc.msg, je.Message)
 			assert.Equal(t,
-				"github.com/luno/jettison/errors/errors_test.go:"+line,
+				"errors_test.go TestWrap.func1",
 				je.Source,
 			)
 			assert.Equal(t, tc.expectedMessage, err.Error())
@@ -297,12 +294,12 @@ func TestIsUnwrap(t *testing.T) {
 
 func TestWithoutStackTrace(t *testing.T) {
 	errFoo := errors.New("foo", errors.WithoutStackTrace()).(*errors.JettisonError)
+	assert.Empty(t, errFoo.Binary)
 	assert.Empty(t, errFoo.StackTrace)
-	assert.Empty(t, errFoo.Source)
 
 	err := errors.Wrap(errFoo, "wrap adds stack trace").(*errors.JettisonError)
+	assert.NotEmpty(t, err.Binary)
 	assert.NotEmpty(t, err.StackTrace)
-	assert.NotEmpty(t, err.Source)
 }
 
 func TestErrorMetadata(t *testing.T) {
@@ -494,13 +491,7 @@ func wrapStackTrace(err error) error {
 }
 
 func TestGetLastStackTrace(t *testing.T) {
-	errors.SetTraceConfigTesting(t, trace.StackConfig{
-		RemoveLambdas: true,
-		TrimRuntime:   true,
-		Format: func(call stack.Call) string {
-			return fmt.Sprintf("%s %n", call, call)
-		},
-	})
+	errors.SetTraceConfigTesting(t, errors.TestingConfig)
 
 	testCases := []struct {
 		name     string

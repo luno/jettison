@@ -1,1 +1,1 @@
-github.com/luno/jettison/trace/stack.go:69 GetStackTrace
+github.com/luno/jettison/trace/stack_test.go:44 callingFunction

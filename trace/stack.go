@@ -27,13 +27,6 @@ type StackConfig struct {
 	Format func(stack.Call) string
 }
 
-func (c StackConfig) IsZero() bool {
-	return !c.RemoveLambdas &&
-		!c.TrimRuntime &&
-		c.Format == nil &&
-		len(c.PackagesShown) == 0
-}
-
 func (c StackConfig) shouldKeepCall(call stack.Call) bool {
 	if c.RemoveLambdas {
 		fnName := fmt.Sprintf("%n", call)
@@ -63,14 +56,14 @@ func (c StackConfig) formatLine(call stack.Call) string {
 const maxDepth = 64
 
 // GetStackTrace returns a rendered stacktrace of the calling code, skipping
-// `skip` frames in the stack (1 is the GetStackTrace frame itself).
+// `skip` frames in the stack prior to this function
 func GetStackTrace(skip int, config StackConfig) []string {
 	var res []string
 	trace := stack.Trace()
 	if config.TrimRuntime {
 		trace = trace.TrimRuntime()
 	}
-	for _, c := range trace[skip:] {
+	for _, c := range trace[skip+1:] {
 		if !config.shouldKeepCall(c) {
 			continue
 		}
@@ -82,6 +75,7 @@ func GetStackTrace(skip int, config StackConfig) []string {
 	return res
 }
 
-func GetSourceCodeRef(skip int) string {
-	return fmt.Sprintf("%+v", stack.Caller(skip+1))
+// GetSourceCodeRef returns the callers source code reference
+func GetSourceCodeRef(skip int, config StackConfig) string {
+	return config.Format(stack.Caller(skip + 1))
 }

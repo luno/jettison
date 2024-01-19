@@ -4,16 +4,26 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-stack/stack"
+
 	"github.com/luno/jettison/trace"
 )
 
-var traceConfig trace.StackConfig
+var (
+	configSet   bool
+	traceConfig = trace.StackConfig{
+		Format: func(call stack.Call) string {
+			return fmt.Sprintf("%+v %n", call, call)
+		},
+	}
+)
 
 func SetTraceConfig(config trace.StackConfig) {
-	if !traceConfig.IsZero() {
+	if configSet {
 		panic(fmt.Sprintln("config has already been set", traceConfig, config))
 	}
 	traceConfig = config
+	configSet = true
 }
 
 func SetTraceConfigTesting(t testing.TB, config trace.StackConfig) {
@@ -24,9 +34,23 @@ func SetTraceConfigTesting(t testing.TB, config trace.StackConfig) {
 	traceConfig = config
 }
 
+var TestingConfig = trace.StackConfig{
+	TrimRuntime:   true,
+	RemoveLambdas: true,
+	Format: func(call stack.Call) string {
+		return fmt.Sprintf("%s %n", call, call)
+	},
+}
+
 // getTrace will get the current binary and a stacktrace
 // skip will omit a certain number of stack calls before getTrace
 func getTrace(skip int) (string, []string) {
 	// Skip GetStackTrace and getTrace
-	return trace.CurrentBinary(), trace.GetStackTrace(skip+2, traceConfig)
+	return trace.CurrentBinary(), trace.GetStackTrace(skip+1, traceConfig)
+}
+
+// getSourceCode will get the current
+// Skip getSourceCode
+func getSourceCode(skip int) string {
+	return trace.GetSourceCodeRef(skip+1, traceConfig)
 }

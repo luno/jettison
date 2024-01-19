@@ -12,15 +12,12 @@ import (
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/log"
-	"github.com/luno/jettison/trace"
 )
 
 func TestCmdLogger(t *testing.T) {
 	var buf bytes.Buffer
 	log.SetCmdLoggerForTesting(t, &buf)
-	errors.SetTraceConfigTesting(t,
-		trace.StackConfig{RemoveLambdas: true, TrimRuntime: true},
-	)
+	errors.SetTraceConfigTesting(t, errors.TestingConfig)
 
 	ctx := log.ContextWith(context.TODO(), j.KS("ctx_key", "ctx_val"))
 	log.Info(ctx, "this is an info message", j.KS("info_key", "info_val"))
@@ -33,5 +30,5 @@ func TestCmdLogger(t *testing.T) {
 	)
 	log.Error(ctx, err)
 
-	goldie.New(t).Assert(t, "cmd_logger", trace.StripTestStacks(t, buf.Bytes()))
+	goldie.New(t).Assert(t, "cmd_logger", buf.Bytes())
 }

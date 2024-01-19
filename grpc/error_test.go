@@ -19,6 +19,12 @@ import (
 	"github.com/luno/jettison/models"
 )
 
+type source string
+
+func (s source) ApplyToError(je *errors.JettisonError) {
+	je.Source = string(s)
+}
+
 func TestFromStatus(t *testing.T) {
 	testCases := []struct {
 		name     string
@@ -137,7 +143,7 @@ func TestToProto(t *testing.T) {
 		},
 		{
 			name: "wrapped error",
-			err:  errors.Wrap(io.EOF, "hello", errors.WithoutStackTrace(), j.KV("key", "value")),
+			err:  errors.Wrap(io.EOF, "hello", errors.WithoutStackTrace(), source(""), j.KV("key", "value")),
 			expProto: &jettisonpb.WrappedError{
 				Message: "hello",
 				WrappedError: &jettisonpb.WrappedError{
@@ -162,6 +168,7 @@ func TestToProto(t *testing.T) {
 }
 
 func TestToFromStatus(t *testing.T) {
+	errors.SetTraceConfigTesting(t, errors.TestingConfig)
 	testCases := []struct {
 		name     string
 		err      error
@@ -169,9 +176,13 @@ func TestToFromStatus(t *testing.T) {
 	}{
 		{
 			name: "single error, single param",
-			err:  errors.New("msg", j.KV("key", "value"), errors.WithoutStackTrace()),
+			err: errors.New("msg",
+				j.KV("key", "value"),
+				errors.WithoutStackTrace(),
+			),
 			expJetty: errors.JettisonError{
 				Message: "msg",
+				Source:  "error_test.go TestToFromStatus",
 				KV: []models.KeyValue{
 					{Key: "key", Value: "value"},
 				},
@@ -184,6 +195,7 @@ func TestToFromStatus(t *testing.T) {
 			),
 			expJetty: errors.JettisonError{
 				Message: "msg",
+				Source:  "error_test.go TestToFromStatus",
 				KV: []models.KeyValue{
 					{Key: "key1", Value: "value1"},
 					{Key: "key2", Value: "value2"},
@@ -198,8 +210,10 @@ func TestToFromStatus(t *testing.T) {
 			),
 			expJetty: errors.JettisonError{
 				Message: "outer",
+				Source:  "error_test.go TestToFromStatus",
 				Err: &errors.JettisonError{
 					Message: "inner",
+					Source:  "error_test.go TestToFromStatus",
 				},
 			},
 		},
@@ -211,6 +225,7 @@ func TestToFromStatus(t *testing.T) {
 			),
 			expJetty: errors.JettisonError{
 				Message: "jetty",
+				Source:  "error_test.go TestToFromStatus",
 				Err: &errors.JettisonError{
 					Message: "unexpected EOF",
 				},
