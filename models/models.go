@@ -88,6 +88,6 @@ func NewError(msg string) Error {
 }
 
 type KeyValue struct {
-	Key   string `json:"key" protocp:"1"`
-	Value string `json:"value" protocp:"2"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }

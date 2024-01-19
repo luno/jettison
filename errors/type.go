@@ -34,10 +34,10 @@ type JettisonError struct {
 //
 //	%s, %v formats all wrapped error messages concatenated with ": ".
 //	%+v, %#v does the above but also adds error parameters; "(k1=v1, k2=v2)".
-func (je *JettisonError) Format(state fmt.State, c rune) {
+func (je *JettisonError) Format(state fmt.State, _ rune) {
 	withParams := state.Flag(int('#')) || state.Flag(int('+'))
 	p := &printer{Writer: state, detailed: withParams}
-	next := je
+	var next xerrors.Formatter = je
 	for {
 		pre := p.written
 		res := next.FormatError(p)
@@ -47,13 +47,12 @@ func (je *JettisonError) Format(state fmt.State, c rune) {
 		if p.written > pre {
 			_, _ = p.Write([]byte(": "))
 		}
-
-		jerr, ok := res.(*JettisonError)
+		formatter, ok := res.(xerrors.Formatter)
 		if !ok {
 			_, _ = p.Write([]byte(res.Error()))
 			return
 		}
-		next = jerr
+		next = formatter
 	}
 }
 
@@ -74,7 +73,7 @@ func (je *JettisonError) FormatError(p xerrors.Printer) error {
 	}
 
 	p.Printf(msg, args...)
-	return je.Unwrap()
+	return je.Err
 }
 
 // Error satisfies the built-in error interface and returns the default error format.
@@ -125,7 +124,7 @@ func (je *JettisonError) Is(target error) bool {
 		match := targetJErr.Message == je.Message
 		if match {
 			f := legacyCallback.Load()
-			if f != nil {
+			if f != nil && *f != nil {
 				(*f)(je, target)
 			}
 		}

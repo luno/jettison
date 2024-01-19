@@ -3,12 +3,14 @@ package errors_test
 import (
 	"database/sql"
 	"fmt"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
+	"github.com/luno/jettison/jtest"
 )
 
 func TestError(t *testing.T) {
@@ -162,4 +164,61 @@ func TestFormat(t *testing.T) {
 	assert.Equal(t, "wrap sql error: sql: no rows in result set", err5.Error())
 	assert.Equal(t, "wrap sql error: sql: no rows in result set", fmt.Sprintf("%s", err5))
 	assert.Equal(t, "wrap sql error(w=w1): sql: no rows in result set", fmt.Sprintf("%#v", err5))
+}
+
+func TestLegacyCallback(t *testing.T) {
+	testCases := []struct {
+		name    string
+		err     error
+		target  error
+		expCall bool
+	}{
+		{name: "nil errors"},
+		{
+			name: "non jettison errors",
+			err:  io.EOF, target: io.EOF,
+		},
+		{
+			name:   "compared by message, but not equal",
+			err:    errors.New("one two three"),
+			target: errors.New("four five six"),
+		},
+		{
+			name:    "compared by message",
+			err:     errors.New("seven"),
+			target:  errors.New("seven"),
+			expCall: true,
+		},
+		{
+			name:   "compare to standard error",
+			err:    errors.New("unexpected EOF"),
+			target: io.ErrUnexpectedEOF,
+		},
+		{
+			name:   "compare standard error to jettison",
+			err:    io.ErrUnexpectedEOF,
+			target: errors.New("unexpected EOF"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var called bool
+			setCallbackForTesting(t, func(src, target error) {
+				called = true
+				jtest.Assert(t, tc.err, src)
+				jtest.Assert(t, tc.target, target)
+			})
+
+			_ = errors.Is(tc.err, tc.target)
+			assert.Equal(t, tc.expCall, called)
+		})
+	}
+}
+
+func setCallbackForTesting(t *testing.T, f func(src, target error)) {
+	errors.SetLegacyCallback(f)
+	t.Cleanup(func() {
+		errors.SetLegacyCallback(nil)
+	})
 }
