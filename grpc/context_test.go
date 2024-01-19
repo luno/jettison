@@ -50,6 +50,13 @@ func TestOutgoingContext(t *testing.T) {
 				"__jettison__a": []string{"c"},
 			},
 		},
+		{
+			name: "non-utf8 characters",
+			ctx:  log.ContextWith(context.Background(), j.KV("key1", "a\xc5z")),
+			expMD: metadata.MD{
+				"__jettison__key1": []string{"a\xc5z"},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

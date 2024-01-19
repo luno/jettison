@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/go-stack/stack"
 	"github.com/stretchr/testify/assert"
@@ -154,12 +155,38 @@ func TestWrappingGrpcError(t *testing.T) {
 	err = cl.ErrorWithCode(ctx, "")
 	require.NotNil(t, err)
 
-	var jerr *errors.JettisonError
-	require.True(t, errors.As(err, &jerr))
+	assert.Equal(t, "grpc status error", err.Error())
+	assert.Equal(t, []string{"grpc status error"}, errors.GetCodes(err))
 
-	assert.Equal(t, "grpc status error", jerr.Message)
-	assert.Equal(t, "", jerr.Code)
-	assert.Equal(t, map[string]string{"code": "Unavailable"}, errors.GetKeyValues(jerr))
+	kvs := errors.GetKeyValues(err)
+	assert.Equal(t, "Unavailable", kvs["code"])
+}
+
+func TestDeadlineExceededClient(t *testing.T) {
+	l, err := net.Listen("tcp", "")
+	jtest.RequireNil(t, err)
+	defer l.Close()
+
+	_, stop := testgrpc.NewServer(t, l)
+	defer stop()
+
+	cl, err := testgrpc.NewClient(t, l.Addr().String())
+	jtest.RequireNil(t, err)
+	defer cl.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
+	<-ctx.Done()
+
+	err = cl.ErrorWithCode(ctx, "")
+	require.NotNil(t, err)
+
+	jtest.Assert(t, context.DeadlineExceeded, err)
+	assert.Equal(t, "grpc status error", err.Error())
+	assert.Equal(t, []string{"grpc status error"}, errors.GetCodes(err))
+
+	kvs := errors.GetKeyValues(err)
+	assert.Equal(t, "DeadlineExceeded", kvs["code"])
 }
 
 func TestContextCanceled(t *testing.T) {
