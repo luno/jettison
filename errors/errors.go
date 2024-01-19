@@ -132,7 +132,7 @@ func Wrap(err error, msg string, ol ...Option) error {
 
 	// We only need to add a trace when wrapping sentinel or non-jettison errors
 	// for the first time
-	if !hasTrace(err) {
+	if _, _, found := GetLastStackTrace(err); !found {
 		je.Binary, je.StackTrace = getTrace(1)
 	}
 
@@ -211,6 +211,23 @@ func GetCodes(err error) []string {
 		return true
 	})
 	return ret
+}
+
+func GetLastStackTrace(err error) (string, []string, bool) {
+	var bin string
+	var stack []string
+	var found bool
+	Walk(err, func(err error) bool {
+		je, ok := err.(*JettisonError)
+		if !ok || je.Binary == "" {
+			return true
+		}
+		bin = je.Binary
+		stack = je.StackTrace
+		found = true
+		return false
+	})
+	return bin, stack, found
 }
 
 // GetKeyValues returns all embedded key value info in the error

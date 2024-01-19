@@ -2,18 +2,21 @@ package errors_test
 
 import (
 	stdlib_errors "errors"
+	"fmt"
 	"io"
 	"net/http"
 	"runtime"
 	"strconv"
 	"testing"
 
+	"github.com/go-stack/stack"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/models"
+	"github.com/luno/jettison/trace"
 )
 
 func TestNew(t *testing.T) {
@@ -484,4 +487,61 @@ func TestFlatten(t *testing.T) {
 		msgs = append(msgs, pm)
 	}
 	assert.Equal(t, exp, msgs)
+}
+
+func wrapStackTrace(err error) error {
+	return errors.Wrap(err, "", errors.WithStackTrace())
+}
+
+func TestGetLastStackTrace(t *testing.T) {
+	errors.SetTraceConfigTesting(t, trace.StackConfig{
+		RemoveLambdas: true,
+		TrimRuntime:   true,
+		Format: func(call stack.Call) string {
+			return fmt.Sprintf("%s %n", call, call)
+		},
+	})
+
+	testCases := []struct {
+		name     string
+		err      error
+		expTrace []string
+		expFound bool
+	}{
+		{
+			name: "std error has no trace",
+			err:  io.ErrUnexpectedEOF,
+		},
+		{
+			name: "new error has a trace",
+			err:  errors.New("msg"),
+			expTrace: []string{
+				"errors_test.go TestGetLastStackTrace",
+			},
+			expFound: true,
+		},
+		{
+			name: "wrapped gets last trace",
+			err:  wrapStackTrace(errors.New("")),
+			expTrace: []string{
+				"errors_test.go wrapStackTrace",
+				"errors_test.go TestGetLastStackTrace",
+			},
+			expFound: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			bin, stkTrace, found := errors.GetLastStackTrace(tc.err)
+			if tc.expFound {
+				// Only assert binary is non-empty, will depend on how the test is being run.
+				assert.NotEmpty(t, bin)
+			} else {
+				assert.Empty(t, bin)
+			}
+			assert.Equal(t, tc.expTrace, stkTrace)
+			assert.Equal(t, tc.expFound, found)
+		})
+	}
 }
