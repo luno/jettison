@@ -363,6 +363,11 @@ func TestGRPCStatus(t *testing.T) {
 			err:       errors.Wrap(errors.Wrap(context.Canceled, ""), ""),
 			expStatus: status.New(codes.Canceled, ""),
 		},
+		{
+			name:      "status error",
+			err:       status.Error(codes.Unavailable, "oh no!"),
+			expStatus: status.New(codes.Unavailable, "oh no!"),
+		},
 	}
 
 	for _, tc := range testCases {

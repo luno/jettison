@@ -69,24 +69,27 @@ func FromStatus(s *status.Status) Error {
 // with a message given by the most recently wrapped error in the list of
 // hops.
 func toStatus(err error) *status.Status {
-	c := codes.Unknown
-	var msg string
-	if errors.Is(err, context.Canceled) {
-		c = codes.Canceled
-	} else if errors.Is(err, context.DeadlineExceeded) {
-		c = codes.DeadlineExceeded
-	} else {
-		msg = err.Error()
+	s, ok := status.FromError(err)
+	if !ok {
+		c := codes.Unknown
+		var msg string
+		if errors.Is(err, context.Canceled) {
+			c = codes.Canceled
+		} else if errors.Is(err, context.DeadlineExceeded) {
+			c = codes.DeadlineExceeded
+		} else {
+			msg = err.Error()
+		}
+		s = status.New(c, msg)
 	}
-	res := status.New(c, msg)
 
-	withWrap, err := res.WithDetails(errorToProto(err))
+	withWrap, err := s.WithDetails(errorToProto(err))
 	if err != nil {
 		log.Printf("jettison/errors: Failed to add WrappedError to status: %v", err)
 	} else {
-		res = withWrap
+		s = withWrap
 	}
-	return res
+	return s
 }
 
 // fromStatus will unmarshal a *grpc.Status into a jettison error object,
