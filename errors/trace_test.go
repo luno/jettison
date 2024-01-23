@@ -19,7 +19,7 @@ func TestSetTraceConfig(t *testing.T) {
 		RemoveLambdas: true,
 		PackagesShown: []string{trace.PackagePath(JettisonError{})},
 		TrimRuntime:   true,
-		Format: func(call stack.Call) string {
+		FormatStack: func(call stack.Call) string {
 			return fmt.Sprintf("%+k:%n", call, call)
 		},
 	}

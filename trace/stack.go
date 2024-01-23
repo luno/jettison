@@ -22,9 +22,11 @@ type StackConfig struct {
 	PackagesShown []string
 	// TrimRuntime will remove entries from the Go runtime
 	TrimRuntime bool
-	// Format is the format for the stack.Call lines
+	// FormatStack is the format for lines in the stack trace
 	// The default will print the source reference and the function name
-	Format func(stack.Call) string
+	FormatStack func(stack.Call) string
+	// FormatReference is the formatter used when creating source code references
+	FormatReference func(stack.Call) string
 }
 
 func (c StackConfig) shouldKeepCall(call stack.Call) bool {
@@ -46,11 +48,18 @@ func (c StackConfig) shouldKeepCall(call stack.Call) bool {
 	return false
 }
 
-func (c StackConfig) formatLine(call stack.Call) string {
-	if c.Format != nil {
-		return c.Format(call)
+func (c StackConfig) formatStackLine(call stack.Call) string {
+	if c.FormatStack != nil {
+		return c.FormatStack(call)
 	}
 	return fmt.Sprintf("%+v %n", call, call)
+}
+
+func (c StackConfig) formatReference(ref stack.Call) string {
+	if c.FormatReference != nil {
+		return c.FormatReference(ref)
+	}
+	return fmt.Sprintf("%+v", ref)
 }
 
 const maxDepth = 64
@@ -67,7 +76,7 @@ func GetStackTrace(skip int, config StackConfig) []string {
 		if !config.shouldKeepCall(c) {
 			continue
 		}
-		res = append(res, config.formatLine(c))
+		res = append(res, config.formatStackLine(c))
 		if len(res) >= maxDepth {
 			break
 		}
@@ -77,5 +86,5 @@ func GetStackTrace(skip int, config StackConfig) []string {
 
 // GetSourceCodeRef returns the callers source code reference
 func GetSourceCodeRef(skip int, config StackConfig) string {
-	return config.Format(stack.Caller(skip + 1))
+	return config.formatReference(stack.Caller(skip + 1))
 }

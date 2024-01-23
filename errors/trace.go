@@ -11,11 +11,7 @@ import (
 
 var (
 	configSet   bool
-	traceConfig = trace.StackConfig{
-		Format: func(call stack.Call) string {
-			return fmt.Sprintf("%+v %n", call, call)
-		},
-	}
+	traceConfig trace.StackConfig
 )
 
 func SetTraceConfig(config trace.StackConfig) {
@@ -37,7 +33,10 @@ func SetTraceConfigTesting(t testing.TB, config trace.StackConfig) {
 var TestingConfig = trace.StackConfig{
 	TrimRuntime:   true,
 	RemoveLambdas: true,
-	Format: func(call stack.Call) string {
+	FormatStack: func(call stack.Call) string {
+		return fmt.Sprintf("%s %n", call, call)
+	},
+	FormatReference: func(call stack.Call) string {
 		return fmt.Sprintf("%s %n", call, call)
 	},
 }
