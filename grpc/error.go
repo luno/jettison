@@ -51,16 +51,22 @@ func Wrap(err error) Error {
 	return Error{s: toStatus(err), err: err}
 }
 
-// FromStatus will de-serialise the details from the status
+// FromError will de-serialise the details from the status
 // into an Error
-func FromStatus(s *status.Status) Error {
+func FromError(err error) error {
+	s, ok := status.FromError(err)
+	if !ok {
+		// Another interceptor may have already converted this error
+		return err
+	}
 	je, ok := fromStatus(s)
 	if !ok {
-		e := errors.New("grpc status error",
-			j.MKV{"code": s.Code(), "message": s.Message()},
-			errors.WithoutStackTrace(),
-		)
-		return Error{s: s, err: e}
+		return Error{
+			s: s, err: errors.New(
+				s.Message(),
+				j.KV("code", s.Code()),
+				errors.WithoutStackTrace()),
+		}
 	}
 	return Error{s: s, err: je}
 }

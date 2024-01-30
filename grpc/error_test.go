@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"strconv"
@@ -331,6 +332,21 @@ func TestToFromStatus(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "context deadline exceeded",
+			err:      context.DeadlineExceeded,
+			expJetty: errors.JettisonError{Message: context.DeadlineExceeded.Error()},
+		},
+		{
+			name: "wrapped context deadline exceeded",
+			err:  errors.Wrap(context.DeadlineExceeded, "", errors.WithoutStackTrace()),
+			expJetty: errors.JettisonError{
+				Source: "error_test.go TestToFromStatus",
+				Err: &errors.JettisonError{
+					Message: context.DeadlineExceeded.Error(),
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -481,6 +497,83 @@ func TestErrorIs(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			is := errors.Is(tc.err, tc.isErr)
 			assert.Equal(t, tc.expIs, is)
+		})
+	}
+}
+
+func TestFromError(t *testing.T) {
+	testCases := []struct {
+		name     string
+		err      error
+		expError string
+	}{
+		{
+			name:     "fmt error",
+			err:      fmt.Errorf("hello, world"),
+			expError: "hello, world",
+		},
+		{
+			name:     "wrapped fmt",
+			err:      fmt.Errorf("first: %v", fmt.Errorf("second")),
+			expError: "first: second",
+		},
+		{
+			name:     "jet wrapped fmt",
+			err:      errors.Wrap(fmt.Errorf("inner"), "outer"),
+			expError: "outer: inner",
+		},
+		{
+			name:     "context error",
+			err:      context.Canceled,
+			expError: "context canceled",
+		},
+		{
+			name:     "wrapped context",
+			err:      errors.Wrap(context.Canceled, ""),
+			expError: "context canceled",
+		},
+		{
+			name:     "jetty",
+			err:      errors.New("hello, jetty"),
+			expError: "hello, jetty",
+		},
+		{
+			name:     "wrapped jetty",
+			err:      errors.Wrap(errors.New("hi"), "jet"),
+			expError: "jet: hi",
+		},
+		{
+			name:     "grpc error",
+			err:      status.Error(codes.Unavailable, "message"),
+			expError: "message",
+		},
+		{
+			name:     "jetty, over the wire",
+			err:      status.Convert(Wrap(errors.Wrap(errors.New("hey"), "yo"))).Err(),
+			expError: "yo: hey",
+		},
+		{
+			name:     "context, over the wire",
+			err:      status.Convert(Wrap(context.Canceled)).Err(),
+			expError: "context canceled",
+		},
+		{
+			name:     "deadline, over the wire",
+			err:      status.Convert(Wrap(context.DeadlineExceeded)).Err(),
+			expError: "context deadline exceeded",
+		},
+		{
+			name:     "sql, over the wire",
+			err:      status.Convert(Wrap(sql.ErrNoRows)).Err(),
+			expError: "sql: no rows in result set",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := FromError(tc.err)
+			assert.NotNil(t, err)
+			assert.Equal(t, tc.expError, err.Error())
 		})
 	}
 }

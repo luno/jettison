@@ -2,6 +2,7 @@ package test_test
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -147,8 +148,9 @@ func TestWrappingGrpcError(t *testing.T) {
 	err = cl.ErrorWithCode(ctx, "")
 	require.NotNil(t, err)
 
-	assert.Equal(t, "grpc status error", err.Error())
-	assert.Equal(t, []string{"grpc status error"}, errors.GetCodes(err))
+	expErr := fmt.Sprintf("connection error: desc = \"transport: Error while dialing: dial tcp %s: connect: connection refused\"", l.Addr())
+	assert.Equal(t, expErr, err.Error())
+	assert.Equal(t, []string{expErr}, errors.GetCodes(err))
 
 	kvs := errors.GetKeyValues(err)
 	assert.Equal(t, "Unavailable", kvs["code"])
@@ -174,8 +176,8 @@ func TestDeadlineExceededClient(t *testing.T) {
 	require.NotNil(t, err)
 
 	jtest.Assert(t, context.DeadlineExceeded, err)
-	assert.Equal(t, "grpc status error", err.Error())
-	assert.Equal(t, []string{"grpc status error"}, errors.GetCodes(err))
+	assert.Equal(t, "context deadline exceeded", err.Error())
+	assert.Equal(t, []string{context.DeadlineExceeded.Error()}, errors.GetCodes(err))
 
 	kvs := errors.GetKeyValues(err)
 	assert.Equal(t, "DeadlineExceeded", kvs["code"])

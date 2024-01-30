@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/status"
 
 	"github.com/luno/jettison/errors"
 )
@@ -67,12 +66,7 @@ func incomingError(err error) error {
 	if err == nil {
 		return nil
 	}
-	s, ok := status.FromError(err)
-	if !ok {
-		// Another interceptor may have already converted this error
-		return errors.Wrap(err, "", errors.WithStackTrace())
-	}
-	return errors.Wrap(FromStatus(s), "", errors.WithStackTrace())
+	return errors.Wrap(FromError(err), "", errors.WithStackTrace())
 }
 
 // outgoingError converts any err into one that will include more details when sent over GRPC
