@@ -1,6 +1,7 @@
 package log_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,15 +15,14 @@ type testLogger struct {
 	logs []log.Entry
 }
 
-func (tl *testLogger) Log(l log.Entry) string {
+func (tl *testLogger) Log(_ context.Context, l log.Entry) string {
 	tl.logs = append(tl.logs, l)
-
 	return ""
 }
 
 func TestAddLoggers(t *testing.T) {
 	tl := new(testLogger)
-	log.SetLogger(tl)
+	log.SetLoggerForTesting(t, tl)
 
 	log.Info(nil, "message", j.KV("some", "param"))
 	log.Error(nil, errors.New("errMsg"))

@@ -1,6 +1,7 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	"os"
 )
@@ -64,15 +65,15 @@ func Fatalln(v ...interface{}) {
 
 func print(v ...interface{}) string {
 	l := newEntry(fmt.Sprint(v...), LevelInfo, 3)
-	return logger.Log(Entry(l))
+	return logger.Log(context.TODO(), l)
 }
 
 func printf(format string, v ...interface{}) string {
 	l := newEntry(fmt.Sprintf(format, v...), LevelInfo, 3)
-	return logger.Log(Entry(l))
+	return logger.Log(context.TODO(), l)
 }
 
 func println(v ...interface{}) string {
 	l := newEntry(fmt.Sprintln(v...), LevelInfo, 3)
-	return logger.Log(Entry(l))
+	return logger.Log(context.TODO(), l)
 }

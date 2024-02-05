@@ -52,13 +52,13 @@ type Option interface {
 }
 
 func Debug(ctx context.Context, msg string, opts ...Option) {
-	logger.Log(makeEntry(ctx, msg, LevelDebug, opts...))
+	logger.Log(ctx, makeEntry(ctx, msg, LevelDebug, opts...))
 }
 
 // Info writes a structured jettison log to the logger. Any jettison
 // key/value pairs contained in the given context are included in the log.
 func Info(ctx context.Context, msg string, opts ...Option) {
-	logger.Log(makeEntry(ctx, msg, LevelInfo, opts...))
+	logger.Log(ctx, makeEntry(ctx, msg, LevelInfo, opts...))
 }
 
 // Error writes a structured jettison log of the given error to the logger.
@@ -72,7 +72,7 @@ func Error(ctx context.Context, err error, opts ...Option) {
 	}
 	opts = append(opts, WithError(err))
 	e := makeEntry(ctx, err.Error(), LevelError, opts...)
-	logger.Log(e)
+	logger.Log(ctx, e)
 }
 
 func makeEntry(ctx context.Context, msg string, lvl Level, opts ...Option) Entry {

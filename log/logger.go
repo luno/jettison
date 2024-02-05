@@ -1,6 +1,7 @@
 package log
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -15,7 +16,7 @@ var logger Logger = NewCmdLogger(os.Stderr, false)
 // Logger does logging of log lines.
 type Logger interface {
 	// Log logs the given log and returns a string of what was written.
-	Log(Entry) string
+	Log(context.Context, Entry) string
 }
 
 // SetLogger sets the global logger.
@@ -23,27 +24,23 @@ func SetLogger(l Logger) {
 	logger = l
 }
 
-func SetCmdLoggerForTesting(t testing.TB, w io.Writer) {
-	cached := logger
-	logger = NewCmdLogger(w, true)
-
+func SetLoggerForTesting(t testing.TB, l Logger) {
+	old := logger
 	t.Cleanup(func() {
-		logger = cached
+		logger = old
 	})
+	logger = l
 }
 
-func SetDefaultLoggerForTesting(t testing.TB, w io.Writer,
-	opts ...Option,
-) {
-	cached := logger
+func SetCmdLoggerForTesting(t testing.TB, w io.Writer) {
+	SetLoggerForTesting(t, NewCmdLogger(w, true))
+}
 
+func SetDefaultLoggerForTesting(t testing.TB, w io.Writer, opts ...Option) {
 	l := newJSONLogger(w, opts...)
 	l.scrubTimestamp = true
-	logger = l
 
-	t.Cleanup(func() {
-		logger = cached
-	})
+	SetLoggerForTesting(t, l)
 }
 
 func newJSONLogger(w io.Writer, opts ...Option) *jsonLogger {
@@ -62,7 +59,7 @@ type jsonLogger struct {
 	scrubTimestamp bool
 }
 
-func (jl *jsonLogger) Log(l Entry) string {
+func (jl *jsonLogger) Log(_ context.Context, l Entry) string {
 	for _, o := range jl.opts {
 		o.ApplyToLog(&l)
 	}

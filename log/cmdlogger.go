@@ -1,6 +1,7 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -22,7 +23,7 @@ type CmdLogger struct {
 	stripTime bool
 }
 
-func (c *CmdLogger) Log(l Entry) string {
+func (c *CmdLogger) Log(_ context.Context, l Entry) string {
 	timestamp := l.Timestamp.Format("15:04:05.000")
 	if c.stripTime {
 		timestamp = "00:00:00.000"
