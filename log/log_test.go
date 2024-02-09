@@ -25,19 +25,12 @@ func (s source) ApplyToLog(e *jlog.Entry) {
 }
 
 func (s source) ApplyToError(je *jerrors.JettisonError) {
-	if len(je.Hops) > 0 {
-		je.Hops[0].SetSource(string(s))
-	}
 	je.Source = string(s)
 }
 
 // WithCustomTrace sets the stack trace of the current hop to the given value.
 func WithCustomTrace(bin string, stack []string) jerrors.ErrorOption {
 	return func(je *jerrors.JettisonError) {
-		if len(je.Hops) > 0 {
-			je.Hops[0].Binary = bin
-			je.Hops[0].StackTrace = stack
-		}
 		je.Binary = bin
 		je.StackTrace = stack
 	}

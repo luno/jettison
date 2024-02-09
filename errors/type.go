@@ -26,8 +26,6 @@ type JettisonError struct {
 	Code       string
 	Source     string
 	KV         []models.KeyValue
-
-	Hops []models.Hop
 }
 
 // Format satisfies the fmt.Formatter interface providing customizable formatting:
@@ -85,15 +83,6 @@ func (je *JettisonError) String() string {
 	return je.Error()
 }
 
-// Clone returns a copy of the jettison error that can be safely mutated.
-func (je *JettisonError) Clone() *JettisonError {
-	res := JettisonError{Message: je.Message}
-	for _, h := range je.Hops {
-		res.Hops = append(res.Hops, h.Clone())
-	}
-	return &res
-}
-
 // Unwrap returns the next error in the jettison error chain, or nil if there
 // is none. This is compatible with the Wrapper interface from the Go 2 error
 // inspection proposal.
@@ -137,16 +126,6 @@ var legacyCallback atomic.Pointer[func(src, target error)]
 
 func SetLegacyCallback(f func(src, target error)) {
 	legacyCallback.Store(&f)
-}
-
-func (je *JettisonError) IsZero() bool {
-	return je.Message == "" &&
-		je.Err == nil &&
-		je.Binary == "" &&
-		len(je.StackTrace) == 0 &&
-		je.Code == "" &&
-		je.Source == "" &&
-		len(je.KV) == 0
 }
 
 // printer implements xerrors.Printer interface.

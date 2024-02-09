@@ -35,12 +35,6 @@ func TestFromStatus(t *testing.T) {
 		expOk    bool
 	}{
 		{
-			name: "one hop this time",
-			details: []proto.Message{
-				&jettisonpb.Hop{Binary: "mc hammer"},
-			},
-		},
-		{
 			name: "only a wrapped error",
 			details: []proto.Message{
 				&jettisonpb.WrappedError{Message: "test"},
@@ -55,60 +49,6 @@ func TestFromStatus(t *testing.T) {
 			},
 			expJetty: errors.JettisonError{Code: "abc"},
 			expOk:    true,
-		},
-		{
-			name: "ignore Hop when WrappedError is there",
-			details: []proto.Message{
-				&jettisonpb.Hop{Binary: "mc hammer"},
-				&jettisonpb.WrappedError{},
-			},
-			expOk: true,
-		},
-		{
-			name: "fully hopped",
-			details: []proto.Message{
-				&jettisonpb.Hop{
-					Binary:     "binny",
-					StackTrace: []string{"a", "b", "c"},
-					Errors: []*jettisonpb.Error{
-						{
-							Code:    "error1",
-							Message: "msg1",
-							Source:  "anywhere",
-							Parameters: []*jettisonpb.KeyValue{
-								{Key: "test_key_1", Value: "test_value_1"},
-							},
-						},
-						{
-							Code:    "error2",
-							Message: "msg2",
-							Source:  "somewhere else",
-							Parameters: []*jettisonpb.KeyValue{
-								{Key: "test_key_2", Value: "test_value_2"},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "multi hops",
-			details: []proto.Message{
-				&jettisonpb.Hop{Binary: "bin1"},
-				&jettisonpb.Hop{Binary: "bin2"},
-			},
-		},
-		{
-			name: "multi hops with a wrapper",
-			details: []proto.Message{
-				&jettisonpb.Hop{Binary: "bin1"},
-				&jettisonpb.WrappedError{Message: "hello"},
-				&jettisonpb.Hop{Binary: "bin2"},
-			},
-			expJetty: errors.JettisonError{
-				Message: "hello",
-			},
-			expOk: true,
 		},
 	}
 

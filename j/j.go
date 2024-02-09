@@ -63,15 +63,7 @@ func (m MKV) ApplyToLog(l *log.Entry) {
 }
 
 func (m MKV) ApplyToError(je *errors.JettisonError) {
-	kvs := m.ContextKeys()
-	je.KV = append(je.KV, kvs...)
-	if len(je.Hops) == 0 {
-		return
-	}
-	h := je.Hops[0]
-	for _, kv := range kvs {
-		h.SetKey(kv.Key, kv.Value)
-	}
+	je.KV = append(je.KV, m.ContextKeys()...)
 }
 
 // MKS is a multi jettison key value string option.
@@ -96,15 +88,7 @@ func (m MKS) ApplyToLog(l *log.Entry) {
 }
 
 func (m MKS) ApplyToError(je *errors.JettisonError) {
-	kvs := m.ContextKeys()
-	je.KV = append(je.KV, kvs...)
-	if len(je.Hops) == 0 {
-		return
-	}
-	h := je.Hops[0]
-	for _, kv := range kvs {
-		h.SetKey(kv.Key, kv.Value)
-	}
+	je.KV = append(je.KV, m.ContextKeys()...)
 }
 
 // C is an alias for jettison/errors.WithCode. Since this

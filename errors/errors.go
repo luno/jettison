@@ -4,9 +4,6 @@ import (
 	stderrors "errors"
 
 	"golang.org/x/xerrors"
-
-	"github.com/luno/jettison/models"
-	"github.com/luno/jettison/trace"
 )
 
 type ErrorOption func(je *JettisonError)
@@ -29,9 +26,6 @@ func WithStackTrace() Option {
 // The default code (the error message) doesn't provide strong unique guarantees.
 func WithCode(code string) Option {
 	return ErrorOption(func(je *JettisonError) {
-		if len(je.Hops) > 0 && len(je.Hops[0].Errors) > 0 {
-			je.Hops[0].Errors[0].Code = code
-		}
 		je.Code = code
 	})
 }
@@ -51,9 +45,6 @@ func WithCode(code string) Option {
 //	}
 func WithoutStackTrace() Option {
 	return ErrorOption(func(je *JettisonError) {
-		if len(je.Hops) > 0 && len(je.Hops[0].Errors) <= 1 {
-			je.Hops[0].StackTrace = nil
-		}
 		je.Binary = ""
 		je.StackTrace = nil
 	})
@@ -74,13 +65,9 @@ type Option interface {
 
 // New creates a new JettisonError with a populated stack trace
 func New(msg string, ol ...Option) error {
-	h := models.NewHop()
-	h.StackTrace = trace.GetStackTraceLegacy(2)
-	h.Errors = []models.Error{models.NewError(msg)}
 	je := &JettisonError{
 		Message: msg,
 		Source:  getSourceCode(1),
-		Hops:    []models.Hop{h},
 	}
 	je.Binary, je.StackTrace = getTrace(1)
 	for _, o := range ol {
@@ -95,45 +82,16 @@ func Wrap(err error, msg string, ol ...Option) error {
 	if err == nil {
 		return nil
 	}
-
-	// If err is a jettison error, we want to append to it's current segment's
-	// list of errors. Othewise we want to just create a new Jettison error.
-	je, ok := err.(*JettisonError)
-	if !ok {
-		je = &JettisonError{
-			Hops: []models.Hop{models.NewHop()},
-		}
-
-		je.Hops[0].Errors = []models.Error{
-			{Message: err.Error()},
-		}
-	} else {
-		// We don't want to mutate everyone's copy of the error.
-		// When we only use nested errors, this stage will not be necessary, we'll always create a new struct
-		je = je.Clone()
+	je := &JettisonError{
+		Message: msg,
+		Err:     err,
+		Source:  getSourceCode(1),
 	}
-
-	// If the current hop doesn't yet have a stack trace, add one.
-	if je.Hops[0].StackTrace == nil {
-		je.Hops[0].StackTrace = trace.GetStackTraceLegacy(2)
-	}
-
-	// Add the error to the stack and apply the options on the latest hop.
-	je.Hops[0].Errors = append(
-		[]models.Error{models.NewError(msg)},
-		je.Hops[0].Errors...,
-	)
-
-	je.Message = msg
-	je.Source = getSourceCode(1)
-	je.Err = err
-
 	// We only need to add a trace when wrapping sentinel or non-jettison errors
 	// for the first time
 	if _, _, found := GetLastStackTrace(err); !found {
 		je.Binary, je.StackTrace = getTrace(1)
 	}
-
 	for _, o := range ol {
 		o.ApplyToError(je)
 	}
