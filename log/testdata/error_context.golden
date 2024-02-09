@@ -1,0 +1,1 @@
+{"message":"test","source":"testsource","level":"error","timestamp":"0001-01-01T00:00:00Z","parameters":[{"key":"ctx_key","value":"ctx_val"}],"error_code":"test","error_object":{"code":"","source":"testsource","message":"test","stack":["testservice"],"stacktrace":[{"\u003e":["teststacktrace"]}]}}

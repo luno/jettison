@@ -1,0 +1,1 @@
+{"message":"nil error logged - this is probably a bug","source":"testsource","level":"error","timestamp":"0001-01-01T00:00:00Z","error_code":"nil error logged - this is probably a bug","error_object":{"code":"","source":"log.go Error","message":"nil error logged - this is probably a bug","stack":["log.test"],"stacktrace":[{"\u003e":["log.go Error"]}]}}

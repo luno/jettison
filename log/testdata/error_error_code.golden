@@ -1,0 +1,1 @@
+{"message":"test","source":"testsource","level":"error","timestamp":"0001-01-01T00:00:00Z","error_code":"testcode","error_object":{"code":"testcode","source":"testsource","message":"test","stack":["testservice"],"stacktrace":[{"\u003e":["teststacktrace"]}]}}

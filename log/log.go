@@ -92,6 +92,9 @@ func makeEntry(ctx context.Context, msg string, lvl Level, opts ...Option) Entry
 }
 
 func addErrors(e *Entry, err error) {
+	if err == nil {
+		return
+	}
 	paths := errors.Flatten(err)
 	if len(paths) == 1 {
 		ent := errorEntry(paths[0])
@@ -110,10 +113,20 @@ func errorEntry(errPath []error) ErrorObject {
 	if len(errPath) == 0 {
 		return ErrorObject{}
 	}
-	e := ErrorObject{Message: errPath[0].Error()}
+	var e ErrorObject
 
 	var m trace.Merge
 	for _, err := range errPath {
+		// Set the message to the last non-joined message in the path
+		// Clear the message if this is a Joined error (i.e. unwraps to multiple errors)
+		// We don't need the joined error message because we will iterate over the
+		// other paths in turn.
+		if _, isJoin := err.(interface{ Unwrap() []error }); isJoin {
+			e.Message = ""
+		} else if e.Message == "" {
+			e.Message = err.Error()
+		}
+
 		je, ok := err.(*internal.Error)
 		if !ok {
 			continue
