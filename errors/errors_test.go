@@ -4,14 +4,13 @@ import (
 	stdlib_errors "errors"
 	"io"
 	"net/http"
-	"runtime"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/models"
 )
@@ -36,7 +35,7 @@ func TestNew(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			errors.SetTraceConfigTesting(t, errors.TestingConfig)
-			err := errors.New(tc.msg, tc.opts...).(*errors.JettisonError)
+			err := errors.New(tc.msg, tc.opts...).(*internal.Error)
 
 			assert.Equal(t, tc.msg, err.Message)
 			assert.Equal(t,
@@ -122,7 +121,7 @@ func TestWrap(t *testing.T) {
 				assert.NoError(t, err)
 				return
 			}
-			je := err.(*errors.JettisonError)
+			je := err.(*internal.Error)
 			assert.Equal(t, tc.msg, je.Message)
 			assert.Equal(t,
 				"errors_test.go TestWrap.func1",
@@ -271,10 +270,86 @@ func TestGetCodes(t *testing.T) {
 	}
 }
 
-// nextLine returns the next line after the caller.
-func nextLine() string {
-	_, _, line, _ := runtime.Caller(1)
-	return strconv.Itoa(line + 1)
+func TestUnwrap(t *testing.T) {
+	testCases := []struct {
+		name     string
+		err      *internal.Error
+		expCodes []string
+	}{
+		{
+			name:     "default code, no wrap",
+			err:      errors.New("id0").(*internal.Error),
+			expCodes: []string{"id0"},
+		},
+		{
+			name:     "custom code, no wrap",
+			err:      errors.New("id1", errors.WithCode("code1")).(*internal.Error),
+			expCodes: []string{"code1"},
+		},
+		{
+			name: "wrapped once",
+			err: errors.Wrap(
+				errors.New("id1", errors.WithCode("code1")),
+				"id2",
+			).(*internal.Error),
+			expCodes: []string{"id2", "code1"},
+		},
+		{
+			name: "wrapped twice",
+			err: errors.Wrap(
+				errors.Wrap(
+					errors.New("id1", errors.WithCode("code1")),
+					"id2",
+				),
+				"id3",
+				errors.WithCode("code3"),
+			).(*internal.Error),
+			expCodes: []string{"code3", "id2", "code1"},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			codes := errors.GetCodes(tc.err)
+			assert.Equal(t, tc.expCodes, codes)
+		})
+	}
+}
+
+type testErr string
+
+func (te testErr) Error() string {
+	return string(te)
+}
+
+type testErrPtr string
+
+func (tep *testErrPtr) Error() string {
+	return string(*tep)
+}
+
+func TestAs(t *testing.T) {
+	tep := testErrPtr("custom error type with pointer")
+
+	var je *internal.Error
+	err0 := testErr("custom error type")
+	err1 := &tep
+	err2 := errors.New("jettison error")
+
+	je = errors.Wrap(err0, "wrap").(*internal.Error)
+	assert.True(t, errors.As(je, &err0))
+	assert.False(t, errors.As(je, &err1))
+
+	je = errors.Wrap(err1, "wrap").(*internal.Error)
+	assert.True(t, errors.As(je, &err1))
+	assert.False(t, errors.As(je, &err0))
+
+	je = errors.Wrap(err2, "wrap").(*internal.Error)
+	assert.True(t, errors.As(je, &err2))
+	assert.False(t, errors.As(je, &err0))
+	assert.False(t, errors.As(je, &err1))
 }
 
 var errTest = errors.New("test error", errors.WithCode("ERR_59bed5816cb39f35"))
@@ -282,7 +357,7 @@ var errTest = errors.New("test error", errors.WithCode("ERR_59bed5816cb39f35"))
 func TestIsUnwrap(t *testing.T) {
 	err := errTest
 	for i := 0; i < 5; i++ {
-		err = errors.Wrap(err, "wrap").(*errors.JettisonError)
+		err = errors.Wrap(err, "wrap").(*internal.Error)
 	}
 
 	orig := err.Error()
@@ -293,11 +368,11 @@ func TestIsUnwrap(t *testing.T) {
 }
 
 func TestWithoutStackTrace(t *testing.T) {
-	errFoo := errors.New("foo", errors.WithoutStackTrace()).(*errors.JettisonError)
+	errFoo := errors.New("foo", errors.WithoutStackTrace()).(*internal.Error)
 	assert.Empty(t, errFoo.Binary)
 	assert.Empty(t, errFoo.StackTrace)
 
-	err := errors.Wrap(errFoo, "wrap adds stack trace").(*errors.JettisonError)
+	err := errors.Wrap(errFoo, "wrap adds stack trace").(*internal.Error)
 	assert.NotEmpty(t, err.Binary)
 	assert.NotEmpty(t, err.StackTrace)
 }
@@ -305,40 +380,40 @@ func TestWithoutStackTrace(t *testing.T) {
 func TestErrorMetadata(t *testing.T) {
 	testCases := []struct {
 		name       string
-		err        *errors.JettisonError
-		expError   errors.JettisonError
+		err        *internal.Error
+		expError   internal.Error
 		expNoTrace bool
 	}{
 		{
 			name: "new kv",
-			err:  errors.New("one", j.KV("test", "val")).(*errors.JettisonError),
-			expError: errors.JettisonError{
+			err:  errors.New("one", j.KV("test", "val")).(*internal.Error),
+			expError: internal.Error{
 				Message: "one",
 				KV:      []models.KeyValue{{Key: "test", Value: "val"}},
 			},
 		},
 		{
 			name: "new code",
-			err:  errors.New("one", errors.WithCode("code")).(*errors.JettisonError),
-			expError: errors.JettisonError{
+			err:  errors.New("one", errors.WithCode("code")).(*internal.Error),
+			expError: internal.Error{
 				Message: "one", Code: "code",
 			},
 		},
 		{
 			name:       "without stacktrace",
-			err:        errors.New("one", errors.WithoutStackTrace()).(*errors.JettisonError),
+			err:        errors.New("one", errors.WithoutStackTrace()).(*internal.Error),
 			expNoTrace: true,
-			expError:   errors.JettisonError{Message: "one"},
+			expError:   internal.Error{Message: "one"},
 		},
 		{
 			name:     "wrap non-jettison, gets a trace",
-			err:      errors.Wrap(io.EOF, "hi").(*errors.JettisonError),
-			expError: errors.JettisonError{Message: "hi"},
+			err:      errors.Wrap(io.EOF, "hi").(*internal.Error),
+			expError: internal.Error{Message: "hi"},
 		},
 		{
 			name: "wrap non-jettison, with kv",
-			err:  errors.Wrap(io.EOF, "hi", j.KV("key", "value")).(*errors.JettisonError),
-			expError: errors.JettisonError{
+			err:  errors.Wrap(io.EOF, "hi", j.KV("key", "value")).(*internal.Error),
+			expError: internal.Error{
 				Message: "hi",
 				KV:      []models.KeyValue{{Key: "key", Value: "value"}},
 			},
@@ -349,8 +424,8 @@ func TestErrorMetadata(t *testing.T) {
 				errors.New("inner", j.KV("inner", "inner_value")),
 				"outer",
 				j.KV("outer", "outer_value"),
-			).(*errors.JettisonError),
-			expError: errors.JettisonError{
+			).(*internal.Error),
+			expError: internal.Error{
 				Message: "outer",
 				KV:      []models.KeyValue{{Key: "outer", Value: "outer_value"}},
 			},
@@ -376,15 +451,15 @@ func TestErrorMetadata(t *testing.T) {
 }
 
 func TestWithStacktrace(t *testing.T) {
-	base := errors.New("base").(*errors.JettisonError)
+	base := errors.New("base").(*internal.Error)
 	assert.NotEmpty(t, base.StackTrace)
 
 	// No stack trace if base error has one already
-	wrapped := errors.Wrap(base, "wrap").(*errors.JettisonError)
+	wrapped := errors.Wrap(base, "wrap").(*internal.Error)
 	assert.Empty(t, wrapped.StackTrace)
 
 	// Get trace if explicitly requested
-	wst := errors.Wrap(base, "stacky", errors.WithStackTrace()).(*errors.JettisonError)
+	wst := errors.Wrap(base, "stacky", errors.WithStackTrace()).(*internal.Error)
 	assert.NotEmpty(t, wst.StackTrace)
 }
 

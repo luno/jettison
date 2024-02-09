@@ -80,8 +80,8 @@ func TestClientStacktrace(t *testing.T) {
 
 	err = cl.ErrorWithCode(context.Background(), "1")
 	require.Error(t, err)
-	je := err.(*errors.JettisonError)
 
+	_, stk, _ := errors.GetLastStackTrace(err)
 	exp := []string{
 		"interceptors.go incomingError",
 		"interceptors.go UnaryClientInterceptor",
@@ -90,7 +90,7 @@ func TestClientStacktrace(t *testing.T) {
 		"client.go (*Client).ErrorWithCode",
 		"grpc_test.go TestClientStacktrace",
 	}
-	assert.Equal(t, exp, je.StackTrace)
+	assert.Equal(t, exp, stk)
 }
 
 func TestStreamThenError(t *testing.T) {

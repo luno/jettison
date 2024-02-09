@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/log"
 	"github.com/luno/jettison/models"
 )
@@ -62,7 +63,7 @@ func (m MKV) ApplyToLog(l *log.Entry) {
 	l.Parameters = append(l.Parameters, m.ContextKeys()...)
 }
 
-func (m MKV) ApplyToError(je *errors.JettisonError) {
+func (m MKV) ApplyToError(je *internal.Error) {
 	je.KV = append(je.KV, m.ContextKeys()...)
 }
 
@@ -87,7 +88,7 @@ func (m MKS) ApplyToLog(l *log.Entry) {
 	l.Parameters = append(l.Parameters, m.ContextKeys()...)
 }
 
-func (m MKS) ApplyToError(je *errors.JettisonError) {
+func (m MKS) ApplyToError(je *internal.Error) {
 	je.KV = append(je.KV, m.ContextKeys()...)
 }
 

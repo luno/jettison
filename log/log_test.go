@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	jerrors "github.com/luno/jettison/errors"
+	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
 	jlog "github.com/luno/jettison/log"
 	"github.com/luno/jettison/models"
@@ -24,13 +25,13 @@ func (s source) ApplyToLog(e *jlog.Entry) {
 	e.Source = string(s)
 }
 
-func (s source) ApplyToError(je *jerrors.JettisonError) {
+func (s source) ApplyToError(je *internal.Error) {
 	je.Source = string(s)
 }
 
 // WithCustomTrace sets the stack trace of the current hop to the given value.
 func WithCustomTrace(bin string, stack []string) jerrors.ErrorOption {
-	return func(je *jerrors.JettisonError) {
+	return func(je *internal.Error) {
 		je.Binary = bin
 		je.StackTrace = stack
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/go-stack/stack"
 
 	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/trace"
 )
 
@@ -113,7 +114,7 @@ func errorEntry(errPath []error) ErrorObject {
 
 	var m trace.Merge
 	for _, err := range errPath {
-		je, ok := err.(*errors.JettisonError)
+		je, ok := err.(*internal.Error)
 		if !ok {
 			continue
 		}

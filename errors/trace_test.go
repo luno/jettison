@@ -9,15 +9,17 @@ import (
 	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/trace"
 )
 
 //go:generate go test -update
 
 func TestSetTraceConfig(t *testing.T) {
+	type packageType struct{}
 	cfg := trace.StackConfig{
 		RemoveLambdas: true,
-		PackagesShown: []string{trace.PackagePath(JettisonError{})},
+		PackagesShown: []string{trace.PackagePath(packageType{})},
 		TrimRuntime:   true,
 		FormatStack: func(call stack.Call) string {
 			return fmt.Sprintf("%+k:%n", call, call)
@@ -41,9 +43,9 @@ func TestStack(t *testing.T) {
 	goldie.New(t).Assert(t, t.Name(), tr)
 }
 
-func stackCalls(i int) *JettisonError {
+func stackCalls(i int) *internal.Error {
 	if i == 0 {
-		return New("stack").(*JettisonError)
+		return New("stack").(*internal.Error)
 	}
 	return stackCalls(i - 1)
 }

@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/models"
 )
 
@@ -55,7 +56,7 @@ func assertJettisonErrors(t testing.TB, expected, actual error, msgs ...interfac
 		return
 	}
 	// If actual error is not a jettison error, no need to compare further.
-	if !errors.As(actual, new(*errors.JettisonError)) {
+	if !errors.As(actual, new(*internal.Error)) {
 		return
 	}
 	actualKeys := errors.GetKeyValues(actual)
@@ -153,7 +154,7 @@ func pretty(err error) string {
 			pret.Message = p[0].Error()
 		}
 		for _, e := range p {
-			je, ok := e.(*errors.JettisonError)
+			je, ok := e.(*internal.Error)
 			if !ok {
 				continue
 			}

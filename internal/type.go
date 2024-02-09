@@ -1,4 +1,4 @@
-package errors
+package internal
 
 import (
 	"fmt"
@@ -11,13 +11,7 @@ import (
 	"github.com/luno/jettison/models"
 )
 
-// JettisonError is the internal error representation. We use a separate type
-// so that we can implement the Go 2.0 error interfaces, and we also need to
-// implement the GRPCStatus() method so that jettison errors can be passed over
-// gRPC seamlessly.
-//
-// See https://github.com/grpc/grpc-go/blob/master/status/status.go#L130.
-type JettisonError struct {
+type Error struct {
 	Message string
 	Err     error
 
@@ -32,7 +26,7 @@ type JettisonError struct {
 //
 //	%s, %v formats all wrapped error messages concatenated with ": ".
 //	%+v, %#v does the above but also adds error parameters; "(k1=v1, k2=v2)".
-func (je *JettisonError) Format(state fmt.State, _ rune) {
+func (je *Error) Format(state fmt.State, _ rune) {
 	withParams := state.Flag(int('#')) || state.Flag(int('+'))
 	p := &printer{Writer: state, detailed: withParams}
 	var next xerrors.Formatter = je
@@ -57,7 +51,7 @@ func (je *JettisonError) Format(state fmt.State, _ rune) {
 // FormatError implements the Formatter interface for optionally detailed
 // error message rendering - see the Go 2 error printing draft proposal for
 // details.
-func (je *JettisonError) FormatError(p xerrors.Printer) error {
+func (je *Error) FormatError(p xerrors.Printer) error {
 	msg := "%s"
 	args := []interface{}{je.Message}
 	if p.Detail() && len(je.KV) > 0 {
@@ -74,34 +68,28 @@ func (je *JettisonError) FormatError(p xerrors.Printer) error {
 	return je.Err
 }
 
-// Error satisfies the built-in error interface and returns the default error format.
-func (je *JettisonError) Error() string {
+func (je *Error) Error() string {
 	return fmt.Sprintf("%v", je)
 }
 
-func (je *JettisonError) String() string {
+func (je *Error) String() string {
 	return je.Error()
 }
 
-// Unwrap returns the next error in the jettison error chain, or nil if there
-// is none. This is compatible with the Wrapper interface from the Go 2 error
-// inspection proposal.
-func (je *JettisonError) Unwrap() error {
+func (je *Error) Unwrap() error {
 	return je.Err
 }
 
 // Is returns true if the errors are equal as values, or the target is also
-// a jettison error and je contains an error with the same code as the latest
-// error in target. This is compatible with the Is interface from the Go 2
-// error handling proposal.
-func (je *JettisonError) Is(target error) bool {
+// a jettison error and contains the same code as the target.
+func (je *Error) Is(target error) bool {
 	if je == nil {
 		return target == nil
 	}
 	if je == target {
 		return true
 	}
-	targetJErr, ok := target.(*JettisonError)
+	targetJErr, ok := target.(*Error)
 	if !ok {
 		return false
 	}
@@ -150,6 +138,6 @@ func (p *printer) Detail() bool {
 }
 
 var (
-	_ fmt.Formatter   = (*JettisonError)(nil)
+	_ fmt.Formatter   = (*Error)(nil)
 	_ xerrors.Printer = (*printer)(nil)
 )

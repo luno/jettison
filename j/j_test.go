@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luno/jettison/errors"
+	"github.com/luno/jettison/internal"
 )
 
 // fmtonly tests sprint if fmt.Formatter but not fmt.Stringer.
@@ -165,12 +166,12 @@ var tests = []struct {
 func TestC(t *testing.T) {
 	errFoo := errors.New("foo", C("123"))
 
-	je := errFoo.(*errors.JettisonError)
+	je := errFoo.(*internal.Error)
 	require.Empty(t, je.StackTrace)
 	require.Equal(t, "123", je.Code)
 
 	err := errors.Wrap(errFoo, "wrap adds stacktrace")
-	je = err.(*errors.JettisonError)
+	je = err.(*internal.Error)
 	require.NotEmpty(t, je.StackTrace)
 	require.True(t, errors.Is(err, errFoo))
 }

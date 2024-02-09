@@ -11,6 +11,7 @@ import (
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/grpc/internal/jettisonpb"
+	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/models"
 )
@@ -103,7 +104,7 @@ func toStatus(err error) *status.Status {
 // fromStatus will unmarshal a *grpc.Status into a jettison error object,
 // returning a nil error if and only if no unexpected details were found on the
 // status.
-func fromStatus(s *status.Status) (*errors.JettisonError, bool) {
+func fromStatus(s *status.Status) (*internal.Error, bool) {
 	if s == nil {
 		return nil, false
 	}
@@ -115,8 +116,8 @@ func fromStatus(s *status.Status) (*errors.JettisonError, bool) {
 	return nil, false
 }
 
-func errorFromProto(we *jettisonpb.WrappedError) *errors.JettisonError {
-	je := &errors.JettisonError{
+func errorFromProto(we *jettisonpb.WrappedError) *internal.Error {
+	je := &internal.Error{
 		Message:    we.Message,
 		Binary:     we.Binary,
 		Code:       we.Code,
@@ -141,7 +142,7 @@ func errorToProto(err error) *jettisonpb.WrappedError {
 		return nil
 	}
 	var we jettisonpb.WrappedError
-	je, ok := err.(*errors.JettisonError)
+	je, ok := err.(*internal.Error)
 	if ok {
 		we.Message = removeNonUTF8(je.Message)
 		we.Binary = removeNonUTF8(je.Binary)

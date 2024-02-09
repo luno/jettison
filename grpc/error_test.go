@@ -16,6 +16,7 @@ import (
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/grpc/internal/jettisonpb"
+	"github.com/luno/jettison/internal"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/jtest"
 	"github.com/luno/jettison/models"
@@ -23,7 +24,7 @@ import (
 
 type source string
 
-func (s source) ApplyToError(je *errors.JettisonError) {
+func (s source) ApplyToError(je *internal.Error) {
 	je.Source = string(s)
 }
 
@@ -31,7 +32,7 @@ func TestFromStatus(t *testing.T) {
 	testCases := []struct {
 		name     string
 		details  []proto.Message
-		expJetty errors.JettisonError
+		expJetty internal.Error
 		expOk    bool
 	}{
 		{
@@ -39,7 +40,7 @@ func TestFromStatus(t *testing.T) {
 			details: []proto.Message{
 				&jettisonpb.WrappedError{Message: "test"},
 			},
-			expJetty: errors.JettisonError{Message: "test"},
+			expJetty: internal.Error{Message: "test"},
 			expOk:    true,
 		},
 		{
@@ -47,7 +48,7 @@ func TestFromStatus(t *testing.T) {
 			details: []proto.Message{
 				&jettisonpb.WrappedError{Code: "abc"},
 			},
-			expJetty: errors.JettisonError{Code: "abc"},
+			expJetty: internal.Error{Code: "abc"},
 			expOk:    true,
 		},
 	}
@@ -80,7 +81,7 @@ func TestToProto(t *testing.T) {
 		},
 		{
 			name:     "jettison error",
-			err:      &errors.JettisonError{Message: "hi"},
+			err:      &internal.Error{Message: "hi"},
 			expProto: &jettisonpb.WrappedError{Message: "hi"},
 		},
 		{
@@ -120,7 +121,7 @@ func TestToFromStatus(t *testing.T) {
 	testCases := []struct {
 		name     string
 		err      error
-		expJetty errors.JettisonError
+		expJetty internal.Error
 	}{
 		{
 			name: "single error, single param",
@@ -128,7 +129,7 @@ func TestToFromStatus(t *testing.T) {
 				j.KV("key", "value"),
 				errors.WithoutStackTrace(),
 			),
-			expJetty: errors.JettisonError{
+			expJetty: internal.Error{
 				Message: "msg",
 				Source:  "error_test.go TestToFromStatus",
 				KV: []models.KeyValue{
@@ -141,7 +142,7 @@ func TestToFromStatus(t *testing.T) {
 			err: errors.New("msg", errors.WithoutStackTrace(),
 				j.MKV{"key1": "value1", "key2": "value2"},
 			),
-			expJetty: errors.JettisonError{
+			expJetty: internal.Error{
 				Message: "msg",
 				Source:  "error_test.go TestToFromStatus",
 				KV: []models.KeyValue{
@@ -156,10 +157,10 @@ func TestToFromStatus(t *testing.T) {
 				errors.New("inner", errors.WithoutStackTrace()),
 				"outer", errors.WithoutStackTrace(),
 			),
-			expJetty: errors.JettisonError{
+			expJetty: internal.Error{
 				Message: "outer",
 				Source:  "error_test.go TestToFromStatus",
-				Err: &errors.JettisonError{
+				Err: &internal.Error{
 					Message: "inner",
 					Source:  "error_test.go TestToFromStatus",
 				},
@@ -171,10 +172,10 @@ func TestToFromStatus(t *testing.T) {
 				io.ErrUnexpectedEOF,
 				"jetty", errors.WithoutStackTrace(),
 			),
-			expJetty: errors.JettisonError{
+			expJetty: internal.Error{
 				Message: "jetty",
 				Source:  "error_test.go TestToFromStatus",
-				Err: &errors.JettisonError{
+				Err: &internal.Error{
 					Message: "unexpected EOF",
 				},
 			},
@@ -182,13 +183,13 @@ func TestToFromStatus(t *testing.T) {
 		{
 			name: "not jetty",
 			err:  io.ErrUnexpectedEOF,
-			expJetty: errors.JettisonError{
+			expJetty: internal.Error{
 				Message: "unexpected EOF",
 			},
 		},
 		{
 			name: "all jetty details, recursive",
-			err: &errors.JettisonError{
+			err: &internal.Error{
 				Message:    "msg",
 				Binary:     "binary",
 				StackTrace: []string{"stack", "trace"},
@@ -197,7 +198,7 @@ func TestToFromStatus(t *testing.T) {
 				KV: []models.KeyValue{
 					{Key: "k1", Value: "v1"},
 				},
-				Err: &errors.JettisonError{
+				Err: &internal.Error{
 					Message:    "inner msg",
 					Binary:     "binary2",
 					StackTrace: []string{"hello", "world"},
@@ -208,7 +209,7 @@ func TestToFromStatus(t *testing.T) {
 					},
 				},
 			},
-			expJetty: errors.JettisonError{
+			expJetty: internal.Error{
 				Message:    "msg",
 				Binary:     "binary",
 				StackTrace: []string{"stack", "trace"},
@@ -217,7 +218,7 @@ func TestToFromStatus(t *testing.T) {
 				KV: []models.KeyValue{
 					{Key: "k1", Value: "v1"},
 				},
-				Err: &errors.JettisonError{
+				Err: &internal.Error{
 					Message:    "inner msg",
 					Binary:     "binary2",
 					StackTrace: []string{"hello", "world"},
@@ -231,7 +232,7 @@ func TestToFromStatus(t *testing.T) {
 		},
 		{
 			name: "non-utf8 in strings",
-			err: &errors.JettisonError{
+			err: &internal.Error{
 				Message:    "msg\xc5",
 				Binary:     "b\xc5in",
 				StackTrace: []string{"\xc5 one", "two \xc5"},
@@ -244,7 +245,7 @@ func TestToFromStatus(t *testing.T) {
 					},
 				},
 			},
-			expJetty: errors.JettisonError{
+			expJetty: internal.Error{
 				Message:    "msg[snip]",
 				Binary:     "b[snip]in",
 				StackTrace: []string{"[snip] one", "two [snip]"},
@@ -261,12 +262,12 @@ func TestToFromStatus(t *testing.T) {
 		{
 			name: "non-jettison but can unwrap, results in some redundant messages",
 			err:  errors.Wrap(getStrconvErr(), "wrapper", errors.WithoutStackTrace()),
-			expJetty: errors.JettisonError{
+			expJetty: internal.Error{
 				Message: "wrapper",
 				Source:  "error_test.go TestToFromStatus",
-				Err: &errors.JettisonError{
+				Err: &internal.Error{
 					Message: "strconv.Atoi: parsing \"nan\": invalid syntax",
-					Err: &errors.JettisonError{
+					Err: &internal.Error{
 						Message: "invalid syntax",
 					},
 				},
@@ -275,14 +276,14 @@ func TestToFromStatus(t *testing.T) {
 		{
 			name:     "context deadline exceeded",
 			err:      context.DeadlineExceeded,
-			expJetty: errors.JettisonError{Message: context.DeadlineExceeded.Error()},
+			expJetty: internal.Error{Message: context.DeadlineExceeded.Error()},
 		},
 		{
 			name: "wrapped context deadline exceeded",
 			err:  errors.Wrap(context.DeadlineExceeded, "", errors.WithoutStackTrace()),
-			expJetty: errors.JettisonError{
+			expJetty: internal.Error{
 				Source: "error_test.go TestToFromStatus",
-				Err: &errors.JettisonError{
+				Err: &internal.Error{
 					Message: context.DeadlineExceeded.Error(),
 				},
 			},
@@ -299,16 +300,16 @@ func TestToFromStatus(t *testing.T) {
 	}
 }
 
-func errorEqual(t *testing.T, exp, act *errors.JettisonError) {
+func errorEqual(t *testing.T, exp, act *internal.Error) {
 	assert.Equal(t, exp.Message, act.Message)
 	assert.Equal(t, exp.Binary, act.Binary)
 	assert.Equal(t, exp.StackTrace, act.StackTrace)
 	assert.Equal(t, exp.Code, act.Code)
 	assert.Equal(t, exp.Source, act.Source)
 	assert.Equal(t, exp.KV, act.KV)
-	nextJe, ok := exp.Err.(*errors.JettisonError)
+	nextJe, ok := exp.Err.(*internal.Error)
 	if ok {
-		errorEqual(t, nextJe, act.Err.(*errors.JettisonError))
+		errorEqual(t, nextJe, act.Err.(*internal.Error))
 	} else {
 		jtest.Assert(t, exp.Err, act.Err)
 	}

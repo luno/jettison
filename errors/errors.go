@@ -3,19 +3,19 @@ package errors
 import (
 	stderrors "errors"
 
-	"golang.org/x/xerrors"
+	"github.com/luno/jettison/internal"
 )
 
-type ErrorOption func(je *JettisonError)
+type ErrorOption func(je *internal.Error)
 
-func (o ErrorOption) ApplyToError(je *JettisonError) {
+func (o ErrorOption) ApplyToError(je *internal.Error) {
 	o(je)
 }
 
 // WithStackTrace will add a new stack trace to this error
 func WithStackTrace() Option {
 	bin, tr := getTrace(1)
-	return ErrorOption(func(je *JettisonError) {
+	return ErrorOption(func(je *internal.Error) {
 		je.Binary = bin
 		je.StackTrace = tr
 	})
@@ -25,7 +25,7 @@ func WithStackTrace() Option {
 // the intention being to provide an equality check for jettison errors (see Is() for more details).
 // The default code (the error message) doesn't provide strong unique guarantees.
 func WithCode(code string) Option {
-	return ErrorOption(func(je *JettisonError) {
+	return ErrorOption(func(je *internal.Error) {
 		je.Code = code
 	})
 }
@@ -44,7 +44,7 @@ func WithCode(code string) Option {
 //	  return errors.Wrap(ErrFoo, "bar") // Wrapping ErrFoo adds a proper stack trace.
 //	}
 func WithoutStackTrace() Option {
-	return ErrorOption(func(je *JettisonError) {
+	return ErrorOption(func(je *internal.Error) {
 		je.Binary = ""
 		je.StackTrace = nil
 	})
@@ -53,19 +53,19 @@ func WithoutStackTrace() Option {
 func C(code string) Option {
 	c := WithCode(code)
 	st := WithoutStackTrace()
-	return ErrorOption(func(je *JettisonError) {
+	return ErrorOption(func(je *internal.Error) {
 		c.ApplyToError(je)
 		st.ApplyToError(je)
 	})
 }
 
 type Option interface {
-	ApplyToError(je *JettisonError)
+	ApplyToError(je *internal.Error)
 }
 
 // New creates a new JettisonError with a populated stack trace
 func New(msg string, ol ...Option) error {
-	je := &JettisonError{
+	je := &internal.Error{
 		Message: msg,
 		Source:  getSourceCode(1),
 	}
@@ -82,7 +82,7 @@ func Wrap(err error, msg string, ol ...Option) error {
 	if err == nil {
 		return nil
 	}
-	je := &JettisonError{
+	je := &internal.Error{
 		Message: msg,
 		Err:     err,
 		Source:  getSourceCode(1),
@@ -115,14 +115,8 @@ func IsAny(err error, targets ...error) bool {
 }
 
 // As is an alias of the standard library's errors.As() function.
-func As(err error, target interface{}) bool {
+func As(err error, target any) bool {
 	return stderrors.As(err, target)
-}
-
-// Opaque is an alias of golang.org/x/exp/errors.Opaque().
-// Deprecated. See https://github.com/golang/go/issues/29934#issuecomment-489682919
-func Opaque(err error) error {
-	return xerrors.Opaque(err)
 }
 
 // Unwrap is an alias of the standard library's errors.Unwrap() function.
@@ -141,7 +135,7 @@ func Join(err ...error) error {
 func GetCodes(err error) []string {
 	var ret []string
 	Walk(err, func(err error) bool {
-		je, ok := err.(*JettisonError)
+		je, ok := err.(*internal.Error)
 		if !ok {
 			return true
 		}
@@ -161,7 +155,7 @@ func GetLastStackTrace(err error) (string, []string, bool) {
 	var stack []string
 	var found bool
 	Walk(err, func(err error) bool {
-		je, ok := err.(*JettisonError)
+		je, ok := err.(*internal.Error)
 		if !ok || je.Binary == "" {
 			return true
 		}
@@ -177,7 +171,7 @@ func GetLastStackTrace(err error) (string, []string, bool) {
 func GetKeyValues(err error) map[string]string {
 	ret := make(map[string]string)
 	Walk(err, func(err error) bool {
-		je, ok := err.(*JettisonError)
+		je, ok := err.(*internal.Error)
 		if ok {
 			for _, kv := range je.KV {
 				if _, ok := ret[kv.Key]; ok {
@@ -278,4 +272,8 @@ func extendPath(path []error) ([][]error, bool) {
 		return ret, true
 	}
 	return nil, false
+}
+
+func SetLegacyCallback(f func(src, target error)) {
+	internal.SetLegacyCallback(f)
 }
