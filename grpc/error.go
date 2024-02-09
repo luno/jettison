@@ -60,15 +60,17 @@ func FromError(err error) error {
 		return err
 	}
 	je, ok := fromStatus(s)
-	if !ok {
-		return Error{
-			s: s, err: errors.New(
-				s.Message(),
-				j.KV("code", s.Code()),
-				errors.WithoutStackTrace()),
-		}
+	if ok {
+		return Error{s: s, err: je}
 	}
-	return Error{s: s, err: je}
+	// Status error didn't have an encoded error within it, return basic error.
+	return Error{
+		s: s,
+		err: errors.New(s.Message(),
+			j.KV("code", s.Code()),
+			errors.WithoutStackTrace(),
+		),
+	}
 }
 
 // toStatus marshals the given jettison error into a *grpc.Status object,

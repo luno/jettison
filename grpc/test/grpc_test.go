@@ -235,3 +235,23 @@ func TestContextKeys(t *testing.T) {
 	codes := errors.GetCodes(err)
 	assert.Equal(t, []string{"CODE1234"}, codes)
 }
+
+func TestCancel(t *testing.T) {
+	l, err := net.Listen("tcp", "")
+	jtest.RequireNil(t, err)
+	defer l.Close()
+
+	_, stop := testgrpc.NewServer(t, l)
+	defer stop()
+
+	cl, err := testgrpc.NewClient(t, l.Addr().String())
+	jtest.RequireNil(t, err)
+	defer cl.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err = cl.ErrorWithCode(ctx, "blah")
+	jtest.Assert(t, context.Canceled, err)
+	assert.Equal(t, context.Canceled.Error(), err.Error())
+}
