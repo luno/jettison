@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"sync/atomic"
 
 	"golang.org/x/xerrors"
 
@@ -89,31 +88,15 @@ func (je *Error) Is(target error) bool {
 	if je == target {
 		return true
 	}
+	if je.Code == "" {
+		return false
+	}
+	// Only do a shallow check here, don't unwrap, we rely on errors.Is to recur into our wrapped error
 	targetJErr, ok := target.(*Error)
 	if !ok {
 		return false
 	}
-	if je.Code != "" {
-		return targetJErr.Code == je.Code
-	}
-	// TODO(adam): Remove this behaviour
-	if je.Message != "" {
-		match := targetJErr.Message == je.Message
-		if match {
-			f := legacyCallback.Load()
-			if f != nil && *f != nil {
-				(*f)(je, target)
-			}
-		}
-		return match
-	}
-	return false
-}
-
-var legacyCallback atomic.Pointer[func(src, target error)]
-
-func SetLegacyCallback(f func(src, target error)) {
-	legacyCallback.Store(&f)
+	return targetJErr.Code == je.Code
 }
 
 // printer implements xerrors.Printer interface.

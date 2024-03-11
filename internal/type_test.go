@@ -2,15 +2,12 @@ package internal_test
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
-	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/luno/jettison/internal"
-	"github.com/luno/jettison/jtest"
 	"github.com/luno/jettison/models"
 )
 
@@ -106,61 +103,4 @@ func TestFormat(t *testing.T) {
 			assert.Equal(t, tc.expVerbose, fmt.Sprintf("%#v", tc.err))
 		})
 	}
-}
-
-func TestLegacyCallback(t *testing.T) {
-	testCases := []struct {
-		name    string
-		err     error
-		target  error
-		expCall bool
-	}{
-		{name: "nil errors"},
-		{
-			name: "non jettison errors",
-			err:  io.EOF, target: io.EOF,
-		},
-		{
-			name:   "compared by message, but not equal",
-			err:    &internal.Error{Message: "one two three"},
-			target: &internal.Error{Message: "four five six"},
-		},
-		{
-			name:    "compared by message",
-			err:     &internal.Error{Message: "seven"},
-			target:  &internal.Error{Message: "seven"},
-			expCall: true,
-		},
-		{
-			name:   "compare to standard error",
-			err:    &internal.Error{Message: "unexpected EOF"},
-			target: io.ErrUnexpectedEOF,
-		},
-		{
-			name:   "compare standard error to jettison",
-			err:    io.ErrUnexpectedEOF,
-			target: &internal.Error{Message: "unexpected EOF"},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			var called bool
-			setCallbackForTesting(t, func(src, target error) {
-				called = true
-				jtest.Assert(t, tc.err, src)
-				jtest.Assert(t, tc.target, target)
-			})
-
-			_ = errors.Is(tc.err, tc.target)
-			assert.Equal(t, tc.expCall, called)
-		})
-	}
-}
-
-func setCallbackForTesting(t *testing.T, f func(src, target error)) {
-	internal.SetLegacyCallback(f)
-	t.Cleanup(func() {
-		internal.SetLegacyCallback(nil)
-	})
 }

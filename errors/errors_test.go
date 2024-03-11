@@ -176,7 +176,7 @@ func TestIs(t *testing.T) {
 			name:      "new same message is equal",
 			err:       errors.New("hello, world"),
 			target:    errors.New("hello, world"),
-			expResult: true,
+			expResult: false,
 		},
 		{
 			name:      "standard lib err return false",

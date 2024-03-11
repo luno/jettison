@@ -273,7 +273,3 @@ func extendPath(path []error) ([][]error, bool) {
 	}
 	return nil, false
 }
-
-func SetLegacyCallback(f func(src, target error)) {
-	internal.SetLegacyCallback(f)
-}

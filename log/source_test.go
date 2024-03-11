@@ -8,7 +8,6 @@ import (
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/log"
-	"github.com/luno/jettison/trace"
 )
 
 // TestSourceInfo tests the log source which includes line numbers.
@@ -16,6 +15,7 @@ import (
 func TestSourceInfo(t *testing.T) {
 	buf := new(bytes.Buffer)
 	log.SetDefaultLoggerForTesting(t, buf)
+	errors.SetTraceConfigTesting(t, errors.TestingConfig)
 	log.Info(nil, "message")
 	goldie.New(t).Assert(t, "source_info", buf.Bytes())
 }
@@ -25,6 +25,7 @@ func TestSourceInfo(t *testing.T) {
 func TestSourceError(t *testing.T) {
 	buf := new(bytes.Buffer)
 	log.SetDefaultLoggerForTesting(t, buf)
+	errors.SetTraceConfigTesting(t, errors.TestingConfig)
 	log.Error(nil, errors.New("test error"))
-	goldie.New(t).Assert(t, "source_error", trace.StripTestStacks(t, buf.Bytes()))
+	goldie.New(t).Assert(t, "source_error", buf.Bytes())
 }
