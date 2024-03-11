@@ -1,10 +1,12 @@
 package trace
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
 
+	"github.com/go-stack/stack"
 	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/assert"
 )
@@ -26,6 +28,18 @@ func TestStackTrace(t *testing.T) {
 			pkgConfig: StackConfig{PackagesShown: []string{PackagePath(StackConfig{})}},
 		},
 		{
+			name:      "no jettison",
+			pkgConfig: StackConfig{TrimRuntime: true, PackagesHidden: []string{PackagePath(StackConfig{})}},
+		},
+		{
+			name: "package in both, still shows",
+			pkgConfig: StackConfig{
+				TrimRuntime:    true,
+				PackagesShown:  []string{PackagePath(StackConfig{})},
+				PackagesHidden: []string{PackagePath(StackConfig{})},
+			},
+		},
+		{
 			name:      "no lambdas",
 			pkgConfig: StackConfig{RemoveLambdas: true, TrimRuntime: true},
 		},
@@ -33,6 +47,9 @@ func TestStackTrace(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			tc.pkgConfig.FormatStack = func(call stack.Call) string {
+				return fmt.Sprintf("%+s %n", call, call)
+			}
 			tr := callingFunction(tc.skip, tc.pkgConfig)
 			goldie.New(t).Assert(t, t.Name(), []byte(strings.Join(tr, "\n")))
 		})

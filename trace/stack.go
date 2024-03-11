@@ -20,8 +20,12 @@ type StackConfig struct {
 	RemoveLambdas bool
 	// PackagesShown, if not empty, will limit the call stack to functions from these packages
 	PackagesShown []string
+	// PackagesHidden will remove any calls in the stack from these packages
+	// If a call matches a package in PackagesShown and PackagesHidden, it will be shown
+	PackagesHidden []string
 	// TrimRuntime will remove entries from the Go runtime
 	TrimRuntime bool
+
 	// FormatStack is the format for lines in the stack trace
 	// The default will print the source reference and the function name
 	FormatStack func(stack.Call) string
@@ -36,7 +40,7 @@ func (c StackConfig) shouldKeepCall(call stack.Call) bool {
 			return false
 		}
 	}
-	if len(c.PackagesShown) == 0 {
+	if len(c.PackagesShown) == 0 && len(c.PackagesHidden) == 0 {
 		return true
 	}
 	pkgName := fmt.Sprintf("%+k", call)
@@ -45,7 +49,12 @@ func (c StackConfig) shouldKeepCall(call stack.Call) bool {
 			return true
 		}
 	}
-	return false
+	for _, p := range c.PackagesHidden {
+		if strings.HasPrefix(pkgName, p) {
+			return false
+		}
+	}
+	return len(c.PackagesShown) == 0
 }
 
 func (c StackConfig) formatStackLine(call stack.Call) string {
