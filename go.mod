@@ -10,7 +10,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/net v0.23.0
 	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f
-	google.golang.org/grpc v1.56.0
+	google.golang.org/grpc v1.56.3
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/yaml.v2 v2.4.0
 )
