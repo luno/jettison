@@ -16,7 +16,7 @@ check_fmt:
 unit_test:
   parallel:
     matrix:
-      - GO: ["1.20"]
+      - GO: ["1.21", "1.22"]
   image:
     name: golang:$GO
   stage: test
