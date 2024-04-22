@@ -50,6 +50,7 @@ func Require(t testing.TB, expected, actual error, msg ...interface{}) {
 }
 
 func assertJettisonErrors(t testing.TB, expected, actual error, msgs ...interface{}) {
+	t.Helper()
 	expectedKeys := errors.GetKeyValues(expected)
 	if len(expectedKeys) == 0 {
 		// If we have no keys in the expected error, then we don't want to compare further.
