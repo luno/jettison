@@ -7,13 +7,19 @@ import (
 	"github.com/luno/jettison/j"
 )
 
-func AssertKeyValues(t testing.TB, err error, kvs j.MKS, msg ...any) bool {
+// AssertKeyValues asserts that err contains at least the key values in kvs
+//
+// jtest.AssertKeyValues(t, j.MKS{"key":"value"}, err)
+//
+// If err contains keys that aren't in kvs they are ignored
+// If err doesn't contain a key in kvs, then the test will fail
+func AssertKeyValues(t testing.TB, expKVs j.MKS, err error, msg ...any) bool {
 	t.Helper()
 
 	var failure bool
 	errKVs := errors.GetKeyValues(err)
 
-	for expKey, expVal := range kvs {
+	for expKey, expVal := range expKVs {
 		val, has := errKVs[expKey]
 		if !has {
 			t.Error(failJKeyNotPresent(expKey, err, msg))
@@ -27,10 +33,16 @@ func AssertKeyValues(t testing.TB, err error, kvs j.MKS, msg ...any) bool {
 	return !failure
 }
 
-func RequireKeyValues(t testing.TB, err error, kvs j.MKS, msg ...any) bool {
+// RequireKeyValues asserts that err contains at least the key values in kvs
+//
+// jtest.RequireKeyValues(t, j.MKS{"key":"value"}, err)
+//
+// If the assertion fails then the test will terminate immediately.
+// See AssertKeyValues for more details
+func RequireKeyValues(t testing.TB, kvs j.MKS, err error, msg ...any) bool {
 	t.Helper()
 
-	pass := AssertKeyValues(t, err, kvs, msg...)
+	pass := AssertKeyValues(t, kvs, err, msg...)
 	if !pass {
 		t.FailNow()
 	}

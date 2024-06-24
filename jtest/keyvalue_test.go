@@ -88,7 +88,7 @@ func TestAssertKeyValue(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockT := new(testing.T)
 
-			pass := AssertKeyValues(mockT, tc.err, tc.kvs)
+			pass := AssertKeyValues(mockT, tc.kvs, tc.err)
 			if pass != tc.expPass {
 				t.Errorf("Expected test result %v, got %v", tc.expPass, pass)
 			}
