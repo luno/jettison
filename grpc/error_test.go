@@ -62,7 +62,7 @@ func TestFromStatus(t *testing.T) {
 			je, ok := fromStatus(s)
 			require.Equal(t, tc.expOk, ok)
 			if ok {
-				assert.Equal(t, tc.expJetty, *je)
+				assert.Equal(t, &tc.expJetty, je)
 			}
 		})
 	}
@@ -119,9 +119,9 @@ func TestToFromStatus(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name     string
-		err      error
-		expJetty internal.Error
+		name string
+		err  error
+		exp  error
 	}{
 		{
 			name: "single error, single param",
@@ -129,7 +129,7 @@ func TestToFromStatus(t *testing.T) {
 				j.KV("key", "value"),
 				errors.WithoutStackTrace(),
 			),
-			expJetty: internal.Error{
+			exp: &internal.Error{
 				Message: "msg",
 				Source:  "error_test.go TestToFromStatus",
 				KV: []models.KeyValue{
@@ -142,7 +142,7 @@ func TestToFromStatus(t *testing.T) {
 			err: errors.New("msg", errors.WithoutStackTrace(),
 				j.MKV{"key1": "value1", "key2": "value2"},
 			),
-			expJetty: internal.Error{
+			exp: &internal.Error{
 				Message: "msg",
 				Source:  "error_test.go TestToFromStatus",
 				KV: []models.KeyValue{
@@ -157,7 +157,7 @@ func TestToFromStatus(t *testing.T) {
 				errors.New("inner", errors.WithoutStackTrace()),
 				"outer", errors.WithoutStackTrace(),
 			),
-			expJetty: internal.Error{
+			exp: &internal.Error{
 				Message: "outer",
 				Source:  "error_test.go TestToFromStatus",
 				Err: &internal.Error{
@@ -172,7 +172,7 @@ func TestToFromStatus(t *testing.T) {
 				io.ErrUnexpectedEOF,
 				"jetty", errors.WithoutStackTrace(),
 			),
-			expJetty: internal.Error{
+			exp: &internal.Error{
 				Message: "jetty",
 				Source:  "error_test.go TestToFromStatus",
 				Err: &internal.Error{
@@ -183,7 +183,7 @@ func TestToFromStatus(t *testing.T) {
 		{
 			name: "not jetty",
 			err:  io.ErrUnexpectedEOF,
-			expJetty: internal.Error{
+			exp: &internal.Error{
 				Message: "unexpected EOF",
 			},
 		},
@@ -209,7 +209,7 @@ func TestToFromStatus(t *testing.T) {
 					},
 				},
 			},
-			expJetty: internal.Error{
+			exp: &internal.Error{
 				Message:    "msg",
 				Binary:     "binary",
 				StackTrace: []string{"stack", "trace"},
@@ -245,7 +245,7 @@ func TestToFromStatus(t *testing.T) {
 					},
 				},
 			},
-			expJetty: internal.Error{
+			exp: &internal.Error{
 				Message:    "msg[snip]",
 				Binary:     "b[snip]in",
 				StackTrace: []string{"[snip] one", "two [snip]"},
@@ -262,7 +262,7 @@ func TestToFromStatus(t *testing.T) {
 		{
 			name: "non-jettison but can unwrap, results in some redundant messages",
 			err:  errors.Wrap(getStrconvErr(), "wrapper", errors.WithoutStackTrace()),
-			expJetty: internal.Error{
+			exp: &internal.Error{
 				Message: "wrapper",
 				Source:  "error_test.go TestToFromStatus",
 				Err: &internal.Error{
@@ -274,14 +274,38 @@ func TestToFromStatus(t *testing.T) {
 			},
 		},
 		{
-			name:     "context deadline exceeded",
-			err:      context.DeadlineExceeded,
-			expJetty: internal.Error{Message: context.DeadlineExceeded.Error()},
+			name: "joined message not redundant",
+			err:  errors.Join(errors.Join(errors.New("hello", j.C("123")))),
+			exp:  errors.Join(errors.Join(&internal.Error{Message: "hello", Code: "123", Source: "error_test.go TestToFromStatus"})),
+		},
+		{
+			name: "joined wrapped message",
+			err: errors.Join(
+				errors.Wrap(
+					errors.Join(
+						errors.New("hello", j.C("123")),
+					), "wrap", errors.WithoutStackTrace(),
+				),
+			),
+			exp: errors.Join(
+				&internal.Error{
+					Message: "wrap",
+					Source:  "error_test.go TestToFromStatus",
+					Err: errors.Join(
+						&internal.Error{Message: "hello", Code: "123", Source: "error_test.go TestToFromStatus"},
+					),
+				},
+			),
+		},
+		{
+			name: "context deadline exceeded",
+			err:  context.DeadlineExceeded,
+			exp:  &internal.Error{Message: context.DeadlineExceeded.Error()},
 		},
 		{
 			name: "wrapped context deadline exceeded",
 			err:  errors.Wrap(context.DeadlineExceeded, "", errors.WithoutStackTrace()),
-			expJetty: internal.Error{
+			exp: &internal.Error{
 				Source: "error_test.go TestToFromStatus",
 				Err: &internal.Error{
 					Message: context.DeadlineExceeded.Error(),
@@ -295,24 +319,25 @@ func TestToFromStatus(t *testing.T) {
 			st := toStatus(tc.err)
 			je, ok := fromStatus(st)
 			assert.True(t, ok)
-			errorEqual(t, &tc.expJetty, je)
+			errorEqual(t, tc.exp, je)
 		})
 	}
 }
 
-func errorEqual(t *testing.T, exp, act *internal.Error) {
-	assert.Equal(t, exp.Message, act.Message)
-	assert.Equal(t, exp.Binary, act.Binary)
-	assert.Equal(t, exp.StackTrace, act.StackTrace)
-	assert.Equal(t, exp.Code, act.Code)
-	assert.Equal(t, exp.Source, act.Source)
-	assert.Equal(t, exp.KV, act.KV)
-	nextJe, ok := exp.Err.(*internal.Error)
-	if ok {
-		errorEqual(t, nextJe, act.Err.(*internal.Error))
-	} else {
-		jtest.Assert(t, exp.Err, act.Err)
+func errorEqual(t *testing.T, exp, act error) {
+	expJe, ok := exp.(*internal.Error)
+	if !ok {
+		assert.Equal(t, exp, act)
+		return
 	}
+	je := act.(*internal.Error)
+	assert.Equal(t, expJe.Message, je.Message)
+	assert.Equal(t, expJe.Binary, je.Binary)
+	assert.Equal(t, expJe.StackTrace, je.StackTrace)
+	assert.Equal(t, expJe.Code, je.Code)
+	assert.Equal(t, expJe.Source, je.Source)
+	assert.Equal(t, expJe.KV, je.KV)
+	errorEqual(t, expJe.Err, je.Err)
 }
 
 func TestGRPCStatus(t *testing.T) {
@@ -515,6 +540,41 @@ func TestFromError(t *testing.T) {
 			err := FromError(tc.err)
 			assert.NotNil(t, err)
 			assert.Equal(t, tc.expError, err.Error())
+		})
+	}
+}
+
+func TestGRPCErrorMessage(t *testing.T) {
+	testCases := []struct {
+		name       string
+		err        error
+		expMessage string
+	}{
+		{name: "empty", expMessage: "<nil>"},
+		{
+			name:       "plain error",
+			err:        errors.New("hello, world"),
+			expMessage: "hello, world",
+		},
+		{
+			name: "multi error",
+			err: errors.Join(
+				errors.New("error one"),
+				errors.New("error two"),
+			),
+			expMessage: "error one\nerror two",
+		},
+		{
+			name:       "join join",
+			err:        errors.Join(errors.Join(errors.New("message goes here"))),
+			expMessage: "message goes here",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := incomingError(status.Convert(outgoingError(tc.err)).Err())
+			assert.Equal(t, tc.expMessage, fmt.Sprint(err))
 		})
 	}
 }

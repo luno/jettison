@@ -60,9 +60,9 @@ func FromError(err error) error {
 		// Another interceptor may have already converted this error
 		return err
 	}
-	je, ok := fromStatus(s)
+	convErr, ok := fromStatus(s)
 	if ok {
-		return Error{s: s, err: je}
+		return Error{s: s, err: convErr}
 	}
 	// Status error didn't have an encoded error within it, return basic error.
 	return Error{
@@ -104,7 +104,7 @@ func toStatus(err error) *status.Status {
 // fromStatus will unmarshal a *grpc.Status into a jettison error object,
 // returning a nil error if and only if no unexpected details were found on the
 // status.
-func fromStatus(s *status.Status) (*internal.Error, bool) {
+func fromStatus(s *status.Status) (error, bool) {
 	if s == nil {
 		return nil, false
 	}
@@ -116,7 +116,14 @@ func fromStatus(s *status.Status) (*internal.Error, bool) {
 	return nil, false
 }
 
-func errorFromProto(we *jettisonpb.WrappedError) *internal.Error {
+func errorFromProto(we *jettisonpb.WrappedError) error {
+	if len(we.JoinedErrors) > 0 {
+		var errs []error
+		for _, joinErr := range we.JoinedErrors {
+			errs = append(errs, errorFromProto(joinErr))
+		}
+		return stderrors.Join(errs...)
+	}
 	je := &internal.Error{
 		Message:    we.Message,
 		Binary:     we.Binary,
@@ -125,13 +132,7 @@ func errorFromProto(we *jettisonpb.WrappedError) *internal.Error {
 		StackTrace: we.StackTrace,
 		KV:         kvFromProto(we.KeyValues),
 	}
-	if len(we.JoinedErrors) > 0 {
-		var errs []error
-		for _, joinErr := range we.JoinedErrors {
-			errs = append(errs, errorFromProto(joinErr))
-		}
-		je.Err = stderrors.Join(errs...)
-	} else if we.WrappedError != nil {
+	if we.WrappedError != nil {
 		je.Err = errorFromProto(we.WrappedError)
 	}
 	return je
@@ -156,16 +157,20 @@ func errorToProto(err error) *jettisonpb.WrappedError {
 			}
 		}
 		we.KeyValues = kvToProto(je.KV)
-	} else {
-		we.Message = removeNonUTF8(err.Error())
 	}
 	switch unw := err.(type) {
 	case interface{ Unwrap() error }:
+		// Wasn't a jettison internal.Error, copy the full message
+		if !ok {
+			we.Message = err.Error()
+		}
 		we.WrappedError = errorToProto(unw.Unwrap())
 	case interface{ Unwrap() []error }:
 		for _, e := range unw.Unwrap() {
 			we.JoinedErrors = append(we.JoinedErrors, errorToProto(e))
 		}
+	default:
+		we.Message = removeNonUTF8(err.Error())
 	}
 	return &we
 }

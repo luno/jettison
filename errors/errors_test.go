@@ -214,6 +214,18 @@ func TestIs(t *testing.T) {
 			target:    id3,
 			expResult: true,
 		},
+		{
+			name:      "one wrapped with jc",
+			err:       errors.Wrap(errors.New("", j.C("code1234")), ""),
+			target:    errors.New("", j.C("code1234")),
+			expResult: true,
+		},
+		{
+			name:      "target wrapped, fails Is check as we dont recur into target",
+			err:       errors.New("", j.C("code1234")),
+			target:    errors.Wrap(errors.New("", j.C("code1234")), ""),
+			expResult: false,
+		},
 	}
 
 	for _, tc := range testCases {
