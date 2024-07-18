@@ -1,0 +1,3 @@
+{
+  "extends": ["github>luno/.github:default-renovate-config.json5"]
+}
