@@ -150,15 +150,15 @@ func normalise(key string) string {
 	// Keys beginning with 'grpc-' are disallowed.
 	key = strings.TrimPrefix(key, "grpc-")
 
-	var res string
+	var res strings.Builder
 	for _, ch := range key {
 		// Remove illegal characters from the key.
 		if !allowedCharsMap[ch] {
 			continue
 		}
 
-		res += string(ch)
+		res.WriteRune(ch)
 	}
 
-	return res
+	return res.String()
 }
