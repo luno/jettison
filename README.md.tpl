@@ -31,7 +31,7 @@ to a string by default).
 Jettison also provides gRPC middleware that automatically groups the errors 
 in a chain by the gRPC server (or "hop") they originated from.
 
-See the `jettison/example` package for a more complete usage example, including
+See the `jettison/_example` package for a more complete usage example, including
 a gRPC server/client passing jettison errors over the wire.
 
 ```GO
@@ -66,7 +66,7 @@ An example log written via `log.Info`:
 ```JSON
 {
   "message": "entering the example function",
-  "source": "jettison/example/example.go:9",
+  "source": "jettison/_example/example.go:9",
   "level": "info",
   "parameters": [
     {
@@ -81,7 +81,7 @@ An example log written via `log.Error`:
 ```JSON
 {
   "message": "a jettison error",
-  "source": "jettison/example/example.go:18",
+  "source": "jettison/_example/example.go:18",
   "level": "error",
   "hops": [
     {
@@ -89,7 +89,7 @@ An example log written via `log.Error`:
       "errors": [
         {
           "message": "a jettison error",
-          "source": "jettison/example/example.go:14",
+          "source": "jettison/_example/example.go:14",
           "parameters": [
             {
               "key": "key",
