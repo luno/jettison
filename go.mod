@@ -7,7 +7,7 @@ require (
 	github.com/go-stack/stack v1.8.1
 	github.com/golang/protobuf v1.5.4
 	github.com/sebdah/goldie/v2 v2.5.3
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	golang.org/x/net v0.33.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 	google.golang.org/grpc v1.63.2
