@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/runtime/protoiface"
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/grpc/internal/jettisonpb"
@@ -31,13 +31,13 @@ func (s source) ApplyToError(je *internal.Error) {
 func TestFromStatus(t *testing.T) {
 	testCases := []struct {
 		name     string
-		details  []proto.Message
+		details  []protoiface.MessageV1
 		expJetty internal.Error
 		expOk    bool
 	}{
 		{
 			name: "only a wrapped error",
-			details: []proto.Message{
+			details: []protoiface.MessageV1{
 				&jettisonpb.WrappedError{Message: "test"},
 			},
 			expJetty: internal.Error{Message: "test"},
@@ -45,7 +45,7 @@ func TestFromStatus(t *testing.T) {
 		},
 		{
 			name: "wrapped meta",
-			details: []proto.Message{
+			details: []protoiface.MessageV1{
 				&jettisonpb.WrappedError{Code: "abc"},
 			},
 			expJetty: internal.Error{Code: "abc"},

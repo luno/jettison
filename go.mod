@@ -5,7 +5,6 @@ go 1.23.4
 require (
 	github.com/dave/dst v0.27.3
 	github.com/go-stack/stack v1.8.1
-	github.com/golang/protobuf v1.5.4
 	github.com/sebdah/goldie/v2 v2.5.5
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/net v0.33.0
