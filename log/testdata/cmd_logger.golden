@@ -1,11 +1,11 @@
-I 00:00:00.000 g/l/j/log/cmdlogger_test.go:23: this is an info message[ctx_key=ctx_val,info_key=info_val]
-E 00:00:00.000 g/l/j/log/cmdlogger_test.go:24: error(s) [ctx_key=ctx_val]
-  EOF(error without stack trace)
-E 00:00:00.000 g/l/j/log/cmdlogger_test.go:25: error(s) [ctx_key=ctx_val,error_key=error_val]
-  example error[error_key=error_val]
+I 00:00:00.000 g/l/j/log/cmdlogger_test.go:25: this is an info message[ctx_key=ctx_val,info_key=info_val]
+E 00:00:00.000 g/l/j/log/cmdlogger_test.go:26: error(s) [ctx_key=ctx_val]
+ 🚨 EOF(error without stack trace)
+E 00:00:00.000 g/l/j/log/cmdlogger_test.go:27: error(s) [ctx_key=ctx_val,error_key=error_val]
+ 🚨 example error[error_key=error_val]
   - cmdlogger_test.go TestCmdLogger
-E 00:00:00.000 g/l/j/log/cmdlogger_test.go:31: error(s) [ctx_key=ctx_val]
-  error one
+E 00:00:00.000 g/l/j/log/cmdlogger_test.go:33: error(s) [ctx_key=ctx_val]
+ 🚨 error one
   - cmdlogger_test.go TestCmdLogger
-  error two
+ 🚨 error two
   - cmdlogger_test.go TestCmdLogger
