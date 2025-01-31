@@ -4,6 +4,7 @@ go 1.23.4
 
 require (
 	github.com/dave/dst v0.27.3
+	github.com/fatih/color v1.18.0
 	github.com/go-stack/stack v1.8.1
 	github.com/golang/protobuf v1.5.4
 	github.com/sebdah/goldie/v2 v2.5.5
@@ -18,6 +19,8 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect

@@ -14,6 +14,8 @@ import (
 	"github.com/luno/jettison/log"
 )
 
+//go:generate go test . -run TestCmdLogger -update
+
 func TestCmdLogger(t *testing.T) {
 	var buf bytes.Buffer
 	log.SetCmdLoggerForTesting(t, &buf)
