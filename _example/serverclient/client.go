@@ -6,8 +6,8 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/luno/jettison/_example/examplepb"
 	"github.com/luno/jettison/errors"
-	"github.com/luno/jettison/example/examplepb"
 	jetgrpc "github.com/luno/jettison/grpc"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/log"

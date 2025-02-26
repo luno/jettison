@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/luno/jettison/example/serverclient"
+	"github.com/luno/jettison/_example/serverclient"
 	"github.com/luno/jettison/j"
 	"github.com/luno/jettison/log"
 )
