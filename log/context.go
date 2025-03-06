@@ -2,6 +2,7 @@ package log
 
 import (
 	"context"
+	"slices"
 
 	"github.com/luno/jettison/models"
 )
@@ -30,10 +31,14 @@ func ContextWith(ctx context.Context, opts ...ContextOption) context.Context {
 }
 
 func ContextWithKeyValues(ctx context.Context, add []models.KeyValue) context.Context {
+	kvs := ContextKeyValues(ctx)
+	add = slices.DeleteFunc(add, func(kv models.KeyValue) bool {
+		return slices.Contains(kvs, kv)
+	})
 	if len(add) == 0 {
 		return ctx
 	}
-	kvs := append(ContextKeyValues(ctx), add...)
+	kvs = append(kvs, add...)
 	return context.WithValue(ctx, key, kvs)
 }
 
