@@ -48,6 +48,24 @@ func TestContextWith(t *testing.T) {
 				{Key: "two", Value: "2"},
 			},
 		},
+		{
+			name: "dedupe kvs",
+			ctx: log.ContextWith(context.Background(), j.MKV{
+				"one": "1",
+				"two": "2",
+			}),
+			opts: []log.ContextOption{j.MKV{
+				"one":   "3!",
+				"two":   "2",
+				"three": "3",
+			}},
+			expKVs: []models.KeyValue{
+				{Key: "one", Value: "1"},
+				{Key: "two", Value: "2"},
+				{Key: "one", Value: "3!"},
+				{Key: "three", Value: "3"},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
