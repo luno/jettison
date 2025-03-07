@@ -75,3 +75,26 @@ func TestContextWith(t *testing.T) {
 		})
 	}
 }
+
+func TestChildDoesntChangeParent(t *testing.T) {
+	parent := log.ContextWith(context.Background(), j.KV("one", "1"))
+	child := log.ContextWith(parent, j.KV("two", "2"))
+
+	expParent := []models.KeyValue{{Key: "one", Value: "1"}}
+	assert.Equal(t, expParent, log.ContextKeyValues(parent))
+	expChild := []models.KeyValue{
+		{Key: "one", Value: "1"},
+		{Key: "two", Value: "2"},
+	}
+	assert.Equal(t, expChild, log.ContextKeyValues(child))
+}
+
+func BenchmarkContextWith(b *testing.B) {
+	b.ReportAllocs()
+	b.SetBytes(1)
+	ctx := log.ContextWith(context.Background(), j.KV("one", "1"))
+
+	for range b.N {
+		_ = log.ContextWith(ctx, j.KV("one", "1"))
+	}
+}
