@@ -62,9 +62,7 @@ func contextKV(ctx context.Context) []models.KeyValue {
 	if ctx == nil {
 		return nil
 	}
+	// nil will return false, and we can return an empty slice safely
 	kvs, _ := ctx.Value(key).([]models.KeyValue)
-	if len(kvs) == 0 {
-		return nil
-	}
-	return ctx.Value(key).([]models.KeyValue)
+	return kvs
 }
