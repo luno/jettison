@@ -2,9 +2,8 @@ package log
 
 import (
 	"context"
-	"slices"
-
 	"github.com/luno/jettison/models"
+	"slices"
 )
 
 // contextKey is used to index jettison options in the given
@@ -23,27 +22,43 @@ type ContextOption interface {
 // passed to Info or Error, the options are automatically applied to
 // the resulting log.
 func ContextWith(ctx context.Context, opts ...ContextOption) context.Context {
-	var add []models.KeyValue
-	for _, o := range opts {
-		add = append(add, o.ContextKeys()...)
+	if len(opts) == 0 {
+		return ctx
+	}
+	add := opts[0].ContextKeys()
+	for i := 1; i < len(opts); i++ {
+		add = append(add, opts[i].ContextKeys()...)
 	}
 	return ContextWithKeyValues(ctx, add)
 }
 
 func ContextWithKeyValues(ctx context.Context, add []models.KeyValue) context.Context {
-	kvs := ContextKeyValues(ctx)
+	kvs := contextKV(ctx)
 	add = slices.DeleteFunc(add, func(kv models.KeyValue) bool {
 		return slices.Contains(kvs, kv)
 	})
 	if len(add) == 0 {
 		return ctx
 	}
-	kvs = append(kvs, add...)
-	return context.WithValue(ctx, key, kvs)
+	// we need to make a new slice for the child context
+	nkv := make([]models.KeyValue, len(kvs)+len(add))
+	copy(nkv, kvs)
+	copy(nkv[len(kvs):], add)
+	return context.WithValue(ctx, key, nkv)
 }
 
 // ContextKeyValues returns the list of jettison key values options contained in the given context.
 func ContextKeyValues(ctx context.Context) []models.KeyValue {
+	kvs := contextKV(ctx)
+	if len(kvs) == 0 {
+		return nil
+	}
+	ret := make([]models.KeyValue, len(kvs))
+	copy(ret, kvs)
+	return ret
+}
+
+func contextKV(ctx context.Context) []models.KeyValue {
 	if ctx == nil {
 		return nil
 	}
@@ -51,7 +66,5 @@ func ContextKeyValues(ctx context.Context) []models.KeyValue {
 	if len(kvs) == 0 {
 		return nil
 	}
-	ret := make([]models.KeyValue, len(kvs))
-	copy(ret, kvs)
-	return ret
+	return ctx.Value(key).([]models.KeyValue)
 }
