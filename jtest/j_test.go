@@ -150,13 +150,13 @@ func TestPretty(t *testing.T) {
 			expected: `- message: a
   code: error_a
   kv:
-  - key: wrap
-    value: "true"
+    - key: wrap
+      value: "true"
 - message: b
   code: error_b
   kv:
-  - key: wrap
-    value: "true"
+    - key: wrap
+      value: "true"
 `,
 		},
 	}
