@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"testing"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/luno/jettison/errors"
 	"github.com/luno/jettison/internal"
