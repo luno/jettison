@@ -41,4 +41,4 @@ jobs:
       - name: Test
         run: make test
         env:
-          TESTING_ETCD_ENDPOINTS: "http://localhost:${{ job.services.etcd.ports[2379] }}"
+          TESTING_ETCD_ENDPOINTS: "http://localhost:${{ job.services.etcd.ports['2379'] }}"
