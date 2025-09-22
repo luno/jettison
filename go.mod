@@ -7,7 +7,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/go-stack/stack v1.8.1
 	github.com/sebdah/goldie/v2 v2.7.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 	google.golang.org/grpc v1.75.1
 	google.golang.org/protobuf v1.36.8
