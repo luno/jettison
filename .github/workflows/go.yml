@@ -12,10 +12,6 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        go: ['1.24', '1']
-
     services:
       etcd:
         image: quay.io/coreos/etcd:v3.6.5
@@ -32,7 +28,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go }}
+          go-version-file: 'go.mod'
         id: go
 
       - name: Vet
