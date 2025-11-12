@@ -18,9 +18,9 @@ jobs:
 
     services:
       etcd:
-        image: bitnami/etcd:latest
+        image: quay.io/coreos/etcd:v3.6.5
         env:
-          ALLOW_NONE_AUTHENTICATION: "yes"
+          ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
           ETCD_ADVERTISE_CLIENT_URLS: "http://localhost:2379"
         ports:
           - 2379
