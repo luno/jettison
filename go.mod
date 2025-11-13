@@ -2,8 +2,6 @@ module github.com/luno/jettison
 
 go 1.25
 
-toolchain go1.25.4
-
 require (
 	github.com/dave/dst v0.27.3
 	github.com/fatih/color v1.18.0
