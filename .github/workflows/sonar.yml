@@ -17,9 +17,25 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
+          cache: false
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Generate Sonar Report
-        run: go test -coverpkg=./... -coverprofile=coverage.out -json ./... > sonar-report.json
+        run: |
+          go test -coverpkg=./... -coverprofile=coverage.out -json ./... > sonar-report.json || {
+            echo "Tests failed! Here's the test output:"
+            cat sonar-report.json
+            exit 1
+          }
 
       - name: Upload coverage reports to Sonar
         env:
