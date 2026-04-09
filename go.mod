@@ -1,6 +1,6 @@
 module github.com/luno/jettison
 
-go 1.25
+go 1.26.0
 
 require (
 	github.com/dave/dst v0.27.3
