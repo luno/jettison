@@ -69,7 +69,7 @@ func (cl *Client) StreamThenError(count int, code string) (int, error) {
 	}
 
 	var empties int
-	for i := 0; i < count; i++ {
+	for i := range count {
 		_, err := sc.Recv()
 		if err != nil {
 			return i, errors.Wrap(err, "unexpected error")

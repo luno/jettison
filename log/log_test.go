@@ -156,7 +156,6 @@ func TestError(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
 			buf := new(bytes.Buffer)
@@ -174,17 +173,16 @@ func TestDeprecated(t *testing.T) {
 	testCases := []struct {
 		name   string
 		format string
-		vl     []interface{}
+		vl     []any
 	}{
 		{
 			name:   "mixed_types",
 			format: "%d, %s, %v",
-			vl:     []interface{}{1, "2", false},
+			vl:     []any{1, "2", false},
 		},
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
 			buf := new(bytes.Buffer)

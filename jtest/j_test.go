@@ -169,7 +169,7 @@ func TestPretty(t *testing.T) {
 
 func Test_messageFromMsg(t *testing.T) {
 	type args struct {
-		msg []interface{}
+		msg []any
 	}
 	tests := []struct {
 		name string
@@ -217,6 +217,6 @@ func Test_messageFromMsg(t *testing.T) {
 	}
 }
 
-func makeInterfaceSlice(al ...interface{}) []interface{} {
+func makeInterfaceSlice(al ...any) []any {
 	return al
 }
