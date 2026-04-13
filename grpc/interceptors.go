@@ -90,10 +90,10 @@ type clientStream struct {
 	grpc.ClientStream
 }
 
-func (cs *clientStream) SendMsg(m interface{}) error {
+func (cs *clientStream) SendMsg(m any) error {
 	return incomingError(cs.ClientStream.SendMsg(m))
 }
 
-func (cs *clientStream) RecvMsg(m interface{}) error {
+func (cs *clientStream) RecvMsg(m any) error {
 	return incomingError(cs.ClientStream.RecvMsg(m))
 }
