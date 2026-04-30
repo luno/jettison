@@ -3,7 +3,7 @@ module github.com/luno/jettison
 go 1.26.0
 
 require (
-	github.com/dave/dst v0.27.3
+	github.com/dave/dst v0.27.4
 	github.com/fatih/color v1.19.0
 	github.com/go-stack/stack v1.8.1
 	github.com/sebdah/goldie/v2 v2.8.0
