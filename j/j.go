@@ -104,7 +104,7 @@ var nosprints = map[reflect.Kind]bool{
 	reflect.Map:           true,
 	reflect.Slice:         true,
 	reflect.Array:         true,
-	reflect.Ptr:           true,
+	reflect.Pointer:       true,
 	reflect.UnsafePointer: true,
 	reflect.Uintptr:       true,
 	reflect.Func:          true,
@@ -112,7 +112,7 @@ var nosprints = map[reflect.Kind]bool{
 	reflect.Interface:     true,
 }
 
-func sprint(i interface{}) string {
+func sprint(i any) string {
 	if i == nil {
 		return "<nil>"
 	}

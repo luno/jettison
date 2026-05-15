@@ -31,7 +31,6 @@ func TestNew(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
 			errors.SetTraceConfigTesting(t, errors.TestingConfig)
@@ -112,7 +111,6 @@ func TestWrap(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
 			errors.SetTraceConfigTesting(t, errors.TestingConfig)
@@ -229,7 +227,6 @@ func TestIs(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
 			// Test Jettison's implementation of Is().
@@ -273,7 +270,6 @@ func TestGetCodes(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
 			codes := errors.GetCodes(tc.err)
@@ -321,7 +317,6 @@ func TestUnwrap(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
 			codes := errors.GetCodes(tc.err)
@@ -368,7 +363,7 @@ var errTest = errors.New("test error", errors.WithCode("ERR_59bed5816cb39f35"))
 
 func TestIsUnwrap(t *testing.T) {
 	err := errTest
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		err = errors.Wrap(err, "wrap").(*internal.Error)
 	}
 

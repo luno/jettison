@@ -20,7 +20,7 @@ import (
 // will be marked failed if it does not.
 //
 //	jtest.Assert(t, ErrWhatIExpect, err)
-func Assert(t testing.TB, expected, actual error, msgs ...interface{}) bool {
+func Assert(t testing.TB, expected, actual error, msgs ...any) bool {
 	t.Helper()
 
 	if !errors.Is(actual, expected) {
@@ -41,7 +41,7 @@ func Assert(t testing.TB, expected, actual error, msgs ...interface{}) bool {
 // fails.
 //
 //	jtest.Require(t, ErrWhatIExpect, err)
-func Require(t testing.TB, expected, actual error, msg ...interface{}) {
+func Require(t testing.TB, expected, actual error, msg ...any) {
 	t.Helper()
 
 	if !Assert(t, expected, actual, msg...) {
@@ -49,7 +49,7 @@ func Require(t testing.TB, expected, actual error, msg ...interface{}) {
 	}
 }
 
-func assertJettisonErrors(t testing.TB, expected, actual error, msgs ...interface{}) {
+func assertJettisonErrors(t testing.TB, expected, actual error, msgs ...any) {
 	t.Helper()
 	expectedKeys := errors.GetKeyValues(expected)
 	if len(expectedKeys) == 0 {
@@ -80,7 +80,7 @@ func assertJettisonErrors(t testing.TB, expected, actual error, msgs ...interfac
 // although it provides slightly clearer failure output.
 //
 //	jtest.AssertNil(t, err)
-func AssertNil(t testing.TB, actual error, msgs ...interface{}) bool {
+func AssertNil(t testing.TB, actual error, msgs ...any) bool {
 	t.Helper()
 
 	if actual != nil {
@@ -96,7 +96,7 @@ func AssertNil(t testing.TB, actual error, msgs ...interface{}) bool {
 // output.
 //
 //	jtest.RequireNil(t, err)
-func RequireNil(t testing.TB, actual error, msg ...interface{}) {
+func RequireNil(t testing.TB, actual error, msg ...any) {
 	t.Helper()
 
 	if !AssertNil(t, actual, msg...) {
@@ -104,27 +104,27 @@ func RequireNil(t testing.TB, actual error, msg ...interface{}) {
 	}
 }
 
-func failLog(expected, actual error, msgs ...interface{}) string {
+func failLog(expected, actual error, msgs ...any) string {
 	l := fmt.Sprintf("No error in chain matches expected:\nexpected: %+vactual:   %+v", pretty(expected), pretty(actual))
 
 	return l + messageFromMsgs(msgs...)
 }
 
-func failNilLog(actual error, msgs ...interface{}) string {
+func failNilLog(actual error, msgs ...any) string {
 	l := fmt.Sprintf("Unexpected non-nil error:\n"+
 		"actual:   %+v", pretty(actual))
 
 	return l + messageFromMsgs(msgs...)
 }
 
-func failJKeyNotPresent(key string, actual error, msgs ...interface{}) string {
+func failJKeyNotPresent(key string, actual error, msgs ...any) string {
 	l := fmt.Sprintf("Expected jettison key '%v' was not present in actual error:\n"+
 		"%+v", key, pretty(actual))
 
 	return l + messageFromMsgs(msgs...)
 }
 
-func failJKeyValuesMismatch(key, expected, actual string, msgs ...interface{}) string {
+func failJKeyValuesMismatch(key, expected, actual string, msgs ...any) string {
 	l := fmt.Sprintf("jettison values differ for key '%v':\n"+
 		"expected: %+v\n"+
 		"actual:   %+v\n", key, expected, actual)
@@ -175,7 +175,7 @@ func pretty(err error) string {
 	return string(b)
 }
 
-func messageFromMsgs(msgs ...interface{}) string {
+func messageFromMsgs(msgs ...any) string {
 	if len(msgs) == 0 {
 		return ""
 	}

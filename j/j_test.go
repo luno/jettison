@@ -81,11 +81,11 @@ func BenchmarkFull(b *testing.B) {
 	}
 }
 
-var simple = []interface{}{1, 1.0, "1", true}
+var simple = []any{1, 1.0, "1", true}
 
 var tests = []struct {
 	Name   string
-	Input  interface{}
+	Input  any
 	Output string
 }{
 	{
@@ -190,7 +190,6 @@ func TestNormalise(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 
 		t.Run(tc.in, func(t *testing.T) {
 			assert.Equal(t, tc.exp, normalise(tc.in))

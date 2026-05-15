@@ -52,7 +52,7 @@ func (je *Error) Format(state fmt.State, _ rune) {
 // details.
 func (je *Error) FormatError(p xerrors.Printer) error {
 	msg := "%s"
-	args := []interface{}{je.Message}
+	args := []any{je.Message}
 	if p.Detail() && len(je.KV) > 0 {
 		var fmts []string
 		for _, kv := range je.KV {
@@ -106,13 +106,13 @@ type printer struct {
 	written  int
 }
 
-func (p *printer) Print(args ...interface{}) {
-	w, _ := p.Write([]byte(fmt.Sprint(args...)))
+func (p *printer) Print(args ...any) {
+	w, _ := p.Write(fmt.Append(nil, args...))
 	p.written += w
 }
 
-func (p *printer) Printf(format string, args ...interface{}) {
-	w, _ := p.Write([]byte(fmt.Sprintf(format, args...)))
+func (p *printer) Printf(format string, args ...any) {
+	w, _ := p.Write(fmt.Appendf(nil, format, args...))
 	p.written += w
 }
 
