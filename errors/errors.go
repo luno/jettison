@@ -80,7 +80,7 @@ func New(msg string, ol ...Option) error {
 // If no error in the err error tree has a trace, a stack trace is populated.
 func Wrap(err error, msg string, ol ...Option) error {
 	if err == nil {
-		return nil
+		panic("jettison: Wrap called with nil error")
 	}
 	je := &internal.Error{
 		Message: msg,
