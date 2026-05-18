@@ -52,13 +52,13 @@ func TestWrap(t *testing.T) {
 		msg  string
 		opts []errors.Option
 
-		expectNil       bool
+		expectPanic     bool
 		expectedMessage string
 	}{
 		{
-			name:      "nil err",
-			err:       nil,
-			expectNil: true,
+			name:        "nil err",
+			err:         nil,
+			expectPanic: true,
 		},
 		{
 			name:            "non-Jettison err",
@@ -114,11 +114,13 @@ func TestWrap(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			errors.SetTraceConfigTesting(t, errors.TestingConfig)
-			err := errors.Wrap(tc.err, tc.msg, tc.opts...)
-			if tc.expectNil {
-				assert.NoError(t, err)
+			if tc.expectPanic {
+				assert.PanicsWithValue(t, "jettison: Wrap called with nil error", func() {
+					errors.Wrap(tc.err, tc.msg, tc.opts...)
+				})
 				return
 			}
+			err := errors.Wrap(tc.err, tc.msg, tc.opts...)
 			je := err.(*internal.Error)
 			assert.Equal(t, tc.msg, je.Message)
 			assert.Equal(t,
